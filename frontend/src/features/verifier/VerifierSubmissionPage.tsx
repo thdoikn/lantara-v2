@@ -63,11 +63,6 @@ function ActionPanel({
   const [active, setActive] = useState<ActionType | null>(null);
   const [note, setNote] = useState("");
 
-  const allowedActions = submission.schema_snapshot?.stages?.find(
-    (s) => s.key === submission.current_stage_key
-  );
-
-  // Determine which actions are available for current stage
   const availableActions = ACTIONS.filter(() => {
     if (submission.status === "issued" || submission.status === "rejected") return false;
     return true;

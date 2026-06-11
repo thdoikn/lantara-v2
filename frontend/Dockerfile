@@ -1,8 +1,8 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN npm install --legacy-peer-deps
 
 COPY . .
 RUN npm run build

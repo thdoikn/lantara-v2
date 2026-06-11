@@ -16,7 +16,7 @@ from django.core.management.base import BaseCommand, CommandError
 from apps.reference.models import Bidang, KbliCode
 
 FIXTURES_BASE = Path("/fixtures/kbli")
-FALLBACK_BASE = Path(__file__).resolve().parents[6] / "fixtures" / "kbli"
+FALLBACK_BASE = Path(__file__).resolve().parents[4] / "fixtures" / "kbli"
 
 HEADER_ROW = 7  # 0-indexed row where CSV headers appear
 COLUMNS = {

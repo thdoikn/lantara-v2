@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
@@ -22,7 +22,7 @@ class SektorViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = Sektor.objects.filter(is_active=True).annotate(
-            permit_count=Count("permit_types", filter={"permit_types__is_published": True})
+            permit_count=Count("permit_types", filter=Q(permit_types__is_published=True))
         )
         return qs
 

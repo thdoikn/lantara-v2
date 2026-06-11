@@ -18,7 +18,7 @@ FIXTURES_DIRS = [
     Path("/fixtures/sektor_kesehatan"),
     Path("/fixtures/sektor_pendidikan"),
 ]
-FALLBACK_BASE = Path(__file__).resolve().parents[6] / "fixtures"
+FALLBACK_BASE = Path(__file__).resolve().parents[4] / "fixtures"
 
 
 class Command(BaseCommand):

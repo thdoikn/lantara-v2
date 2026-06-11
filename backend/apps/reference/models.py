@@ -27,12 +27,12 @@ class KbliCode(UUIDModel):
     """
 
     bidang = models.ForeignKey(Bidang, on_delete=models.CASCADE, related_name="kbli_codes")
-    sektor_oss_name = models.CharField(max_length=200, blank=True, help_text="SEKTOR (OSS)")
+    sektor_oss_name = models.CharField(max_length=500, blank=True, help_text="SEKTOR (OSS)")
     code = models.CharField(max_length=10, db_index=True)
     title = models.CharField(max_length=500)
-    verifier_sector = models.CharField(max_length=200, blank=True)
-    lantara_izin_label = models.CharField(max_length=300, blank=True)
-    pengampu = models.CharField(max_length=200, blank=True)
+    verifier_sector = models.CharField(max_length=500, blank=True)
+    lantara_izin_label = models.CharField(max_length=500, blank=True)
+    pengampu = models.CharField(max_length=500, blank=True)
     notes = models.TextField(blank=True)
 
     class Meta:

@@ -1,8 +1,10 @@
-from django.urls import path, include
-from rest_framework_nested import routers as nested_routers
-from rest_framework.routers import DefaultRouter
+from django.urls import path
+from .views import DocumentViewSet
 
-# These are nested under /submissions/{submission_pk}/documents/
-# The parent submission router registers them in submissions/urls.py
-# For direct access, just expose an empty list here
-urlpatterns: list = []
+router_list = DocumentViewSet.as_view({"get": "list", "post": "create"})
+router_detail = DocumentViewSet.as_view({"get": "retrieve", "delete": "destroy"})
+
+urlpatterns = [
+    path("", router_list, name="document-list"),
+    path("<uuid:pk>/", router_detail, name="document-detail"),
+]
