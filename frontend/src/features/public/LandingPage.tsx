@@ -368,11 +368,13 @@ export default function LandingPage() {
   return (
     <div>
       <Hero />
-      <StatsStrip />
-      <SektorCards sektors={sektors ?? []} />
-      <HowItWorks />
-      <Features />
-      <CTA />
+      <main id="main-content">
+        <StatsStrip />
+        <SektorCards sektors={sektors ?? []} />
+        <HowItWorks />
+        <Features />
+        <CTA />
+      </main>
       <Footer />
     </div>
   );

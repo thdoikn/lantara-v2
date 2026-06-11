@@ -164,7 +164,7 @@ export default function ServiceCatalog() {
     (allPermits ?? []).filter((p) => p.sektor_key === sektorKey);
 
   return (
-    <div className="min-h-screen bg-background">
+    <main id="main-content" className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-buana-dark text-white">
         <div className="max-w-6xl mx-auto px-4 py-10 sm:py-16">
@@ -247,7 +247,7 @@ export default function ServiceCatalog() {
           );
         })}
       </div>
-    </div>
+    </main>
   );
 }
 
