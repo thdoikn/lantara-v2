@@ -30,16 +30,28 @@ export interface FormField {
   key: string;
   label: string;
   field_type:
-    | "text" | "textarea" | "number" | "date"
-    | "select" | "multiselect" | "file"
-    | "nik" | "npwp" | "phone" | "email"
+    | "text" | "textarea" | "number" | "currency" | "date"
+    | "select" | "multiselect" | "file" | "boolean"
+    | "nik" | "npwp" | "phone" | "tel" | "email"
     | "geo" | "map_point";
   section: string;
   order: number;
   required: boolean;
-  validation_json: Record<string, unknown>;
+  validation_json: {
+    required?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    patternMessage?: string;
+    placeholder?: string;
+    help_text?: string;
+    acceptedTypes?: string;
+    [key: string]: unknown;
+  };
   options_json: Array<{ value: string; label: string }>;
   prefill_from_profile: boolean;
+  conditional_field_key?: string;
+  conditional_field_value?: string;
   help_text_field: string;
   placeholder: string;
 }
@@ -51,10 +63,10 @@ export interface DocumentRequirement {
   description: string;
   allowed_types: string[];
   max_bytes: number;
-  required: boolean;
+  is_required: boolean;
   order: number;
-  conditional_field_key: string;
-  conditional_field_value: string;
+  conditional_field_key?: string;
+  conditional_field_value?: string;
 }
 
 export interface PermitType {
@@ -75,7 +87,7 @@ export interface PermitType {
   schema_version: number;
   stages: WorkflowStage[];
   form_fields: FormField[];
-  doc_requirements: DocumentRequirement[];
+  document_requirements: DocumentRequirement[];
 }
 
 // ── Auth types ────────────────────────────────────────────────────────────────
@@ -118,8 +130,9 @@ export interface ApplicantProfile {
 // ── Submission types ──────────────────────────────────────────────────────────
 
 export type SubmissionStatus =
-  | "draft" | "submitted" | "in_review" | "revision"
-  | "approved" | "rejected" | "publishing" | "collection" | "collected";
+  | "draft" | "submitted" | "under_review"
+  | "awaiting_revision" | "revision_submitted"
+  | "site_visit_scheduled" | "approved" | "rejected" | "issued";
 
 export interface AuditEntry {
   id: string;
@@ -146,11 +159,18 @@ export interface Submission {
   id: string;
   reference_number: string;
   status: SubmissionStatus;
-  permit_type: PermitType;
+  permit_type_key: string;
+  permit_type_name: string;
+  sektor_name: string;
   applicant_name: string;
   applicant_email: string;
   form_data: Record<string, unknown>;
   schema_version_snapshot: number;
+  schema_snapshot: {
+    stages: Array<{ key: string; name: string; order: number }>;
+    form_fields: Array<{ key: string; label: string }>;
+    document_requirements: DocumentRequirement[];
+  };
   current_stage_key: string;
   current_stage_order: number;
   sla_due_at: string | null;
@@ -159,9 +179,10 @@ export interface Submission {
   stage_sla_due_at: string | null;
   submitted_at: string | null;
   rejection_reason: string;
+  issued_permit_id: string | null;
+  issued_permit_validation_uuid: string | null;
   created_at: string;
   updated_at: string;
-  audit_entries: AuditEntry[];
   revision_fields: RevisionField[];
 }
 
@@ -170,6 +191,7 @@ export interface UploadedDocument {
   requirement_key: string;
   requirement_title: string;
   original_filename: string;
+  file_url: string;
   mime_type: string;
   file_size: number;
   status: "pending" | "valid" | "invalid" | "infected";
