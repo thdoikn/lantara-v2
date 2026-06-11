@@ -1,9 +1,32 @@
 import { Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-// Public routes (lazy for code splitting)
+// Public
 const LandingPage = lazy(() => import("./features/public/LandingPage"));
+const ServiceCatalog = lazy(() => import("./features/public/ServiceCatalog"));
+const PermitValidatePage = lazy(() => import("./features/public/PermitValidatePage"));
 const NotFoundPage = lazy(() => import("./features/public/NotFoundPage"));
+
+// Auth
+const LoginPage = lazy(() => import("./features/auth/LoginPage"));
+const RegisterPage = lazy(() => import("./features/auth/RegisterPage"));
+const OTPPage = lazy(() => import("./features/auth/OTPPage"));
+const ForgotPasswordPage = lazy(() => import("./features/auth/ForgotPasswordPage"));
+
+// Applicant portal
+const PortalLayout = lazy(() => import("./features/applicant/PortalLayout"));
+const PortalDashboard = lazy(() => import("./features/applicant/PortalDashboard"));
+const NewSubmissionPage = lazy(() => import("./features/applicant/NewSubmissionPage"));
+const SubmissionDetailPage = lazy(() => import("./features/applicant/SubmissionDetailPage"));
+
+// Verifier workspace
+const VerifierLayout = lazy(() => import("./features/verifier/VerifierLayout"));
+const VerifierQueue = lazy(() => import("./features/verifier/VerifierQueue"));
+const VerifierSubmissionPage = lazy(() => import("./features/verifier/VerifierSubmissionPage"));
+
+// Admin (Phase 2)
+const AdminPlaceholder = lazy(() => import("./features/admin/AdminPlaceholder"));
 
 function LoadingSpinner() {
   return (
@@ -17,23 +40,53 @@ export default function App() {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
-        {/* Public */}
+        {/* ── Public ── */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/layanan" element={<ServiceCatalog />} />
+        <Route path="/validate/:uuid" element={<PermitValidatePage />} />
 
-        {/* Auth — Phase 1 */}
-        <Route path="/auth/*" element={<div>Auth (coming soon)</div>} />
+        {/* ── Auth ── */}
+        <Route path="/auth/login" element={<LoginPage />} />
+        <Route path="/auth/register" element={<RegisterPage />} />
+        <Route path="/auth/verify-otp" element={<OTPPage />} />
+        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
 
-        {/* Applicant portal — Phase 1 */}
-        <Route path="/portal/*" element={<div>Portal (coming soon)</div>} />
+        {/* ── Applicant portal ── */}
+        <Route
+          path="/portal"
+          element={
+            <ProtectedRoute>
+              <PortalLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<PortalDashboard />} />
+          <Route path="new/:permitKey" element={<NewSubmissionPage />} />
+          <Route path="submissions/:id" element={<SubmissionDetailPage />} />
+        </Route>
 
-        {/* Verifier workspace — Phase 1 */}
-        <Route path="/verifier/*" element={<div>Verifier (coming soon)</div>} />
+        {/* ── Verifier workspace ── */}
+        <Route
+          path="/verifier"
+          element={
+            <ProtectedRoute requireRoles={["superadmin", "staff"]}>
+              <VerifierLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<VerifierQueue />} />
+          <Route path="submissions/:id" element={<VerifierSubmissionPage />} />
+        </Route>
 
-        {/* Admin — Phase 2 */}
-        <Route path="/admin/*" element={<div>Admin (coming soon)</div>} />
-
-        {/* Public permit validation — Phase 1 */}
-        <Route path="/validate/:uuid" element={<div>Validasi Izin (coming soon)</div>} />
+        {/* ── Admin (Phase 2) ── */}
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute requireRoles={["superadmin"]}>
+              <AdminPlaceholder />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
