@@ -245,6 +245,20 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             actor=request.user,
             notes=f"Dijadwalkan: {visit.scheduled_date}",
         )
+        # Send WA visit ticket (no-op if FEATURE_WHATSAPP_ENABLED is false)
+        try:
+            from apps.whatsapp.services import create_visit_ticket
+            from django.utils.dateparse import parse_datetime
+            scheduled_at = parse_datetime(str(visit.scheduled_date))
+            if scheduled_at:
+                create_visit_ticket(
+                    submission=sub,
+                    scheduled_by=request.user,
+                    scheduled_at=scheduled_at,
+                    location_notes=request.data.get("location_notes", ""),
+                )
+        except Exception:
+            pass  # WA ticket is best-effort
         return Response(SiteVisitSerializer(visit).data, status=status.HTTP_201_CREATED)
 
 
@@ -282,6 +296,7 @@ def _notify_submission(sub: Submission) -> None:
         body=f"Pengajuan {sub.reference_number} berhasil dikirim dan sedang diproses.",
         submission_id=sub.id,
         action_url=f"/portal/submissions/{sub.id}",
+        send_whatsapp=True,
     )
 
 
@@ -295,6 +310,7 @@ def _notify_stage_advance(sub: Submission, actor) -> None:
         body=f"Pengajuan {sub.reference_number} telah masuk ke tahap berikutnya.",
         submission_id=sub.id,
         action_url=f"/portal/submissions/{sub.id}",
+        send_whatsapp=True,
     )
 
 
@@ -308,6 +324,7 @@ def _notify_revision(sub: Submission, actor) -> None:
         body=f"Pengajuan {sub.reference_number} membutuhkan revisi. Cek detailnya di portal.",
         submission_id=sub.id,
         action_url=f"/portal/submissions/{sub.id}",
+        send_whatsapp=True,
     )
 
 
@@ -321,4 +338,5 @@ def _notify_rejection(sub: Submission, actor) -> None:
         body=f"Pengajuan {sub.reference_number} ditolak. Alasan: {sub.rejection_reason}",
         submission_id=sub.id,
         action_url=f"/portal/submissions/{sub.id}",
+        send_whatsapp=True,
     )
