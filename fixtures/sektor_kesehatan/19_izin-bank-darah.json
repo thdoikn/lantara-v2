@@ -1,0 +1,185 @@
+{
+  "sektor": {
+    "key": "kesehatan",
+    "name": "Kesehatan",
+    "description": "Layanan perizinan sektor kesehatan di wilayah IKN.",
+    "icon": "🏥",
+    "order": 2,
+    "pengampu": "Direktorat Pelayanan Dasar (Dit. Yandas)"
+  },
+  "permit_type": {
+    "key": "izin-bank-darah",
+    "name": "Izin Unit Transfusi Darah / Bank Darah",
+    "description": "Izin operasional unit transfusi darah di fasilitas kesehatan IKN.",
+    "is_berusaha": false,
+    "oss_covered": false,
+    "sla_days": 14,
+    "product_name": "Izin Unit Transfusi Darah",
+    "legal_basis": [
+      "Undang-Undang Nomor 36 Tahun 2009 tentang Kesehatan",
+      "Peraturan Pemerintah Nomor 47 Tahun 2016 tentang Fasilitas Pelayanan Kesehatan",
+      "Peraturan Menteri Kesehatan Nomor 14 Tahun 2021 tentang Standar Kegiatan Usaha dan Standar Produk pada Penyelenggaraan Perizinan Berusaha Berbasis Risiko di Bidang Kesehatan"
+    ],
+    "fee_description": "Rp0 (gratis) s/d 2035",
+    "complaint_info": "Pengaduan dapat disampaikan melalui WhatsApp Satu Nomor Otorita IKN atau portal layanan.",
+    "is_published": true,
+    "stages": [
+      {
+        "key": "submit",
+        "order": 1,
+        "name": "Pengajuan Pemohon",
+        "stage_type": "verification",
+        "actor_role": "applicant",
+        "sla_hours": 0,
+        "requires_site_visit": false,
+        "allowed_actions": [
+          "submit"
+        ],
+        "is_terminal": false,
+        "instructions": "Pemohon melengkapi formulir dan mengunggah dokumen persyaratan."
+      },
+      {
+        "key": "tim-teknis-verifikasi",
+        "order": 2,
+        "name": "Verifikasi Tim Teknis",
+        "stage_type": "verification",
+        "actor_role": "verifier",
+        "sla_hours": 48,
+        "requires_site_visit": true,
+        "allowed_actions": [
+          "approve",
+          "revise",
+          "reject",
+          "schedule_site_visit"
+        ],
+        "is_terminal": false,
+        "instructions": "Tim teknis memverifikasi kelengkapan dan kesesuaian dokumen."
+      },
+      {
+        "key": "penerbitan",
+        "order": 3,
+        "name": "Penerbitan Izin oleh Kepala Otorita",
+        "stage_type": "publish",
+        "actor_role": "approver",
+        "sla_hours": 24,
+        "requires_site_visit": false,
+        "allowed_actions": [
+          "approve",
+          "reject"
+        ],
+        "is_terminal": false,
+        "instructions": "Kepala Otorita menandatangani dan menerbitkan izin."
+      },
+      {
+        "key": "penyerahan",
+        "order": 4,
+        "name": "Penyerahan ke Pemohon",
+        "stage_type": "collection",
+        "actor_role": "staff",
+        "sla_hours": 8,
+        "requires_site_visit": false,
+        "allowed_actions": [
+          "approve"
+        ],
+        "is_terminal": true,
+        "instructions": "Izin diserahkan ke pemohon melalui WhatsApp / portal online."
+      }
+    ],
+    "form_fields": [
+      {
+        "key": "nama_pemohon",
+        "label": "Nama Pemohon / Lembaga",
+        "field_type": "text",
+        "section": "Identitas Pemohon",
+        "order": 1,
+        "required": true,
+        "validation_json": {
+          "minLength": 3
+        },
+        "options_json": [],
+        "prefill_from_profile": true,
+        "help_text": "",
+        "placeholder": ""
+      },
+      {
+        "key": "nik_pemohon",
+        "label": "NIK Pemohon",
+        "field_type": "nik",
+        "section": "Identitas Pemohon",
+        "order": 2,
+        "required": true,
+        "validation_json": {},
+        "options_json": [],
+        "prefill_from_profile": true,
+        "help_text": "16 digit Nomor Induk Kependudukan",
+        "placeholder": ""
+      },
+      {
+        "key": "nomor_telepon",
+        "label": "Nomor Telepon / WhatsApp",
+        "field_type": "phone",
+        "section": "Identitas Pemohon",
+        "order": 3,
+        "required": true,
+        "validation_json": {},
+        "options_json": [],
+        "prefill_from_profile": true,
+        "help_text": "",
+        "placeholder": "+62..."
+      },
+      {
+        "key": "alamat_lengkap",
+        "label": "Alamat Lengkap",
+        "field_type": "textarea",
+        "section": "Identitas Pemohon",
+        "order": 4,
+        "required": true,
+        "validation_json": {
+          "minLength": 10
+        },
+        "options_json": [],
+        "prefill_from_profile": false,
+        "help_text": "",
+        "placeholder": ""
+      }
+    ],
+    "doc_requirements": [
+      {
+        "key": "ktp",
+        "title": "KTP Pemohon",
+        "description": "Kartu Tanda Penduduk yang masih berlaku",
+        "allowed_types": [
+          "pdf",
+          "jpg",
+          "jpeg",
+          "png"
+        ],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 1
+      },
+      {
+        "key": "surat_permohonan",
+        "title": "Surat Permohonan",
+        "description": "Surat permohonan yang ditujukan kepada Kepala Otorita IKN",
+        "allowed_types": [
+          "pdf"
+        ],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 2
+      },
+      {
+        "key": "surat_keterangan",
+        "title": "Surat Keterangan Pendukung",
+        "description": "Dokumen pendukung permohonan",
+        "allowed_types": [
+          "pdf"
+        ],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 3
+      }
+    ]
+  }
+}
