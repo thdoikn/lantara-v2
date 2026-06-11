@@ -11,7 +11,7 @@ Endpoints (all require is_staff):
 import io
 from datetime import date, timedelta
 
-from django.db.models import Avg, Case, Count, F, IntegerField, Q, Value, When
+from django.db.models import Case, Count, F, IntegerField, Value, When
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.utils import timezone
@@ -98,18 +98,6 @@ class SLAView(APIView):
         breached = active_qs.filter(is_sla_breached=True).count()
         at_risk = active_qs.filter(is_sla_at_risk=True, is_sla_breached=False).count()
         on_time = active_qs.filter(is_sla_breached=False, is_sla_at_risk=False).count()
-
-        avg_days = (
-            Submission.objects.filter(
-                status__in=["approved", "collected"],
-                submitted_at__isnull=False,
-                updated_at__isnull=False,
-            )
-            .annotate(
-                duration=F("updated_at") - F("submitted_at"),
-            )
-            .aggregate(avg=Avg("duration"))
-        )
 
         return Response(
             {

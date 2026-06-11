@@ -37,13 +37,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from apps.engine.models import (
-            DocumentRequirement,
-            FormField,
-            PermitType,
-            Sektor,
-            WorkflowStage,
-        )
 
         dirs = FIXTURES_DIRS
         if options.get("sektor"):

@@ -8,14 +8,12 @@ Key invariants:
   - current_stage_key is the FK into WorkflowStage.key for the active stage.
   - SLA is computed from working-days calendar (Holiday + weekends).
 """
-import uuid
 
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
 
 from apps.common.models import TimestampedModel, UUIDModel
-from apps.engine.models import PermitType, WorkflowStage
+from apps.engine.models import PermitType
 
 
 def _ref_number(sektor_key: str, izin_key: str) -> str:

@@ -2,7 +2,6 @@
 Submissions API — applicant-facing (create/read/track) +
 verifier-facing actions (approve/revise/reject).
 """
-import json
 
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -10,8 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.common.permissions import HasStagePermission
-from apps.engine.models import PermitType, PermitTypeVersion, WorkflowStage
+from apps.engine.models import PermitType, WorkflowStage
 from apps.engine.serializers import PermitTypeDetailSerializer
 
 from .models import AuditEntry, Submission, SubmissionIndex, SubmissionRevisionField
@@ -247,8 +245,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         )
         # Send WA visit ticket (no-op if FEATURE_WHATSAPP_ENABLED is false)
         try:
-            from apps.whatsapp.services import create_visit_ticket
             from django.utils.dateparse import parse_datetime
+
+            from apps.whatsapp.services import create_visit_ticket
             scheduled_at = parse_datetime(str(visit.scheduled_date))
             if scheduled_at:
                 create_visit_ticket(
@@ -287,8 +286,8 @@ def _upsert_index(sub: Submission) -> None:
 
 
 def _notify_submission(sub: Submission) -> None:
-    from apps.notifications.utils import send_notification
     from apps.notifications.models import Notification
+    from apps.notifications.utils import send_notification
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.SUBMISSION_SUBMITTED,
@@ -301,8 +300,8 @@ def _notify_submission(sub: Submission) -> None:
 
 
 def _notify_stage_advance(sub: Submission, actor) -> None:
-    from apps.notifications.utils import send_notification
     from apps.notifications.models import Notification
+    from apps.notifications.utils import send_notification
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.STAGE_ADVANCED,
@@ -315,8 +314,8 @@ def _notify_stage_advance(sub: Submission, actor) -> None:
 
 
 def _notify_revision(sub: Submission, actor) -> None:
-    from apps.notifications.utils import send_notification
     from apps.notifications.models import Notification
+    from apps.notifications.utils import send_notification
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.REVISION_REQUESTED,
@@ -329,8 +328,8 @@ def _notify_revision(sub: Submission, actor) -> None:
 
 
 def _notify_rejection(sub: Submission, actor) -> None:
-    from apps.notifications.utils import send_notification
     from apps.notifications.models import Notification
+    from apps.notifications.utils import send_notification
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.SUBMISSION_REJECTED,

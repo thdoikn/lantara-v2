@@ -8,12 +8,11 @@ Endpoints:
   GET /api/v1/rdtr/kbli-check/?kbli=&zone= — KBLI compatibility for a zone
 """
 from rest_framework import serializers
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import KBLICompatibility, RDTRZone
-
 
 # ── Serializers ───────────────────────────────────────────────────────────────
 

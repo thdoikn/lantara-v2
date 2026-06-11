@@ -15,7 +15,6 @@ import logging
 from io import BytesIO
 
 from django.conf import settings
-from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,6 @@ def sign_permit(permit) -> tuple[bytes, bool]:
 def _fetch_permit_pdf(permit) -> bytes | None:
     try:
         import boto3
-        from botocore.exceptions import BotoCoreError, ClientError
         s3 = boto3.client(
             "s3",
             endpoint_url=settings.AWS_S3_ENDPOINT_URL,
@@ -59,10 +57,10 @@ def _apply_mock_stamp(pdf_bytes: bytes) -> bytes:
     Uses PyPDF2 if available; falls back to returning original bytes unchanged.
     """
     try:
+        import pypdf
+        from reportlab.lib.colors import Color
         from reportlab.lib.pagesizes import A4
         from reportlab.pdfgen import canvas as rl_canvas
-        from reportlab.lib.colors import Color
-        import pypdf
 
         # Create watermark page
         buf = BytesIO()

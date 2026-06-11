@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import ApplicantProfile, OTPCode, Role, RolePermission, User, UserRole
+from .models import OTPCode, Role, RolePermission, User, UserRole
 
 
 class UserRoleInline(admin.TabularInline):

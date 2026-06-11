@@ -1,10 +1,9 @@
 from django.db.models import Count, Q
-from rest_framework import serializers as drf_serializers, status, viewsets
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
-from apps.common.permissions import IsSuperAdmin
 from .models import DocumentRequirement, FormField, PermitType, Sektor, WorkflowStage
 from .serializers import (
     DocumentRequirementSerializer,

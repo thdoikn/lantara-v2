@@ -15,7 +15,6 @@ def generate_permit_pdf(self, permit_id: str):
     try:
         # Phase 1: basic HTML→PDF via WeasyPrint
         # Phase 2: template-driven with merge fields + terbilang + QR embed
-        import io
         import qrcode
         from weasyprint import HTML
 
@@ -38,7 +37,8 @@ def generate_permit_pdf(self, permit_id: str):
 
 
 def _render_permit_html(permit, sub, qr_img=None):
-    import io, base64
+    import base64
+    import io
     qr_b64 = ""
     if qr_img:
         buf = io.BytesIO()

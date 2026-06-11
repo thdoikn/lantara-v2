@@ -1,14 +1,18 @@
 """API v1 URL registry."""
 from django.urls import include, path
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from rest_framework.routers import DefaultRouter
+from rest_framework.views import APIView
 
 from apps.engine.views import (
-    SektorViewSet, PermitTypeViewSet,
-    AdminSektorViewSet, AdminPermitTypeViewSet,
-    AdminStageViewSet, AdminFormFieldViewSet, AdminDocRequirementViewSet,
+    AdminDocRequirementViewSet,
+    AdminFormFieldViewSet,
+    AdminPermitTypeViewSet,
+    AdminSektorViewSet,
+    AdminStageViewSet,
+    PermitTypeViewSet,
+    SektorViewSet,
 )
 
 

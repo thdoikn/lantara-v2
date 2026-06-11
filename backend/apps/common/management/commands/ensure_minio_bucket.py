@@ -4,8 +4,8 @@ manage.py ensure_minio_bucket
 Creates the MinIO/S3 bucket on startup if it doesn't already exist.
 Idempotent — safe to run on every container start.
 """
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):

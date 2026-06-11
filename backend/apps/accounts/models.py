@@ -4,7 +4,6 @@ Accounts — custom User, OTP, dynamic RBAC (Role/RolePermission/UserRole).
 RBAC permissions are {stage_key}:{izin_key} strings derived from engine
 config at request time, NOT a static Django permission enum.
 """
-import uuid
 from datetime import timedelta
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin

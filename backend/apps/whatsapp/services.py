@@ -10,9 +10,9 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-def create_visit_ticket(submission, scheduled_by, scheduled_at: datetime, location_notes: str = "") -> "VisitTicket":
-    from .models import VisitTicket
+def create_visit_ticket(submission, scheduled_by, scheduled_at: datetime, location_notes: str = ""):
     from .adapter import send_whatsapp_message
+    from .models import VisitTicket
 
     ticket = VisitTicket.objects.create(
         submission=submission,

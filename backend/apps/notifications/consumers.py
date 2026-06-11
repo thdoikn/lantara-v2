@@ -44,6 +44,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _mark_read(self, user, ids):
         from django.utils import timezone
+
         from apps.notifications.models import Notification
         qs = Notification.objects.filter(recipient=user, is_read=False)
         if ids:

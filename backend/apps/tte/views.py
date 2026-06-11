@@ -13,6 +13,8 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .models import TTERequest
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +24,7 @@ class TTESignView(APIView):
 
     def post(self, request, permit_id):
         from apps.permits.models import IssuedPermit
-        from .models import TTERequest
+
         from .adapter import sign_permit
 
         try:
@@ -83,7 +85,6 @@ class TTEStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, permit_id):
-        from .models import TTERequest
 
         try:
             tte_req = TTERequest.objects.get(permit_id=permit_id)
@@ -119,12 +120,7 @@ def _store_signed_pdf(permit, pdf_bytes: bytes) -> None:
             Body=pdf_bytes,
             ContentType="application/pdf",
         )
-        # Track the key on the TTERequest (permit model doesn't need new fields)
-        TTERequest = permit.tte_request.__class__
+        # Track the key on the TTERequest
         TTERequest.objects.filter(permit=permit).update(signed_pdf_key=key)
     except Exception as exc:
         logger.error("Failed to store signed PDF: %s", exc)
-
-
-# Import inside function to avoid circular at module load
-from .models import TTERequest  # noqa: E402 — needed for _store_signed_pdf type hint

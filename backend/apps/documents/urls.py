@@ -1,4 +1,5 @@
 from django.urls import path
+
 from .views import DocumentViewSet
 
 router_list = DocumentViewSet.as_view({"get": "list", "post": "create"})

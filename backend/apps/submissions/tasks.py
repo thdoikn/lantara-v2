@@ -8,7 +8,6 @@ def sweep_sla():
     Recompute SLA flags for all active submissions.
     Fires notifications when at-risk or breached.
     """
-    from django.utils import timezone
     from .models import Submission
     from .sla import compute_submission_sla
 
@@ -42,8 +41,8 @@ def sweep_sla():
 
 
 def _notify_sla_breached(sub):
-    from apps.notifications.utils import send_notification
     from apps.notifications.models import Notification
+    from apps.notifications.utils import send_notification
     # Notify assigned verifiers + the applicant
     send_notification(
         recipient=sub.applicant,
@@ -56,8 +55,8 @@ def _notify_sla_breached(sub):
 
 
 def _notify_sla_at_risk(sub):
-    from apps.notifications.utils import send_notification
     from apps.notifications.models import Notification
+    from apps.notifications.utils import send_notification
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.SLA_AT_RISK,

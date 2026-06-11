@@ -4,7 +4,6 @@ optionally WhatsApp if enabled. Also pushes real-time via channel layer.
 """
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from django.utils import timezone
 
 
 def send_notification(

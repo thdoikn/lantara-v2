@@ -12,7 +12,7 @@ class Command(BaseCommand):
     help = "Create superadmin from env vars (idempotent)"
 
     def handle(self, *args, **options):
-        from apps.accounts.models import Role, RolePermission, User, UserRole
+        from apps.accounts.models import Role, User, UserRole
 
         email = getattr(settings, "SUPERADMIN_EMAIL", "admin@lantara.ikn.go.id")
         password = getattr(settings, "SUPERADMIN_PASSWORD", "changeme")
