@@ -144,14 +144,14 @@ function StageTracker({
 // ── Audit timeline ───────────────────────────────────────────────────────────
 
 const ACTION_LABEL: Record<string, string> = {
-  submitted: "Permohonan diajukan",
-  approved: "Disetujui oleh verifikator",
-  rejected: "Ditolak",
-  revision_requested: "Revisi diminta",
-  revision_submitted: "Revisi dikirim",
-  issued: "Izin diterbitkan",
-  site_visit_scheduled: "Kunjungan lapangan dijadwalkan",
-  site_visit_completed: "Kunjungan lapangan selesai",
+  submit: "Permohonan diajukan",
+  approve: "Disetujui oleh verifikator",
+  reject: "Ditolak",
+  revise: "Revisi diminta",
+  resubmit: "Revisi dikirim",
+  issue: "Izin diterbitkan",
+  visit_scheduled: "Kunjungan lapangan dijadwalkan",
+  visit_completed: "Kunjungan lapangan selesai",
 };
 
 function AuditTimeline({ entries }: { entries: AuditEntry[] }) {
@@ -179,12 +179,13 @@ function AuditTimeline({ entries }: { entries: AuditEntry[] }) {
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   draft: { text: "Draft", className: "badge-pending" },
   submitted: { text: "Diajukan", className: "badge-pending" },
-  under_review: { text: "Sedang Diverifikasi", className: "badge-info" },
-  awaiting_revision: { text: "Perlu Revisi", className: "badge-warn" },
-  revision_submitted: { text: "Revisi Dikirim", className: "badge-info" },
-  site_visit_scheduled: { text: "Kunjungan Dijadwalkan", className: "badge-info" },
+  in_review: { text: "Sedang Diverifikasi", className: "badge-info" },
+  revision: { text: "Perlu Revisi", className: "badge-warn" },
   approved: { text: "Disetujui", className: "badge-success" },
   rejected: { text: "Ditolak", className: "badge-danger" },
+  publishing: { text: "Penerbitan", className: "badge-info" },
+  collection: { text: "Siap Diambil", className: "badge-success" },
+  collected: { text: "Selesai", className: "badge-success" },
   issued: { text: "Diterbitkan", className: "badge-success" },
 };
 
@@ -227,8 +228,8 @@ export default function SubmissionDetailPage() {
   };
 
   const stages: StageRow[] = submission.schema_snapshot?.stages ?? [];
-  const needsRevision = submission.status === "awaiting_revision";
-  const isIssued = submission.status === "issued";
+  const needsRevision = submission.status === "revision";
+  const isIssued = ["issued", "collected", "approved"].includes(submission.status);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">

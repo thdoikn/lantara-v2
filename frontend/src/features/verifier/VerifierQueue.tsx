@@ -21,20 +21,21 @@ function slaAgeClass(dueAt: string | null, breached: boolean): string {
 const STATUS_LABEL: Record<SubmissionStatus, string> = {
   draft: "Draft",
   submitted: "Baru Masuk",
-  under_review: "Sedang Diverifikasi",
-  awaiting_revision: "Menunggu Revisi",
-  revision_submitted: "Revisi Masuk",
-  site_visit_scheduled: "Kunjungan Dijadwalkan",
+  in_review: "Sedang Diverifikasi",
+  revision: "Perlu Revisi",
   approved: "Disetujui",
   rejected: "Ditolak",
+  publishing: "Penerbitan",
+  collection: "Siap Diambil",
+  collected: "Selesai",
   issued: "Diterbitkan",
 };
 
 const FILTER_TABS: { label: string; statuses: SubmissionStatus[] }[] = [
-  { label: "Semua Aktif", statuses: ["submitted", "under_review", "revision_submitted", "site_visit_scheduled"] },
+  { label: "Semua Aktif", statuses: ["submitted", "in_review", "revision", "publishing"] },
   { label: "Baru", statuses: ["submitted"] },
-  { label: "Revisi Masuk", statuses: ["revision_submitted"] },
-  { label: "Selesai", statuses: ["approved", "issued", "rejected"] },
+  { label: "Revisi Masuk", statuses: ["revision"] },
+  { label: "Selesai", statuses: ["approved", "collected", "issued", "rejected"] },
 ];
 
 export default function VerifierQueue() {

@@ -58,10 +58,10 @@ export default function PortalDashboard() {
   const stats = {
     total: data?.count ?? 0,
     pending: submissions.filter((s) =>
-      ["submitted", "under_review", "revision_submitted", "site_visit_scheduled"].includes(s.status)
+      ["submitted", "in_review", "publishing", "collection"].includes(s.status)
     ).length,
-    issued: submissions.filter((s) => s.status === "issued").length,
-    needsAction: submissions.filter((s) => s.status === "awaiting_revision").length,
+    issued: submissions.filter((s) => ["issued", "collected"].includes(s.status)).length,
+    needsAction: submissions.filter((s) => s.status === "revision").length,
   };
 
   return (
