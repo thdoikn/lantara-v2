@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Nusantara design tokens */
+    --nus-jagawana: #428A40;
+    --nus-jagawana-deep: #2F6B2E;
+    --nus-khatulistiwa: #185088;
+    --nus-terakota: #DBAF6C;
+    --nus-saka: #EE2F24;
+    --nus-pertiwi: #FBF9D5;
+    --nus-buana: #919191;
+    --nus-buana-dark: #242421;
+
+    --color-bg: var(--nus-pertiwi);
+    --color-fg: var(--nus-buana-dark);
+    --color-primary: var(--nus-jagawana);
+    --color-info: var(--nus-khatulistiwa);
+    --color-warn: var(--nus-terakota);
+    --color-danger: var(--nus-saka);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+
+  /* Focus-visible ring using khatulistiwa */
+  :focus-visible {
+    outline: 2px solid #185088;
+    outline-offset: 2px;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .container-content {
+    @apply max-w-content mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Submission status badges */
+  .badge-pending   { @apply bg-terakota/15 text-amber-800 border border-terakota/30; }
+  .badge-approved  { @apply bg-jagawana/10 text-jagawana-deep border border-jagawana/30; }
+  .badge-rejected  { @apply bg-saka/10 text-red-800 border border-saka/30; }
+  .badge-scheduled { @apply bg-khatulistiwa/10 text-khatulistiwa border border-khatulistiwa/30; }
+}
