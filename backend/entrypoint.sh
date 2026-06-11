@@ -22,4 +22,7 @@ python manage.py load_fixtures --skip-if-exists || true
 echo "Bootstrapping superadmin..."
 python manage.py bootstrap_superadmin || true
 
+echo "Ensuring MinIO bucket exists..."
+python manage.py ensure_minio_bucket || true
+
 exec "$@"
