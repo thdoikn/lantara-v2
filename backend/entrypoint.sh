@@ -25,4 +25,7 @@ python manage.py bootstrap_superadmin || true
 echo "Ensuring MinIO bucket exists..."
 python manage.py ensure_minio_bucket || true
 
+echo "Seeding RDTR mock zones..."
+python manage.py seed_rdtr_mock || true
+
 exec "$@"

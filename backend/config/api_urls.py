@@ -73,4 +73,6 @@ urlpatterns = [
     path("admin/engine/", include(permit_nested_router())),
     # Analytics (Phase 2)
     path("analytics/", include("apps.analytics.urls")),
+    # RDTR mock spatial (Phase 3)
+    path("rdtr/", include("apps.rdtr.urls")),
 ]
