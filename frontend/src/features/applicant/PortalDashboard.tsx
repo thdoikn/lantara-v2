@@ -11,12 +11,13 @@ import type { PaginatedResponse, Submission, SubmissionStatus } from "@/types";
 const STATUS_CONFIG: Record<SubmissionStatus, { label: string; className: string }> = {
   draft: { label: "Draft", className: "badge-pending" },
   submitted: { label: "Diajukan", className: "badge-pending" },
-  under_review: { label: "Sedang Diverifikasi", className: "badge-info" },
-  awaiting_revision: { label: "Perlu Revisi", className: "badge-warn" },
-  revision_submitted: { label: "Revisi Dikirim", className: "badge-info" },
-  site_visit_scheduled: { label: "Kunjungan Dijadwalkan", className: "badge-info" },
+  in_review: { label: "Sedang Diverifikasi", className: "badge-info" },
+  revision: { label: "Perlu Revisi", className: "badge-warn" },
   approved: { label: "Disetujui", className: "badge-success" },
   rejected: { label: "Ditolak", className: "badge-danger" },
+  publishing: { label: "Penerbitan", className: "badge-info" },
+  collection: { label: "Siap Diambil", className: "badge-success" },
+  collected: { label: "Selesai", className: "badge-success" },
   issued: { label: "Diterbitkan", className: "badge-success" },
 };
 

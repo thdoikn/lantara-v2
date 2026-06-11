@@ -1,3 +1,5 @@
+from django.utils import timezone
+from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -57,3 +59,49 @@ class GenerateDraftView(APIView):
             {"detail": "Draf sedang dibuat.", "task_id": task.id},
             status=202,
         )
+
+
+class PublishPermitView(APIView):
+    """
+    POST /api/v1/permits/{submission_id}/publish/
+    Staff: mark draft permit as published (officially issued).
+    Accepts optional signatory info in body.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, submission_id):
+        from apps.submissions.models import Submission
+        try:
+            sub = Submission.objects.get(id=submission_id)
+        except Submission.DoesNotExist:
+            return Response({"detail": "Pengajuan tidak ditemukan."}, status=404)
+
+        if not request.user.is_staff and not request.user.has_stage_permission(
+            f"{sub.current_stage_key}:{sub.permit_type.key}"
+        ):
+            return Response({"detail": "Akses ditolak."}, status=403)
+
+        permit, _ = IssuedPermit.objects.get_or_create(submission=sub)
+        if permit.generation_status not in (
+            IssuedPermit.GenerationStatus.DRAFT,
+            IssuedPermit.GenerationStatus.SIGNED,
+        ):
+            return Response(
+                {"detail": "Izin belum dalam status draf. Generate draf terlebih dahulu."},
+                status=400,
+            )
+
+        permit.generation_status = IssuedPermit.GenerationStatus.PUBLISHED
+        permit.published_at = timezone.now()
+        permit.signatory_name = request.data.get("signatory_name", permit.signatory_name)
+        permit.signatory_title = request.data.get("signatory_title", permit.signatory_title)
+        permit.signatory_nip = request.data.get("signatory_nip", permit.signatory_nip)
+        permit.save()
+
+        # Update submission status to collected (fully issued + ready for pickup)
+        from apps.submissions.models import Submission as Sub
+        sub.status = Sub.Status.COLLECTED
+        sub.save(update_fields=["status"])
+
+        return Response(IssuedPermitDetailSerializer(permit).data)

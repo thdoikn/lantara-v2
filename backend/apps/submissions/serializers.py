@@ -61,6 +61,8 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
     audit_entries = AuditEntrySerializer(many=True, read_only=True)
     revision_fields = RevisionFieldSerializer(many=True, read_only=True)
     site_visits = SiteVisitSerializer(many=True, read_only=True)
+    issued_permit_id = serializers.SerializerMethodField()
+    issued_permit_validation_uuid = serializers.SerializerMethodField()
 
     class Meta:
         model = Submission
@@ -73,9 +75,22 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
             "sla_due_at", "is_sla_breached", "is_sla_at_risk",
             "stage_sla_due_at",
             "submitted_at", "rejection_reason",
+            "issued_permit_id", "issued_permit_validation_uuid",
             "created_at", "updated_at",
             "audit_entries", "revision_fields", "site_visits",
         ]
+
+    def get_issued_permit_id(self, obj):
+        try:
+            return str(obj.issued_permit.id)
+        except Exception:
+            return None
+
+    def get_issued_permit_validation_uuid(self, obj):
+        try:
+            return str(obj.issued_permit.validation_uuid)
+        except Exception:
+            return None
 
 
 class SubmissionCreateSerializer(serializers.Serializer):

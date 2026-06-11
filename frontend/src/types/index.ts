@@ -130,9 +130,9 @@ export interface ApplicantProfile {
 // ── Submission types ──────────────────────────────────────────────────────────
 
 export type SubmissionStatus =
-  | "draft" | "submitted" | "under_review"
-  | "awaiting_revision" | "revision_submitted"
-  | "site_visit_scheduled" | "approved" | "rejected" | "issued";
+  | "draft" | "submitted" | "in_review"
+  | "revision" | "approved" | "rejected"
+  | "publishing" | "collection" | "collected" | "issued";
 
 export interface AuditEntry {
   id: string;
