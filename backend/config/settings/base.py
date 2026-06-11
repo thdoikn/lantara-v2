@@ -113,6 +113,14 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Asia/Makassar"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "sla-sweep": {
+        "task": "apps.submissions.tasks.sweep_sla",
+        "schedule": crontab(minute="*/30"),
+    },
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
