@@ -33,6 +33,9 @@ const IzinListPage = lazy(() => import("./features/admin/IzinListPage"));
 const IzinBuilderPage = lazy(() => import("./features/admin/IzinBuilderPage"));
 const AnalyticsPage = lazy(() => import("./features/admin/AnalyticsPage"));
 
+// RDTR (Phase 3)
+const RDTRPage = lazy(() => import("./features/rdtr/RDTRPage"));
+
 function LoadingSpinner() {
   return (
     <div className="flex h-screen items-center justify-center bg-background">
@@ -98,6 +101,16 @@ export default function App() {
           <Route path="engine/:sektorKey/:izinKey" element={<IzinBuilderPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
+
+        {/* ── RDTR (Phase 3) ── */}
+        <Route
+          path="/rdtr"
+          element={
+            <ProtectedRoute>
+              <RDTRPage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
