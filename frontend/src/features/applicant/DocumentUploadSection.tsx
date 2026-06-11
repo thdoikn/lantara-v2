@@ -74,7 +74,7 @@ export default function DocumentUploadSection({ submissionId, requirements, read
               <div>
                 <p className="text-sm font-medium">
                   {req.title}
-                  {req.is_required && <span className="text-saka ml-0.5">*</span>}
+                  {req.required && <span className="text-saka ml-0.5">*</span>}
                 </p>
                 {req.description && (
                   <p className="text-xs text-buana mt-0.5">{req.description}</p>

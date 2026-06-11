@@ -63,7 +63,7 @@ export interface DocumentRequirement {
   description: string;
   allowed_types: string[];
   max_bytes: number;
-  is_required: boolean;
+  required: boolean;
   order: number;
   conditional_field_key?: string;
   conditional_field_value?: string;
@@ -87,7 +87,7 @@ export interface PermitType {
   schema_version: number;
   stages: WorkflowStage[];
   form_fields: FormField[];
-  document_requirements: DocumentRequirement[];
+  doc_requirements: DocumentRequirement[];
 }
 
 // ── Auth types ────────────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ export interface Submission {
   schema_snapshot: {
     stages: Array<{ key: string; name: string; order: number }>;
     form_fields: Array<{ key: string; label: string }>;
-    document_requirements: DocumentRequirement[];
+    doc_requirements: DocumentRequirement[];
   };
   current_stage_key: string;
   current_stage_order: number;

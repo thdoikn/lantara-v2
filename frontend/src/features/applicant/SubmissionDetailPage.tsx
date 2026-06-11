@@ -298,11 +298,11 @@ export default function SubmissionDetailPage() {
           )}
 
           {/* Document section */}
-          {submission.schema_snapshot?.document_requirements?.length > 0 && (
+          {(submission.schema_snapshot?.doc_requirements?.length ?? 0) > 0 && (
             <div className="rounded-2xl border border-border bg-white p-5">
               <DocumentUploadSection
                 submissionId={submission.id}
-                requirements={submission.schema_snapshot.document_requirements}
+                requirements={submission.schema_snapshot.doc_requirements}
                 readOnly={!needsRevision}
               />
             </div>

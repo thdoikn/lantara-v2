@@ -136,7 +136,7 @@ export default function NewSubmissionPage() {
         <div className="rounded-2xl border border-border bg-white p-6 space-y-6">
           <DocumentUploadSection
             submissionId={submissionId}
-            requirements={permitType.document_requirements ?? []}
+            requirements={permitType.doc_requirements ?? []}
           />
           <div className="flex gap-3 pt-2">
             <button
