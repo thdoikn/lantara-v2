@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from apps.common.permissions import IsSuperAdmin
+from apps.common.permissions import AuthRateThrottle, IsSuperAdmin
 
 from .models import ApplicantProfile, OTPCode, Role, User, UserRole
 from .serializers import (
@@ -25,10 +25,12 @@ from .serializers import (
 
 class CustomTokenObtainView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_classes = [AuthRateThrottle]
 
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -47,6 +49,7 @@ class RegisterView(APIView):
 
 class OTPVerifyView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request):
         serializer = OTPVerifySerializer(data=request.data)
@@ -96,6 +99,7 @@ class ResendOTPView(APIView):
 
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)

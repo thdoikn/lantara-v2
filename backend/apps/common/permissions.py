@@ -1,5 +1,11 @@
 """Dynamic RBAC permission classes resolved from engine config."""
 from rest_framework.permissions import BasePermission
+from rest_framework.throttling import AnonRateThrottle
+
+
+class AuthRateThrottle(AnonRateThrottle):
+    """Tighter throttle for auth endpoints (login, register, OTP)."""
+    scope = "auth"
 
 
 class IsEngineAdmin(BasePermission):
