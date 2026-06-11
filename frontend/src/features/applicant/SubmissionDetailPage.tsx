@@ -174,6 +174,52 @@ function AuditTimeline({ entries }: { entries: AuditEntry[] }) {
   );
 }
 
+// ── TTE status badge ─────────────────────────────────────────────────────────
+
+function TTEStatusBadge({ permitId }: { permitId: string }) {
+  const { data } = useQuery<{
+    status: string;
+    is_mock: boolean;
+    tte_enabled: boolean;
+  }>({
+    queryKey: ["tte-status", permitId],
+    queryFn: () =>
+      import("@/lib/api").then((m) =>
+        m.default.get(`/tte/${permitId}/status/`).then((r) => r.data)
+      ),
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  if (!data || data.status === "not_started") return null;
+
+  const label =
+    data.status === "signed"
+      ? "TTE BSrE ✓"
+      : data.status === "mock"
+      ? "Simulasi TTE"
+      : data.status === "processing"
+      ? "TTE Diproses…"
+      : null;
+
+  if (!label) return null;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+        data.status === "signed"
+          ? "bg-jagawana/10 text-jagawana"
+          : data.is_mock
+          ? "bg-buana/10 text-buana"
+          : "bg-khatulistiwa/10 text-khatulistiwa"
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
@@ -256,7 +302,7 @@ export default function SubmissionDetailPage() {
         )}
 
         {isIssued && submission.issued_permit_id && (
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-3 items-center">
             <Link
               to={`/validate/${submission.issued_permit_validation_uuid}`}
               className="inline-flex items-center gap-1.5 text-sm text-khatulistiwa hover:underline"
@@ -264,6 +310,7 @@ export default function SubmissionDetailPage() {
               <FileText className="h-4 w-4" /> Lihat / Unduh Izin
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
+            <TTEStatusBadge permitId={submission.issued_permit_id} />
           </div>
         )}
       </div>

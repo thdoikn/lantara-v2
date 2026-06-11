@@ -75,4 +75,6 @@ urlpatterns = [
     path("analytics/", include("apps.analytics.urls")),
     # RDTR mock spatial (Phase 3)
     path("rdtr/", include("apps.rdtr.urls")),
+    # TTE flagged mock (Phase 3)
+    path("tte/", include("apps.tte.urls")),
 ]
