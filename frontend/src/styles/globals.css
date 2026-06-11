@@ -4,7 +4,6 @@
 
 @layer base {
   :root {
-    /* Nusantara design tokens */
     --nus-jagawana: #428A40;
     --nus-jagawana-deep: #2F6B2E;
     --nus-khatulistiwa: #185088;
@@ -22,30 +21,29 @@
     --color-danger: var(--nus-saka);
   }
 
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "cv11", "ss01";
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
-  }
+  h1, h2, h3, h4, h5, h6 { @apply font-display; }
 
-  /* Focus-visible ring using khatulistiwa */
   :focus-visible {
     outline: 2px solid #185088;
     outline-offset: 2px;
+    border-radius: 4px;
   }
 
-  /* Reduced motion */
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-buana/25; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-buana/50; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -57,18 +55,168 @@
 }
 
 @layer components {
+  /* ── Layout helpers ─────────────────────────────── */
   .container-content {
     @apply max-w-content mx-auto px-4 sm:px-6 lg:px-8;
   }
 
-  /* Submission status badges */
-  .badge           { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
-  .badge-pending   { @apply bg-terakota/15 text-amber-800 border border-terakota/30; }
-  .badge-warn      { @apply bg-terakota/15 text-amber-800 border border-terakota/30; }
-  .badge-info      { @apply bg-khatulistiwa/10 text-khatulistiwa border border-khatulistiwa/30; }
-  .badge-success   { @apply bg-jagawana/10 text-jagawana-deep border border-jagawana/30; }
-  .badge-danger    { @apply bg-saka/10 text-red-800 border border-saka/30; }
-  .badge-approved  { @apply bg-jagawana/10 text-jagawana-deep border border-jagawana/30; }
-  .badge-rejected  { @apply bg-saka/10 text-red-800 border border-saka/30; }
-  .badge-scheduled { @apply bg-khatulistiwa/10 text-khatulistiwa border border-khatulistiwa/30; }
+  /* ── Status badges ──────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+  .badge-pending   { @apply bg-amber-50 text-amber-700 ring-1 ring-amber-200; }
+  .badge-warn      { @apply bg-orange-50 text-orange-700 ring-1 ring-orange-200; }
+  .badge-info      { @apply bg-sky-50 text-khatulistiwa ring-1 ring-khatulistiwa/20; }
+  .badge-success   { @apply bg-emerald-50 text-jagawana-deep ring-1 ring-jagawana/20; }
+  .badge-danger    { @apply bg-red-50 text-red-700 ring-1 ring-red-200; }
+  .badge-approved  { @apply bg-emerald-50 text-jagawana-deep ring-1 ring-jagawana/20; }
+  .badge-rejected  { @apply bg-red-50 text-red-700 ring-1 ring-red-200; }
+  .badge-scheduled { @apply bg-sky-50 text-khatulistiwa ring-1 ring-khatulistiwa/20; }
+
+  /* ── Cards ──────────────────────────────────────── */
+  .card {
+    @apply rounded-2xl bg-white ring-1 ring-black/[0.06] shadow-sm;
+  }
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-md hover:ring-black/[0.10] hover:-translate-y-0.5;
+  }
+  .card-glass {
+    @apply rounded-2xl bg-white/50 backdrop-blur-xl ring-1 ring-white/60 shadow-xl;
+  }
+  .card-dark {
+    @apply rounded-2xl bg-buana-dark/90 ring-1 ring-white/10 shadow-xl;
+  }
+
+  /* ── Inputs ─────────────────────────────────────── */
+  .input {
+    @apply w-full rounded-xl border-0 bg-white px-4 py-3 text-sm text-foreground
+           ring-1 ring-black/[0.10] placeholder:text-buana/50
+           focus:outline-none focus:ring-2 focus:ring-khatulistiwa/60
+           transition-all duration-150;
+  }
+  .input-error {
+    @apply ring-saka/50 focus:ring-saka/60;
+  }
+
+  /* ── Buttons ────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           bg-gradient-to-b from-jagawana to-jagawana-deep
+           px-5 py-2.5 text-sm font-semibold text-white
+           shadow-[0_1px_2px_rgba(0,0,0,.12),0_2px_8px_rgba(66,138,64,.30)]
+           hover:shadow-[0_2px_4px_rgba(0,0,0,.12),0_4px_16px_rgba(66,138,64,.40)]
+           hover:brightness-110 active:brightness-95
+           transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           bg-white px-5 py-2.5 text-sm font-medium text-foreground
+           ring-1 ring-black/[0.10] shadow-sm
+           hover:bg-muted hover:ring-black/[0.15]
+           transition-all duration-150;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           px-3 py-2 text-sm font-medium text-buana-dark/70
+           hover:bg-black/5 hover:text-foreground
+           transition-all duration-150;
+  }
+  .btn-outline-white {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           border border-white/25 bg-white/10 backdrop-blur-sm
+           px-5 py-2.5 text-sm font-semibold text-white
+           hover:bg-white/20 hover:border-white/40
+           transition-all duration-150;
+  }
+
+  /* ── Stat cards ─────────────────────────────────── */
+  .stat-card {
+    @apply card p-5;
+  }
+
+  /* ── Section labels ─────────────────────────────── */
+  .section-label {
+    @apply text-[11px] font-bold uppercase tracking-[0.12em] text-buana;
+  }
+
+  /* ── Nav items (sidebar) ────────────────────────── */
+  .nav-item {
+    @apply relative flex items-center gap-3 rounded-xl px-3 py-2.5
+           text-sm font-medium text-buana-dark/70
+           hover:text-foreground hover:bg-black/[0.04]
+           transition-all duration-150;
+  }
+  .nav-item-active {
+    @apply text-jagawana bg-jagawana/10 font-semibold;
+  }
+  /* Active indicator bar */
+  .nav-item-active::before {
+    content: '';
+    @apply absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-jagawana;
+  }
+
+  /* ── Forms ──────────────────────────────────────── */
+  .form-label {
+    @apply block text-sm font-medium text-foreground mb-1.5;
+  }
+  .form-error {
+    @apply mt-1.5 flex items-center gap-1 text-xs text-saka font-medium;
+  }
+  .field-group {
+    @apply space-y-1.5;
+  }
+
+  /* ── Divider ────────────────────────────────────── */
+  .divider {
+    @apply flex items-center gap-3 text-xs text-buana before:flex-1 before:border-t before:border-border after:flex-1 after:border-t after:border-border;
+  }
+
+  /* ── Loading skeleton ───────────────────────────── */
+  .skeleton {
+    @apply rounded-xl bg-gradient-to-r from-muted via-white/60 to-muted bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite];
+  }
+}
+
+@layer utilities {
+  /* Shimmer keyframe */
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-jagawana to-khatulistiwa bg-clip-text text-transparent;
+  }
+  .text-gradient-warm {
+    @apply bg-gradient-to-r from-terakota to-amber-500 bg-clip-text text-transparent;
+  }
+
+  /* Dot grid background */
+  .dot-grid {
+    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Glow effects */
+  .glow-green {
+    box-shadow: 0 0 40px -8px rgba(66, 138, 64, 0.35);
+  }
+  .glow-blue {
+    box-shadow: 0 0 40px -8px rgba(24, 80, 136, 0.35);
+  }
+
+  /* Frosted grain overlay */
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
 }
