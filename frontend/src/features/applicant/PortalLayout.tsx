@@ -29,6 +29,7 @@ export default function PortalLayout() {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <aside
+        aria-label="Navigasi portal"
         className={cn(
           "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-border flex flex-col transform transition-transform duration-200",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -38,16 +39,17 @@ export default function PortalLayout() {
           <Link to="/" className="font-display font-bold text-xl text-jagawana">
             Lantara
           </Link>
-          <button onClick={() => setMobileOpen(false)} className="lg:hidden">
-            <X className="h-5 w-5" />
+          <button onClick={() => setMobileOpen(false)} className="lg:hidden" aria-label="Tutup menu">
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1" aria-label="Menu utama">
           {navItems.map(({ to, label, icon: Icon, exact }) => (
             <Link
               key={to}
               to={to}
+              aria-current={isActive(to, exact) ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 isActive(to, exact)
@@ -55,7 +57,7 @@ export default function PortalLayout() {
                   : "text-buana-dark hover:bg-muted"
               )}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4" aria-hidden="true" />
               {label}
             </Link>
           ))}
@@ -73,9 +75,10 @@ export default function PortalLayout() {
           </div>
           <button
             onClick={logout}
+            aria-label="Keluar dari akun"
             className="flex items-center gap-2 text-sm text-buana hover:text-saka transition-colors w-full"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4" aria-hidden="true" />
             Keluar
           </button>
         </div>
@@ -85,21 +88,28 @@ export default function PortalLayout() {
       <div className="lg:pl-64 flex-1 flex flex-col min-h-screen">
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-white border-b border-border px-4 py-3 flex items-center justify-between">
-          <button onClick={() => setMobileOpen(true)} className="lg:hidden">
-            <Menu className="h-5 w-5" />
+          <button onClick={() => setMobileOpen(true)} className="lg:hidden" aria-label="Buka menu">
+            <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
           <div className="flex-1" />
-          <Link to="/portal/notifications" className="relative p-2 rounded-lg hover:bg-muted">
-            <Bell className="h-5 w-5" />
+          <Link
+            to="/portal/notifications"
+            className="relative p-2 rounded-lg hover:bg-muted"
+            aria-label={unreadCount ? `Notifikasi, ${unreadCount} belum dibaca` : "Notifikasi"}
+          >
+            <Bell className="h-5 w-5" aria-hidden="true" />
             {unreadCount ? (
-              <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-saka text-white text-xs flex items-center justify-center">
+              <span
+                aria-hidden="true"
+                className="absolute top-1 right-1 h-4 w-4 rounded-full bg-saka text-white text-xs flex items-center justify-center"
+              >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             ) : null}
           </Link>
         </header>
 
-        <main className="flex-1 p-6">
+        <main id="main-content" className="flex-1 p-6">
           <Outlet />
         </main>
       </div>
@@ -108,6 +118,7 @@ export default function PortalLayout() {
       {mobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          aria-hidden="true"
           onClick={() => setMobileOpen(false)}
         />
       )}

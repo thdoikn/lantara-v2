@@ -22,13 +22,13 @@ export default function AdminLayout() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="w-56 border-r border-border flex flex-col">
+      <aside aria-label="Navigasi admin" className="w-56 border-r border-border flex flex-col">
         <div className="p-4 border-b border-border">
           <p className="font-display font-bold text-sm text-primary">Lantara v2</p>
           <p className="text-xs text-buana">Admin Panel</p>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1" aria-label="Menu admin">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
@@ -43,7 +43,7 @@ export default function AdminLayout() {
                 )
               }
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-4 h-4" aria-hidden="true" />
               {label}
             </NavLink>
           ))}
@@ -53,16 +53,17 @@ export default function AdminLayout() {
           <p className="text-xs text-buana truncate mb-2">{user?.email}</p>
           <button
             onClick={handleLogout}
+            aria-label="Keluar dari akun"
             className="flex items-center gap-2 text-xs text-buana hover:text-danger transition-colors"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
             Keluar
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
+      <main id="main-content" className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
     </div>

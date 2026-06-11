@@ -10,7 +10,7 @@ export default function VerifierLayout() {
   return (
     <div className="min-h-screen bg-muted flex">
       {/* Slim sidebar */}
-      <aside className="w-56 shrink-0 bg-white border-r border-border flex flex-col">
+      <aside aria-label="Navigasi verifikator" className="w-56 shrink-0 bg-white border-r border-border flex flex-col">
         <div className="p-4 border-b border-border">
           <Link to="/" className="font-display font-bold text-lg text-jagawana">
             Lantara
@@ -18,9 +18,10 @@ export default function VerifierLayout() {
           <p className="text-xs text-buana mt-0.5">Workspace Verifikator</p>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1" aria-label="Menu verifikator">
           <Link
             to="/verifier"
+            aria-current={location.pathname === "/verifier" ? "page" : undefined}
             className={cn(
               "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
               location.pathname === "/verifier"
@@ -28,7 +29,7 @@ export default function VerifierLayout() {
                 : "text-buana-dark hover:bg-muted"
             )}
           >
-            <LayoutDashboard className="h-4 w-4" />
+            <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
             Antrean
           </Link>
         </nav>
@@ -40,15 +41,16 @@ export default function VerifierLayout() {
           </div>
           <button
             onClick={logout}
+            aria-label="Keluar dari akun"
             className="flex items-center gap-2 text-sm text-buana hover:text-saka px-3 py-1.5 w-full transition-colors"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4" aria-hidden="true" />
             Keluar
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0 p-6">
+      <main id="main-content" className="flex-1 min-w-0 p-6">
         <Outlet />
       </main>
     </div>
