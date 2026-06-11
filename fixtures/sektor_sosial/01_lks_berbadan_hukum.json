@@ -1,0 +1,260 @@
+{
+  "sektor": {
+    "key": "sosial",
+    "name": "Sosial",
+    "description": "Layanan perizinan sektor sosial di Ibu Kota Nusantara",
+    "icon": "heart-handshake",
+    "order": 10,
+    "pengampu": "Direktorat P5 / Deputi Pengendalian Pembangunan"
+  },
+  "permit_type": {
+    "key": "lks-berbadan-hukum",
+    "name": "Pendaftaran LKS Berbadan Hukum",
+    "description": "Pendaftaran Lembaga Kesejahteraan Sosial (LKS) yang berbadan hukum di wilayah IKN",
+    "is_berusaha": false,
+    "oss_covered": false,
+    "sla_days": 8,
+    "product_name": "Tanda Daftar LKS Berbadan Hukum",
+    "legal_basis": [
+      "Undang-Undang Nomor 11 Tahun 2009 tentang Kesejahteraan Sosial",
+      "Peraturan Menteri Sosial Nomor 184/HUK/2011 tentang Lembaga Kesejahteraan Sosial"
+    ],
+    "fee_description": "Rp0 (gratis) s/d 2035",
+    "complaint_info": "Direktorat P5 Otorita IKN — Satu Nomor Layanan Publik IKN",
+    "is_published": true,
+    "stages": [
+      {
+        "key": "submit",
+        "order": 1,
+        "name": "Pengajuan Pemohon",
+        "stage_type": "verification",
+        "actor_role": "Pemohon",
+        "sla_hours": 0,
+        "requires_site_visit": false,
+        "allowed_actions": ["submit"],
+        "is_terminal": false,
+        "instructions": "Pemohon mengisi formulir dan mengunggah dokumen persyaratan"
+      },
+      {
+        "key": "tim-teknis-verifikasi",
+        "order": 2,
+        "name": "Verifikasi Tim Teknis",
+        "stage_type": "verification",
+        "actor_role": "Tim Teknis Sosial — Direktorat P5",
+        "sla_hours": 32,
+        "requires_site_visit": true,
+        "allowed_actions": ["approve", "revise", "reject"],
+        "is_terminal": false,
+        "instructions": "Tim teknis melakukan verifikasi dokumen dan kunjungan lapangan"
+      },
+      {
+        "key": "penerbitan",
+        "order": 3,
+        "name": "Penerbitan oleh Kepala Otorita",
+        "stage_type": "publish",
+        "actor_role": "Kepala Otorita IKN",
+        "sla_hours": 16,
+        "requires_site_visit": false,
+        "allowed_actions": ["sign", "generate"],
+        "is_terminal": false,
+        "instructions": "Kepala Otorita IKN menandatangani dan menerbitkan Tanda Daftar"
+      },
+      {
+        "key": "penyerahan",
+        "order": 4,
+        "name": "Penyerahan ke Pemohon",
+        "stage_type": "collection",
+        "actor_role": "Petugas Loket / WhatsApp",
+        "sla_hours": 8,
+        "requires_site_visit": false,
+        "allowed_actions": ["collect"],
+        "is_terminal": true,
+        "instructions": "Tanda daftar dikirim ke pemohon melalui WA atau diambil di loket"
+      }
+    ],
+    "form_fields": [
+      {
+        "key": "nama_lembaga",
+        "label": "Nama Lembaga",
+        "field_type": "text",
+        "section": "Data Lembaga",
+        "order": 1,
+        "required": true,
+        "placeholder": "Contoh: Yayasan Peduli Nusantara"
+      },
+      {
+        "key": "nama_ketua",
+        "label": "Nama Ketua / Pimpinan Lembaga",
+        "field_type": "text",
+        "section": "Data Lembaga",
+        "order": 2,
+        "required": true,
+        "prefill_from_profile": true
+      },
+      {
+        "key": "nik_ketua",
+        "label": "NIK Ketua",
+        "field_type": "nik",
+        "section": "Data Lembaga",
+        "order": 3,
+        "required": true,
+        "validation_json": {"length": 16}
+      },
+      {
+        "key": "npwp_lembaga",
+        "label": "NPWP Lembaga",
+        "field_type": "npwp",
+        "section": "Data Lembaga",
+        "order": 4,
+        "required": false
+      },
+      {
+        "key": "jenis_lembaga",
+        "label": "Jenis Lembaga Sosial",
+        "field_type": "select",
+        "section": "Data Lembaga",
+        "order": 5,
+        "required": true,
+        "options_json": [
+          {"value": "panti_asuhan", "label": "Panti Asuhan"},
+          {"value": "panti_jompo", "label": "Panti Jompo"},
+          {"value": "rumah_singgah", "label": "Rumah Singgah"},
+          {"value": "lksa", "label": "LKSA (Lembaga Kesejahteraan Sosial Anak)"},
+          {"value": "lainnya", "label": "Lainnya"}
+        ]
+      },
+      {
+        "key": "bidang_kegiatan",
+        "label": "Bidang Kegiatan",
+        "field_type": "textarea",
+        "section": "Data Lembaga",
+        "order": 6,
+        "required": true,
+        "placeholder": "Jelaskan bidang kegiatan sosial yang dilaksanakan"
+      },
+      {
+        "key": "alamat_lembaga",
+        "label": "Alamat Lengkap Lembaga",
+        "field_type": "textarea",
+        "section": "Lokasi",
+        "order": 7,
+        "required": true
+      },
+      {
+        "key": "nomor_telepon",
+        "label": "Nomor Telepon Lembaga",
+        "field_type": "phone",
+        "section": "Kontak",
+        "order": 8,
+        "required": true
+      },
+      {
+        "key": "email_lembaga",
+        "label": "Email Lembaga",
+        "field_type": "email",
+        "section": "Kontak",
+        "order": 9,
+        "required": false
+      },
+      {
+        "key": "nomor_akta_notaris",
+        "label": "Nomor Akta Notaris",
+        "field_type": "text",
+        "section": "Legalitas",
+        "order": 10,
+        "required": true
+      },
+      {
+        "key": "tanggal_akta_notaris",
+        "label": "Tanggal Akta Notaris",
+        "field_type": "date",
+        "section": "Legalitas",
+        "order": 11,
+        "required": true
+      },
+      {
+        "key": "nomor_sk_kemenhukham",
+        "label": "Nomor SK Kemenkumham",
+        "field_type": "text",
+        "section": "Legalitas",
+        "order": 12,
+        "required": false,
+        "help_text": "Khusus untuk yayasan dan perkumpulan berbadan hukum"
+      }
+    ],
+    "doc_requirements": [
+      {
+        "key": "surat_permohonan",
+        "title": "Surat Permohonan",
+        "description": "Surat permohonan bermaterai ditandatangani ketua lembaga",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 1
+      },
+      {
+        "key": "akta_notaris",
+        "title": "Akta Notaris / Akta Pendirian",
+        "description": "Salinan akta notaris pendirian lembaga",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 2
+      },
+      {
+        "key": "sk_kemenhukham",
+        "title": "SK Pengesahan Kemenkumham",
+        "description": "Salinan SK pengesahan badan hukum dari Kemenkumham",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 3
+      },
+      {
+        "key": "ktp_ketua",
+        "title": "KTP Ketua / Pimpinan",
+        "description": "Fotokopi KTP ketua lembaga yang masih berlaku",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
+        "max_bytes": 2097152,
+        "required": true,
+        "order": 4
+      },
+      {
+        "key": "npwp_lembaga_dok",
+        "title": "NPWP Lembaga",
+        "description": "Fotokopi NPWP lembaga",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
+        "max_bytes": 2097152,
+        "required": false,
+        "order": 5
+      },
+      {
+        "key": "profil_lembaga",
+        "title": "Profil / Company Profile Lembaga",
+        "description": "Dokumen profil lembaga termasuk struktur organisasi dan program kegiatan",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 6
+      },
+      {
+        "key": "daftar_pengurus",
+        "title": "Daftar Pengurus Lembaga",
+        "description": "Daftar lengkap pengurus beserta fotokopi KTP",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 7
+      },
+      {
+        "key": "surat_keterangan_domisili",
+        "title": "Surat Keterangan Domisili",
+        "description": "Surat keterangan domisili lembaga dari kelurahan/kecamatan setempat",
+        "allowed_types": ["pdf"],
+        "max_bytes": 2097152,
+        "required": true,
+        "order": 8
+      }
+    ]
+  }
+}
