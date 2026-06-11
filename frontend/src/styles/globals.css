@@ -62,7 +62,12 @@
   }
 
   /* Submission status badges */
+  .badge           { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
   .badge-pending   { @apply bg-terakota/15 text-amber-800 border border-terakota/30; }
+  .badge-warn      { @apply bg-terakota/15 text-amber-800 border border-terakota/30; }
+  .badge-info      { @apply bg-khatulistiwa/10 text-khatulistiwa border border-khatulistiwa/30; }
+  .badge-success   { @apply bg-jagawana/10 text-jagawana-deep border border-jagawana/30; }
+  .badge-danger    { @apply bg-saka/10 text-red-800 border border-saka/30; }
   .badge-approved  { @apply bg-jagawana/10 text-jagawana-deep border border-jagawana/30; }
   .badge-rejected  { @apply bg-saka/10 text-red-800 border border-saka/30; }
   .badge-scheduled { @apply bg-khatulistiwa/10 text-khatulistiwa border border-khatulistiwa/30; }
