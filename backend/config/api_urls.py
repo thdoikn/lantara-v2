@@ -71,4 +71,6 @@ urlpatterns = [
     # Admin engine builder
     path("admin/engine/", include(admin_router.urls)),
     path("admin/engine/", include(permit_nested_router())),
+    # Analytics (Phase 2)
+    path("analytics/", include("apps.analytics.urls")),
 ]
