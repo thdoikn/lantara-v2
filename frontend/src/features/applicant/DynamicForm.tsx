@@ -108,20 +108,26 @@ function FieldLabel({ field, error }: { field: FormField; error?: string }) {
 // ── DynamicForm component ───────────────────────────────────────────────────
 
 interface Props {
-  permitType: PermitType;
+  /** Provide either permitType OR fields directly (for engine-builder preview). */
+  permitType?: PermitType;
+  fields?: FormField[];
   docRequirements?: DocumentRequirement[];
   defaultValues?: Record<string, unknown>;
   onSubmit: (formData: Record<string, unknown>, files: Map<string, File>) => void;
   isSubmitting?: boolean;
+  /** Override the submit button label */
+  submitLabel?: string;
 }
 
 export default function DynamicForm({
   permitType,
+  fields: fieldsProp,
   defaultValues,
   onSubmit,
   isSubmitting,
+  submitLabel,
 }: Props) {
-  const fields = permitType.form_fields ?? [];
+  const fields = fieldsProp ?? permitType?.form_fields ?? [];
 
   const zodSchema = useMemo(() => buildZodSchema(fields), [fields]);
 
@@ -347,7 +353,7 @@ export default function DynamicForm({
           disabled={isSubmitting}
           className="w-full rounded-lg bg-jagawana py-3 text-sm font-semibold text-white hover:bg-jagawana-deep transition-colors disabled:opacity-60"
         >
-          {isSubmitting ? "Mengirim…" : "Kirim Permohonan"}
+          {isSubmitting ? "Mengirim…" : (submitLabel ?? "Kirim Permohonan")}
         </button>
       </div>
     </form>

@@ -25,8 +25,12 @@ const VerifierLayout = lazy(() => import("./features/verifier/VerifierLayout"));
 const VerifierQueue = lazy(() => import("./features/verifier/VerifierQueue"));
 const VerifierSubmissionPage = lazy(() => import("./features/verifier/VerifierSubmissionPage"));
 
-// Admin (Phase 2)
-const AdminPlaceholder = lazy(() => import("./features/admin/AdminPlaceholder"));
+// Admin (Phase 2 Engine Builder)
+const AdminLayout = lazy(() => import("./features/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./features/admin/AdminDashboard"));
+const EngineBuilderPage = lazy(() => import("./features/admin/EngineBuilderPage"));
+const IzinListPage = lazy(() => import("./features/admin/IzinListPage"));
+const IzinBuilderPage = lazy(() => import("./features/admin/IzinBuilderPage"));
 
 function LoadingSpinner() {
   return (
@@ -78,15 +82,20 @@ export default function App() {
           <Route path="submissions/:id" element={<VerifierSubmissionPage />} />
         </Route>
 
-        {/* ── Admin (Phase 2) ── */}
+        {/* ── Admin Engine Builder (Phase 2) ── */}
         <Route
-          path="/admin/*"
+          path="/admin"
           element={
             <ProtectedRoute requireRoles={["superadmin"]}>
-              <AdminPlaceholder />
+              <AdminLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="engine" element={<EngineBuilderPage />} />
+          <Route path="engine/:sektorKey" element={<IzinListPage />} />
+          <Route path="engine/:sektorKey/:izinKey" element={<IzinBuilderPage />} />
+        </Route>
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
