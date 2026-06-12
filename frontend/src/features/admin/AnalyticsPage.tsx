@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Download, TrendingUp, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import {
   AreaChart,
@@ -43,34 +44,58 @@ interface TrendPoint {
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 
+const STAT_VARIANTS = {
+  default: {
+    icon: "text-khatulistiwa",
+    bg: "bg-gradient-to-br from-khatulistiwa/15 to-khatulistiwa/5",
+    ring: "ring-khatulistiwa/15",
+  },
+  success: {
+    icon: "text-jagawana",
+    bg: "bg-gradient-to-br from-jagawana/15 to-jagawana/5",
+    ring: "ring-jagawana/15",
+  },
+  danger: {
+    icon: "text-saka",
+    bg: "bg-gradient-to-br from-red-100/70 to-red-50/30",
+    ring: "ring-red-200/50",
+  },
+  warn: {
+    icon: "text-amber-600",
+    bg: "bg-gradient-to-br from-amber-100/80 to-amber-50/40",
+    ring: "ring-amber-200/60",
+  },
+} as const;
+
 function StatCard({
   label,
   value,
   icon: Icon,
   variant = "default",
+  index = 0,
 }: {
   label: string;
   value: number;
   icon: React.ElementType;
-  variant?: "default" | "success" | "danger" | "warn";
+  variant?: keyof typeof STAT_VARIANTS;
+  index?: number;
 }) {
-  const colors = {
-    default: "text-khatulistiwa bg-khatulistiwa/10",
-    success: "text-jagawana bg-jagawana/10",
-    danger: "text-saka bg-saka/10",
-    warn: "text-terakota bg-terakota/10",
-  };
-
+  const s = STAT_VARIANTS[variant];
   return (
-    <div className="rounded-2xl border border-border bg-white p-5 flex items-center gap-4">
-      <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", colors[variant])}>
-        <Icon className="h-5 w-5" />
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06 }}
+      className="card p-5 flex items-center gap-4"
+    >
+      <div className={cn("h-11 w-11 rounded-xl flex items-center justify-center ring-1 shrink-0", s.bg, s.ring)}>
+        <Icon className={cn("h-5 w-5", s.icon)} aria-hidden="true" />
       </div>
       <div>
-        <p className="text-2xl font-bold font-display">{value.toLocaleString("id-ID")}</p>
+        <p className="font-display text-2xl font-bold">{value.toLocaleString("id-ID")}</p>
         <p className="text-xs text-buana mt-0.5">{label}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -100,69 +125,87 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-6xl mx-auto">
+    <div className="p-7 space-y-7 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between gap-4"
+      >
         <div>
           <h1 className="font-display text-2xl font-bold">Analitik</h1>
           <p className="text-sm text-buana mt-0.5">Ringkasan data permohonan secara real-time</p>
         </div>
         <button
           onClick={handleExport}
-          className="flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+          className="btn-secondary gap-2 text-sm"
+          aria-label="Export ke Excel"
         >
-          <Download className="h-4 w-4" />
+          <Download className="h-4 w-4" aria-hidden="true" />
           Export Excel
         </button>
-      </div>
+      </motion.div>
 
       {/* Summary stats */}
       {loadingSummary ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
+            <div key={i} className="skeleton h-[76px] rounded-2xl" />
           ))}
         </div>
       ) : summary ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total Permohonan" value={summary.total} icon={TrendingUp} />
-          <StatCard label="Disetujui" value={summary.approved} icon={CheckCircle} variant="success" />
-          <StatCard label="Ditolak" value={summary.rejected} icon={XCircle} variant="danger" />
-          <StatCard label="SLA Terlampaui" value={summary.sla_breached} icon={AlertTriangle} variant="warn" />
+          <StatCard label="Total Permohonan" value={summary.total} icon={TrendingUp} index={0} />
+          <StatCard label="Disetujui" value={summary.approved} icon={CheckCircle} variant="success" index={1} />
+          <StatCard label="Ditolak" value={summary.rejected} icon={XCircle} variant="danger" index={2} />
+          <StatCard label="SLA Terlampaui" value={summary.sla_breached} icon={AlertTriangle} variant="warn" index={3} />
         </div>
       ) : null}
 
       {/* Trend chart */}
-      <div className="rounded-2xl border border-border bg-white p-6">
+      <div className="card p-6">
         <h2 className="font-semibold text-sm mb-5">Tren Permohonan — 30 Hari Terakhir</h2>
         {loadingTrend ? (
-          <div className="h-48 bg-muted animate-pulse rounded-xl" />
+          <div className="skeleton h-48 rounded-xl" />
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={trend} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
               <defs>
-                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#428A40" stopOpacity={0.25} />
+                <linearGradient id="grad-green" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#428A40" stopOpacity={0.20} />
                   <stop offset="95%" stopColor="#428A40" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 11, fill: "#919191" }}
                 tickFormatter={(v: string) => v.slice(5)}
+                axisLine={false}
+                tickLine={false}
               />
-              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#919191" }}
+                allowDecimals={false}
+                axisLine={false}
+                tickLine={false}
+              />
               <Tooltip
                 formatter={(v: number) => [v, "Permohonan"]}
                 labelFormatter={(l: string) => `Tanggal: ${l}`}
+                contentStyle={{
+                  borderRadius: "12px",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                  fontSize: 12,
+                }}
               />
               <Area
                 type="monotone"
                 dataKey="count"
                 stroke="#428A40"
                 strokeWidth={2}
-                fill="url(#grad)"
+                fill="url(#grad-green)"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -170,18 +213,34 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Per-sektor bar chart + table */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="rounded-2xl border border-border bg-white p-6">
+      <div className="grid lg:grid-cols-2 gap-5">
+        <div className="card p-6">
           <h2 className="font-semibold text-sm mb-5">Permohonan per Sektor</h2>
           {loadingSektor ? (
-            <div className="h-48 bg-muted animate-pulse rounded-xl" />
+            <div className="skeleton h-48 rounded-xl" />
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={bySektor} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="sektor" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                <XAxis
+                  dataKey="sektor"
+                  tick={{ fontSize: 11, fill: "#919191" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "#919191" }}
+                  allowDecimals={false}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "1px solid rgba(0,0,0,0.08)",
+                    fontSize: 12,
+                  }}
+                />
                 <Bar dataKey="approved" name="Disetujui" fill="#428A40" radius={[4, 4, 0, 0]} stackId="a" />
                 <Bar dataKey="active" name="Aktif" fill="#185088" radius={[4, 4, 0, 0]} stackId="a" />
                 <Bar dataKey="rejected" name="Ditolak" fill="#EE2F24" radius={[4, 4, 0, 0]} stackId="a" />
@@ -190,26 +249,26 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        <div className="rounded-2xl border border-border bg-white p-6 overflow-auto">
+        <div className="card p-6 overflow-auto">
           <h2 className="font-semibold text-sm mb-4">Tabel Rekap Sektor</h2>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-buana border-b border-border">
-                <th className="text-left py-1.5 font-medium">Sektor</th>
-                <th className="text-right py-1.5 font-medium">Total</th>
-                <th className="text-right py-1.5 font-medium">Aktif</th>
-                <th className="text-right py-1.5 font-medium">Setuju</th>
-                <th className="text-right py-1.5 font-medium text-saka">SLA ⚠</th>
+                <th className="text-left py-2 font-medium pb-3">Sektor</th>
+                <th className="text-right py-2 font-medium pb-3">Total</th>
+                <th className="text-right py-2 font-medium pb-3">Aktif</th>
+                <th className="text-right py-2 font-medium pb-3">Setuju</th>
+                <th className="text-right py-2 font-medium pb-3 text-saka">SLA</th>
               </tr>
             </thead>
             <tbody>
               {bySektor.map((row) => (
-                <tr key={row.sektor_key} className="border-b border-border/50 hover:bg-muted/40">
-                  <td className="py-2 font-medium capitalize">{row.sektor || "—"}</td>
-                  <td className="py-2 text-right">{row.total}</td>
-                  <td className="py-2 text-right text-khatulistiwa">{row.active}</td>
-                  <td className="py-2 text-right text-jagawana">{row.approved}</td>
-                  <td className="py-2 text-right text-saka">{row.breached}</td>
+                <tr key={row.sektor_key} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                  <td className="py-2.5 font-medium capitalize">{row.sektor || "—"}</td>
+                  <td className="py-2.5 text-right tabular-nums">{row.total}</td>
+                  <td className="py-2.5 text-right tabular-nums text-khatulistiwa font-semibold">{row.active}</td>
+                  <td className="py-2.5 text-right tabular-nums text-jagawana font-semibold">{row.approved}</td>
+                  <td className="py-2.5 text-right tabular-nums text-saka font-semibold">{row.breached}</td>
                 </tr>
               ))}
             </tbody>
