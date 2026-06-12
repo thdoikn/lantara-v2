@@ -47,13 +47,13 @@ export default function EngineBuilderPage() {
           <h1 className="font-display text-2xl font-bold">Engine Builder</h1>
           <p className="text-buana text-sm mt-1">Kelola konfigurasi sektor, izin, alur kerja, dan formulir.</p>
         </div>
-        <button className="flex items-center gap-2 rounded-lg bg-primary text-white px-4 py-2 text-sm font-medium hover:bg-jagawana-deep transition-colors">
-          <Plus className="w-4 h-4" />
+        <button className="btn-primary gap-2 text-sm">
+          <Plus className="w-4 h-4" aria-hidden="true" />
           Tambah Sektor
         </button>
       </div>
 
-      <div className="divide-y divide-border rounded-xl border border-border overflow-hidden">
+      <div className="card overflow-hidden divide-y divide-border/60">
         {sektors?.results.map((sektor) => (
           <SektorRow key={sektor.key} sektor={sektor} />
         ))}
@@ -74,23 +74,23 @@ function SektorRow({ sektor }: { sektor: Sektor }) {
   return (
     <Link
       to={`/admin/engine/${sektor.key}`}
-      className="flex items-center justify-between px-5 py-4 hover:bg-muted/50 transition-colors group"
+      className="flex items-center justify-between px-5 py-4 hover:bg-muted/40 transition-colors group"
     >
       <div>
-        <p className="font-semibold text-sm">{sektor.name}</p>
+        <p className="font-semibold text-sm group-hover:text-jagawana transition-colors">{sektor.name}</p>
         <p className="text-xs text-buana mt-0.5">
           {published}/{total} izin diterbitkan
         </p>
       </div>
       <div className="flex items-center gap-3">
-        <span
-          className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-            sektor.is_active ? "bg-jagawana/10 text-jagawana" : "bg-muted text-buana"
-          }`}
-        >
+        <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+          sektor.is_active
+            ? "bg-jagawana/10 text-jagawana ring-1 ring-jagawana/15"
+            : "bg-muted text-buana"
+        }`}>
           {sektor.is_active ? "Aktif" : "Nonaktif"}
         </span>
-        <ChevronRight className="w-4 h-4 text-buana group-hover:text-foreground transition-colors" />
+        <ChevronRight className="w-4 h-4 text-buana opacity-0 group-hover:opacity-100 transition-all" />
       </div>
     </Link>
   );

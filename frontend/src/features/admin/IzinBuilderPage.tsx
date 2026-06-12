@@ -110,14 +110,17 @@ export default function IzinBuilderPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                className={`px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
                   activeTab === tab.id
-                    ? "border-primary text-primary"
+                    ? "border-jagawana text-jagawana"
                     : "border-transparent text-buana hover:text-foreground"
                 }`}
+                aria-current={activeTab === tab.id ? "true" : undefined}
               >
                 {tab.label}
-                <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">{tab.count}</span>
+                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                  activeTab === tab.id ? "bg-jagawana/10 text-jagawana" : "bg-muted text-buana"
+                }`}>{tab.count}</span>
               </button>
             ))}
           </div>
@@ -151,8 +154,8 @@ export default function IzinBuilderPage() {
 
         {/* Right — live preview */}
         <div className="w-1/2 overflow-y-auto bg-muted/30">
-          <div className="p-4 border-b border-border bg-background">
-            <p className="text-xs font-semibold text-buana uppercase tracking-wide">Preview Formulir Warga</p>
+          <div className="p-4 border-b border-border bg-white">
+            <p className="section-label">Preview Formulir Warga</p>
           </div>
           <div className="p-6">
             <DynamicForm
@@ -204,7 +207,7 @@ function StagesEditor({
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs text-buana font-medium uppercase tracking-wide">Drag untuk mengubah urutan</p>
-        <button className="flex items-center gap-1.5 text-xs text-primary font-medium hover:underline">
+        <button className="flex items-center gap-1.5 text-xs text-jagawana font-semibold hover:underline">
           <Plus className="w-3.5 h-3.5" />
           Tambah Tahap
         </button>
@@ -215,7 +218,7 @@ function StagesEditor({
           <Reorder.Item
             key={stage.id}
             value={stage}
-            className="flex items-center gap-3 bg-background rounded-lg border border-border px-3 py-3 cursor-grab active:cursor-grabbing shadow-sm"
+            className="flex items-center gap-3 bg-white rounded-xl ring-1 ring-black/[0.06] shadow-sm px-3 py-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
           >
             <GripVertical className="w-4 h-4 text-buana shrink-0" />
             <div className="flex-1 min-w-0">
@@ -282,7 +285,7 @@ function FieldsEditor({
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs text-buana font-medium uppercase tracking-wide">Drag untuk mengubah urutan</p>
-        <button className="flex items-center gap-1.5 text-xs text-primary font-medium hover:underline">
+        <button className="flex items-center gap-1.5 text-xs text-jagawana font-semibold hover:underline">
           <Plus className="w-3.5 h-3.5" />
           Tambah Field
         </button>
@@ -293,7 +296,7 @@ function FieldsEditor({
           <Reorder.Item
             key={field.id}
             value={field}
-            className="flex items-center gap-3 bg-background rounded-lg border border-border px-3 py-2.5 cursor-grab active:cursor-grabbing shadow-sm"
+            className="flex items-center gap-3 bg-white rounded-xl ring-1 ring-black/[0.06] shadow-sm px-3 py-2.5 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
           >
             <GripVertical className="w-4 h-4 text-buana shrink-0" />
             <div className="flex-1 min-w-0">
@@ -344,7 +347,7 @@ function DocsEditor({
         <p className="text-xs text-buana font-medium uppercase tracking-wide">
           {docs.length} persyaratan dokumen
         </p>
-        <button className="flex items-center gap-1.5 text-xs text-primary font-medium hover:underline">
+        <button className="flex items-center gap-1.5 text-xs text-jagawana font-semibold hover:underline">
           <Plus className="w-3.5 h-3.5" />
           Tambah Persyaratan
         </button>
@@ -354,7 +357,7 @@ function DocsEditor({
         {docs.map((doc) => (
           <div
             key={doc.id}
-            className="flex items-center gap-3 bg-background rounded-lg border border-border px-3 py-3"
+            className="flex items-center gap-3 bg-white rounded-xl ring-1 ring-black/[0.06] shadow-sm px-3 py-3"
           >
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{doc.title}</p>
