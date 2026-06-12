@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Clock, CheckCircle2, XCircle, RotateCcw, ArrowRight, FilePlus2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -25,6 +26,31 @@ const STATUS_CONFIG: Record<SubmissionStatus, { label: string; badge: string }> 
 function StatusBadge({ status }: { status: SubmissionStatus }) {
   const cfg = STATUS_CONFIG[status] ?? { label: status, badge: "badge-pending" };
   return <span className={cn("badge", cfg.badge)}>{cfg.label}</span>;
+}
+
+// Counts up to the target with ease-out; instant for reduced-motion users
+function CountUp({ value }: { value: number }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setN(value);
+      return;
+    }
+    if (value <= 0) { setN(0); return; }
+    let raf = 0;
+    const start = performance.now();
+    const dur = 750;
+    const step = (t: number) => {
+      const p = Math.min((t - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 4); // ease-out-quart
+      setN(Math.round(value * eased));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{n}</>;
 }
 
 const STATS = [
@@ -138,8 +164,8 @@ export default function PortalDashboard() {
               <Icon className={cn("h-5 w-5", iconColor)} aria-hidden="true" />
             </div>
             <div>
-              <div className="font-display text-2xl font-bold text-foreground">
-                {isLoading ? <span className="skeleton inline-block w-8 h-7 align-middle" /> : stats[key]}
+              <div className="font-display text-2xl font-bold text-foreground tabular-nums">
+                {isLoading ? <span className="skeleton inline-block w-8 h-7 align-middle" /> : <CountUp value={stats[key]} />}
               </div>
               <div className="text-xs text-buana mt-0.5">{label}</div>
             </div>
