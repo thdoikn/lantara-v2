@@ -20,11 +20,29 @@ const config: Config = {
           100: "#DBEAFE",
           50: "#EFF6FF",
         },
-        // ── Gold accent ──
+        // ── Navy scale (landing — dark capital-city world) ──
+        navy: {
+          950: "#030A1A",
+          900: "#060D2E",
+          800: "#0B1B3E",
+          700: "#0F2456",
+          600: "#1A3480",
+          500: "#1E40AF",
+          400: "#2563EB",
+          300: "#3B82F6",
+          200: "#93C5FD",
+          100: "#DBEAFE",
+          50: "#EFF6FF",
+        },
+        // ── Gold accent (IKN official gold) ──
         gold: {
+          700: "#92600A",
+          600: "#B8860B",
           500: "#D4A017",
           400: "#EDB94A",
           300: "#F5D87A",
+          200: "#FBF0C4",
+          100: "#FEF9E7",
         },
         // ── Surfaces ──
         surface: {
