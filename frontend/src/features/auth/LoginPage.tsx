@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, ArrowRight, Leaf } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Leaf, Loader2 } from "lucide-react";
 import { useState } from "react";
 import api from "@/lib/api";
 import { setTokens, useAuthStore } from "@/lib/auth";
@@ -26,6 +26,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
   const [showPass, setShowPass] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
 
   const { register, handleSubmit, formState: { errors }, setError } =
     useForm<FormData>({ resolver: zodResolver(schema) });
@@ -43,6 +44,7 @@ export default function LoginPage() {
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setError("root", { message: msg || "Email atau password salah." });
+      setShakeKey((k) => k + 1);
     },
   });
 
@@ -175,13 +177,18 @@ export default function LoginPage() {
             </div>
 
             {errors.root && (
-              <div className="rounded-xl bg-red-50 ring-1 ring-red-200 px-4 py-3 text-sm text-red-700">
+              <div
+                key={shakeKey}
+                className="animate-shake rounded-xl bg-red-50 ring-1 ring-red-200 px-4 py-3 text-sm text-red-700"
+              >
                 {errors.root.message}
               </div>
             )}
 
             <button type="submit" disabled={mutation.isPending} className="btn-primary w-full py-3">
-              {mutation.isPending ? "Memproses…" : (
+              {mutation.isPending ? (
+                <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Memproses…</>
+              ) : (
                 <><span>Masuk</span><ArrowRight className="h-4 w-4" aria-hidden="true" /></>
               )}
             </button>
