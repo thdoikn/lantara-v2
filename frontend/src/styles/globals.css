@@ -17,6 +17,11 @@
     --color-info: var(--royal-500);
     --color-warn: var(--gold-500);
     --color-danger: #DC2626;
+
+    /* Motion — natural deceleration curves (no bounce/elastic) */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   * { @apply border-border; }
@@ -104,9 +109,10 @@
            px-5 py-2.5 text-sm font-semibold text-white
            shadow-[0_1px_2px_rgba(3,6,26,.18),0_2px_10px_rgba(30,64,175,.30)]
            hover:shadow-[0_2px_6px_rgba(3,6,26,.20),0_6px_20px_rgba(37,99,235,.45)]
-           hover:brightness-110 active:brightness-95
+           hover:brightness-110 active:brightness-95 active:scale-[0.98]
            focus-visible:ring-2 focus-visible:ring-royal-500 focus-visible:ring-offset-2
-           transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+           transition-[transform,filter,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]
+           disabled:opacity-50 disabled:pointer-events-none;
   }
   /* Sheen sweep on primary buttons */
   .btn-primary::after {
@@ -119,9 +125,9 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl
            bg-white px-5 py-2.5 text-sm font-semibold text-royal-600
            ring-1 ring-royal-600/30 shadow-sm
-           hover:bg-royal-50 hover:ring-royal-600/50
+           hover:bg-royal-50 hover:ring-royal-600/50 active:scale-[0.98]
            focus-visible:ring-2 focus-visible:ring-royal-500 focus-visible:ring-offset-2
-           transition-all duration-150;
+           transition-[transform,background-color,box-shadow] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)];
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-lg
@@ -204,6 +210,41 @@
     0% { transform: translateX(-250%) skewX(12deg); }
     55%, 100% { transform: translateX(450%) skewX(12deg); }
   }
+
+  /* Error shake — short, horizontal, no overshoot past rest */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(2px); }
+  }
+  .animate-shake { animation: shake 0.4s var(--ease-out-quart); }
+
+  /* OTP digit settle — quick scale-in when a digit lands */
+  @keyframes otpPop {
+    0% { transform: scale(0.7); opacity: 0.4; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .animate-otp-pop { animation: otpPop 0.18s var(--ease-out-expo); }
+
+  /* SVG stroke draw — for the success check flourish */
+  @keyframes drawStroke {
+    to { stroke-dashoffset: 0; }
+  }
+  .animate-draw {
+    stroke-dasharray: var(--len, 24);
+    stroke-dashoffset: var(--len, 24);
+    animation: drawStroke 0.4s var(--ease-out-quint) forwards;
+  }
+
+  /* Soft attention pulse (current tracker stage / SLA breach) */
+  @keyframes ringPulse {
+    0% { box-shadow: 0 0 0 0 var(--pulse, rgba(37,99,235,0.45)); }
+    70% { box-shadow: 0 0 0 8px rgba(37,99,235,0); }
+    100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+  }
+  .animate-ring-pulse { animation: ringPulse 2s var(--ease-out-quart) infinite; }
 
   /* Gradient text */
   .text-gradient {
