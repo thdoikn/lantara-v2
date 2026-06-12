@@ -6,67 +6,111 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // ── Royal blue authority scale (primary brand) ──
+        royal: {
+          950: "#03061A",
+          900: "#060D2E",
+          800: "#0D1F5C",
+          700: "#1A3480",
+          600: "#1E40AF", // primary brand
+          500: "#2563EB",
+          400: "#3B82F6",
+          300: "#93C5FD",
+          200: "#BFDBFE",
+          100: "#DBEAFE",
+          50: "#EFF6FF",
+        },
+        // ── Gold accent ──
+        gold: {
+          500: "#D4A017",
+          400: "#EDB94A",
+          300: "#F5D87A",
+        },
+        // ── Surfaces ──
+        surface: {
+          DEFAULT: "#F8FAFF", // off-white with blue tint
+          card: "#FFFFFF",
+          dark: "#060D2E",
+        },
+        // ── Ink (text) ──
+        ink: {
+          DEFAULT: "#0D1F5C",
+          muted: "#4B5E8A",
+          faint: "#94A3B8",
+        },
+        // ── Status ──
+        status: {
+          success: "#059669",
+          warning: "#D97706",
+          danger: "#DC2626",
+          info: "#2563EB",
+        },
+
+        // ── Legacy Nusantara names remapped onto the royal system ──
+        //    (kept so existing components rebrand without per-file edits)
         jagawana: {
-          DEFAULT: "#428A40",
-          deep: "#2F6B2E",
-          light: "#6aaf68",
+          DEFAULT: "#1E40AF", // was green → now royal primary
+          deep: "#1A3480",
+          light: "#3B82F6",
         },
         khatulistiwa: {
-          DEFAULT: "#185088",
-          light: "#2a6ab5",
+          DEFAULT: "#2563EB",
+          light: "#3B82F6",
         },
-        terakota: "#DBAF6C",
-        saka: "#EE2F24",
-        pertiwi: "#FBF9D5",
+        terakota: "#D4A017", // warm accent → gold
+        saka: "#DC2626", // danger
+        pertiwi: "#EFF6FF", // light surface tint
         buana: {
-          DEFAULT: "#919191",
-          dark: "#242421",
-          darker: "#161614",
+          DEFAULT: "#4B5E8A", // muted navy-grey
+          dark: "#060D2E", // dark royal surface
+          darker: "#03061A",
         },
+
+        // ── Semantic tokens ──
         primary: {
-          DEFAULT: "#428A40",
+          DEFAULT: "#1E40AF",
           foreground: "#ffffff",
         },
         secondary: {
-          DEFAULT: "#185088",
+          DEFAULT: "#2563EB",
           foreground: "#ffffff",
         },
         destructive: {
-          DEFAULT: "#EE2F24",
+          DEFAULT: "#DC2626",
           foreground: "#ffffff",
         },
         warning: {
-          DEFAULT: "#DBAF6C",
-          foreground: "#242421",
+          DEFAULT: "#D4A017",
+          foreground: "#ffffff",
         },
-        background: "#FBF9D5",
-        foreground: "#242421",
+        background: "#F8FAFF",
+        foreground: "#0D1F5C",
         muted: {
-          DEFAULT: "#f0eedb",
-          foreground: "#919191",
+          DEFAULT: "#EFF6FF",
+          foreground: "#4B5E8A",
         },
         accent: {
-          DEFAULT: "#DBAF6C",
-          foreground: "#242421",
+          DEFAULT: "#D4A017",
+          foreground: "#ffffff",
         },
-        border: "#dddcc8",
-        input: "#dddcc8",
-        ring: "#185088",
+        border: "#DBE3F4",
+        input: "#DBE3F4",
+        ring: "#2563EB",
         card: {
           DEFAULT: "#ffffff",
-          foreground: "#242421",
+          foreground: "#0D1F5C",
         },
         popover: {
           DEFAULT: "#ffffff",
-          foreground: "#242421",
+          foreground: "#0D1F5C",
         },
-        // Dark surface colors for sidebar
+        // Dark surface colors for sidebars
         sidebar: {
-          DEFAULT: "#1e1e1b",
-          hover: "#2a2a26",
+          DEFAULT: "#060D2E",
+          hover: "#0D1F5C",
           border: "rgba(255,255,255,0.08)",
-          text: "rgba(255,255,255,0.70)",
-          "text-muted": "rgba(255,255,255,0.40)",
+          text: "rgba(255,255,255,0.72)",
+          "text-muted": "rgba(255,255,255,0.45)",
         },
       },
       fontFamily: {
@@ -105,20 +149,23 @@ const config: Config = {
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-jagawana": "linear-gradient(135deg, #428A40 0%, #2F6B2E 100%)",
-        "gradient-dark": "linear-gradient(135deg, #242421 0%, #161614 100%)",
-        "gradient-hero": "linear-gradient(160deg, #1a3a1a 0%, #242421 50%, #0e1f3a 100%)",
-        "gradient-auth": "linear-gradient(150deg, #1c2b1c 0%, #242421 40%, #0d1e38 100%)",
+        "gradient-jagawana": "linear-gradient(135deg, #1E40AF 0%, #1A3480 100%)",
+        "gradient-royal": "linear-gradient(135deg, #1E40AF 0%, #2563EB 100%)",
+        "gradient-gold": "linear-gradient(135deg, #D4A017 0%, #EDB94A 100%)",
+        "gradient-dark": "linear-gradient(135deg, #060D2E 0%, #03061A 100%)",
+        "gradient-hero": "linear-gradient(160deg, #060D2E 0%, #0D1F5C 55%, #1A3480 100%)",
+        "gradient-auth": "linear-gradient(150deg, #0D1F5C 0%, #060D2E 45%, #03061A 100%)",
         "noise": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E\")",
       },
       boxShadow: {
-        "glow-green": "0 0 30px -5px rgba(66, 138, 64, 0.35)",
-        "glow-blue": "0 0 30px -5px rgba(24, 80, 136, 0.35)",
-        "glow-warm": "0 0 30px -5px rgba(219, 175, 108, 0.40)",
-        "card": "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-        "card-hover": "0 4px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04)",
-        "auth": "0 25px 60px rgba(0,0,0,0.25), 0 10px 25px rgba(0,0,0,0.15)",
-        "floating": "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+        "glow-green": "0 0 30px -5px rgba(30, 64, 175, 0.40)", // remapped → royal glow
+        "glow-blue": "0 0 30px -5px rgba(37, 99, 235, 0.40)",
+        "glow-royal": "0 0 30px -5px rgba(37, 99, 235, 0.45)",
+        "glow-warm": "0 0 30px -5px rgba(212, 160, 23, 0.40)", // gold
+        "card": "0 1px 3px rgba(13,31,92,0.06), 0 1px 2px rgba(13,31,92,0.04)",
+        "card-hover": "0 4px 16px rgba(13,31,92,0.10), 0 2px 4px rgba(13,31,92,0.05)",
+        "auth": "0 25px 60px rgba(3,6,26,0.30), 0 10px 25px rgba(3,6,26,0.18)",
+        "floating": "0 8px 32px rgba(13,31,92,0.14), 0 2px 8px rgba(13,31,92,0.06)",
         "inner-top": "inset 0 1px 0 rgba(255,255,255,0.08)",
       },
       animation: {
@@ -129,6 +176,10 @@ const config: Config = {
         "float": "float 6s ease-in-out infinite",
         "shimmer": "shimmer 1.5s ease-in-out infinite",
         "spin-slow": "spin 8s linear infinite",
+        "drift-1": "drift1 22s ease-in-out infinite",
+        "drift-2": "drift2 28s ease-in-out infinite",
+        "drift-3": "drift3 25s ease-in-out infinite",
+        "btn-shimmer": "btnShimmer 2.5s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -150,6 +201,22 @@ const config: Config = {
         shimmer: {
           "0%": { backgroundPosition: "200% 0" },
           "100%": { backgroundPosition: "-200% 0" },
+        },
+        drift1: {
+          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
+          "50%": { transform: "translate(60px, -40px) scale(1.12)" },
+        },
+        drift2: {
+          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
+          "50%": { transform: "translate(-50px, 50px) scale(1.08)" },
+        },
+        drift3: {
+          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
+          "50%": { transform: "translate(40px, 60px) scale(1.15)" },
+        },
+        btnShimmer: {
+          "0%": { transform: "translateX(-150%)" },
+          "60%, 100%": { transform: "translateX(150%)" },
         },
       },
     },

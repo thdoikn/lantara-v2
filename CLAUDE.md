@@ -102,47 +102,50 @@ lantara-v2/
 
 ---
 
-## 4. Design System — "Nusantara" (the award-winning layer)
+## 4. Design System — "Nusantara Royal" (the award-winning layer)
 
 **Design philosophy: two registers.**
-- **Public surfaces (landing, catalog, validation): immersive.** Forest→city motion, depth, glassmorphism, animated hero, scroll-reveal. This is the showcase.
+- **Public surfaces (landing, catalog, validation): immersive.** Royal-blue depth, drifting glow orbs, glassmorphism, animated hero, scroll-reveal. This is the digital front door of the new capital — make it impress an international visitor and a first-time citizen equally.
 - **Authenticated surfaces (applicant portal, verifier workspace, admin): calm, fast, dense, accessible.** A verifier processing 50 permits/day needs clarity, not glass. Restraint here is a feature, and juries reward it.
 
 > Read the `frontend-design` skill before building UI. Then apply these tokens.
 
-### 4.1 Color tokens (Nusantara palette)
+### 4.1 Color tokens (Royal palette)
+Premium government identity: **royal-blue authority + gold accent**, off-white blue-tinted surfaces, navy ink. Tokens live in `frontend/tailwind.config.ts` (full `royal` 50–950 scale, `gold` 300–500, `ink`, `surface`, `status`). Legacy Nusantara token names (`jagawana`, `khatulistiwa`, `terakota`, `buana`, `pertiwi`, `saka`) are **remapped onto the royal system** in the config so they resolve to blue/gold — prefer the new names (`royal-*`, `gold-*`, `ink-*`, `surface`, `status-*`) in new code.
+
 ```css
 :root{
-  /* Brand */
-  --nus-jagawana: #428A40;   /* primary green — CTAs, brand */
-  --nus-jagawana-deep:#2F6B2E;
-  --nus-khatulistiwa:#185088;/* secondary blue — links, info, scheduled */
-  --nus-terakota:#DBAF6C;    /* warm accent — highlights, pending */
-  --nus-saka:#EE2F24;        /* alert/danger/rejected/SLA-breached */
+  /* Brand — royal blue authority */
+  --royal-600:#1E40AF;  /* primary brand — CTAs, links, active nav */
+  --royal-700:#1A3480;  /* deep — gradients, button base */
+  --royal-500:#2563EB;  /* info, focus rings, scheduled */
+  --royal-900:#060D2E;  /* dark surfaces — hero, sidebars, footer */
+  --royal-950:#03061A;  /* deepest dark surface */
+  /* Accent */
+  --gold-500:#D4A017;   /* warm accent — highlights, pending, premium flourish */
   /* Neutrals / surfaces */
-  --nus-pertiwi:#FBF9D5;     /* cream surface (light) */
-  --nus-buana:#919191;       /* muted grey */
-  --nus-buana-dark:#242421;  /* near-black surface (dark sections, footer, hero) */
-  /* Semantic */
-  --color-bg: var(--nus-pertiwi);
-  --color-fg: var(--nus-buana-dark);
-  --color-primary: var(--nus-jagawana);
-  --color-info: var(--nus-khatulistiwa);
-  --color-warn: var(--nus-terakota);
-  --color-danger: var(--nus-saka);
+  --surface:#F8FAFF;    /* off-white, blue-tinted page background */
+  --ink:#0D1F5C;        /* primary text — navy */
+  --ink-muted:#4B5E8A;  /* muted navy-grey */
+  --ink-faint:#94A3B8;  /* faint placeholder/disabled */
+  /* Status */
+  --status-success:#059669;
+  --status-warning:#D97706;
+  --status-danger:#DC2626;  /* rejected / SLA-breached */
+  --status-info:#2563EB;
 }
 ```
-**Ticket status colors (PRD §8):** pending→Terakota, approved→Jagawana, rejected→Saka, scheduled→Khatulistiwa.
+**Ticket status colors (PRD §8):** pending→Gold/amber, approved→Emerald, rejected→Red, scheduled→Royal-500.
 
-**Contrast rule:** never put Terakota or Buana text on Pertiwi for body copy (fails AA). Body text = Buana-dark on Pertiwi/white. Run a contrast check; AA minimum on all authenticated UI.
+**Contrast rule:** body text = ink (`#0D1F5C`) on surface/white (passes AA comfortably). Never use ink-faint or gold for body copy on light surfaces. Run a contrast check; AA minimum on all authenticated UI.
 
 ### 4.2 Type & layout
 - Display/headings: a strong geometric or humanist sans (e.g. *Plus Jakarta Sans* — Indonesian-made, fitting) for headings; *Inter* for body/UI. Generous line-height, real hierarchy.
 - 8px spacing grid. Max content width ~1200px on dashboards, full-bleed allowed on landing.
 - Rounded-2xl cards, soft shadows on public; flat/bordered density on dashboards.
 
-### 4.3 Motion (Framer Motion)
-- Landing hero: layered parallax conveying **hutan → kota** (forest dissolving into the planned city). Scroll-reveal sektor cards. Respect `prefers-reduced-motion` — disable non-essential motion.
+### 4.3 Motion (Framer Motion + CSS)
+- Landing hero: drifting blurred glow orbs (royal-700/gold) on a dark royal gradient — pure CSS keyframes (`drift-1/2/3`), GPU-light, not Framer. Scroll-reveal sektor cards via Framer. Respect `prefers-reduced-motion` — disable non-essential motion.
 - Dashboards: micro-interactions only (state transitions, toasts). No decorative motion in data tables.
 
 ### 4.4 Signature UI moments (aim for "extraordinary")
@@ -152,7 +155,7 @@ lantara-v2/
 - **Public catalog** = "cari layanan" command-palette search across all 31 sektor.
 
 ### 4.5 Accessibility (non-negotiable)
-WCAG 2.1 AA. Semantic HTML, focus-visible rings (Khatulistiwa), aria labels, keyboard nav across the whole verifier workspace, form errors announced, no color-only status (always icon+text alongside the color).
+WCAG 2.1 AA. Semantic HTML, focus-visible rings (royal-500), aria labels, keyboard nav across the whole verifier workspace, form errors announced, no color-only status (always icon+text alongside the color).
 
 ---
 
