@@ -4,10 +4,11 @@ import { useState, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Clock, Shield, Smartphone, CheckCircle2,
-  MapPin, ChevronDown,
+  ChevronDown,
   Search, Menu, X, MessageCircle, Building2,
 } from "lucide-react";
 import api from "@/lib/api";
+import { getSektorVisual } from "@/lib/sektorVisuals";
 import type { Sektor } from "@/types";
 
 // ── Batik chain/loop ornament border (IKN motif) ───────────────────────────────
@@ -264,46 +265,52 @@ function SektorCards({ sektors }: { sektors: Sektor[] }) {
           </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {sektors.map((sektor, i) => (
-            <motion.div
-              key={sektor.key}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Link
-                to={`/layanan#${sektor.key}`}
-                className="group relative overflow-hidden block rounded-2xl p-7
-                           bg-white/[0.04] border border-white/[0.08]
-                           hover:bg-white/[0.08] hover:border-white/[0.15]
-                           hover:-translate-y-1.5 hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)]
-                           transition-all duration-300 ease-out
-                           before:content-[''] before:absolute before:top-0 before:left-6 before:right-6 before:h-px
-                           before:bg-gradient-to-r before:from-transparent before:via-yellow-400/40 before:to-transparent"
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+          {sektors.map((sektor, i) => {
+            const v = getSektorVisual(sektor.key, sektor.name);
+            const Icon = v.Icon;
+            return (
+              <motion.div
+                key={sektor.key}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                className="h-full"
               >
-                <div className="flex items-start justify-between">
-                  <div className="rounded-xl bg-blue-500/20 p-3 w-11 h-11 flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                <Link
+                  to={`/layanan#${sektor.key}`}
+                  className={`group relative overflow-hidden flex flex-col h-full rounded-2xl p-7
+                             bg-white/[0.04] border border-white/[0.08]
+                             hover:bg-white/[0.08] hover:border-white/[0.15]
+                             hover:-translate-y-1.5 hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)]
+                             transition-all duration-300 ease-out
+                             before:content-[''] before:absolute before:top-0 before:left-6 before:right-6 before:h-px
+                             before:bg-gradient-to-r before:from-transparent before:to-transparent ${v.via}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className={`rounded-xl ${v.iconWrap} p-3 w-12 h-12 flex items-center justify-center
+                                     ring-1 ring-white/10 group-hover:scale-105 transition-transform`}>
+                      <Icon className={`h-5 w-5 ${v.iconText}`} aria-hidden="true" />
+                    </div>
+                    <span className={`${v.badge} text-xs font-bold px-3 py-1 rounded-full`}>
+                      {sektor.permit_count} izin
+                    </span>
                   </div>
-                  <span className="bg-blue-500/20 text-blue-300 text-xs font-bold px-3 py-1 rounded-full">
-                    {sektor.permit_count} izin
+
+                  <p className="text-white font-display font-bold text-xl mt-5">{sektor.name}</p>
+                  <p className="text-blue-300/60 text-sm mt-1 line-clamp-2 min-h-[2.5rem]">
+                    {sektor.pengampu || "Layanan perizinan sektor"}
+                  </p>
+
+                  <span className={`${v.link} text-sm font-semibold mt-auto pt-5 inline-flex items-center gap-1.5`}>
+                    Lihat Izin
+                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                   </span>
-                </div>
-
-                <p className="text-white font-display font-bold text-xl mt-5">{sektor.name}</p>
-                {sektor.pengampu && (
-                  <p className="text-blue-300/60 text-sm mt-1">{sektor.pengampu}</p>
-                )}
-
-                <span className="text-blue-400 hover:text-blue-300 text-sm font-semibold mt-5 inline-flex items-center gap-1.5">
-                  Lihat Izin
-                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-                </span>
-              </Link>
-            </motion.div>
-          ))}
+                </Link>
+              </motion.div>
+            );
+          })}
         </div>
 
         <div className="text-center mt-12">
