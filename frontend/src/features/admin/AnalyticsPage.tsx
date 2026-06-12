@@ -172,20 +172,20 @@ export default function AnalyticsPage() {
             <AreaChart data={trend} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="grad-green" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#428A40" stopOpacity={0.20} />
-                  <stop offset="95%" stopColor="#428A40" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#1E40AF" stopOpacity={0.22} />
+                  <stop offset="95%" stopColor="#1E40AF" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11, fill: "#919191" }}
+                tick={{ fontSize: 11, fill: "#4B5E8A" }}
                 tickFormatter={(v: string) => v.slice(5)}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "#919191" }}
+                tick={{ fontSize: 11, fill: "#4B5E8A" }}
                 allowDecimals={false}
                 axisLine={false}
                 tickLine={false}
@@ -203,7 +203,7 @@ export default function AnalyticsPage() {
               <Area
                 type="monotone"
                 dataKey="count"
-                stroke="#428A40"
+                stroke="#1E40AF"
                 strokeWidth={2}
                 fill="url(#grad-green)"
               />
@@ -224,12 +224,12 @@ export default function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
                 <XAxis
                   dataKey="sektor"
-                  tick={{ fontSize: 11, fill: "#919191" }}
+                  tick={{ fontSize: 11, fill: "#4B5E8A" }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#919191" }}
+                  tick={{ fontSize: 11, fill: "#4B5E8A" }}
                   allowDecimals={false}
                   axisLine={false}
                   tickLine={false}
@@ -241,9 +241,9 @@ export default function AnalyticsPage() {
                     fontSize: 12,
                   }}
                 />
-                <Bar dataKey="approved" name="Disetujui" fill="#428A40" radius={[4, 4, 0, 0]} stackId="a" />
-                <Bar dataKey="active" name="Aktif" fill="#185088" radius={[4, 4, 0, 0]} stackId="a" />
-                <Bar dataKey="rejected" name="Ditolak" fill="#EE2F24" radius={[4, 4, 0, 0]} stackId="a" />
+                <Bar dataKey="approved" name="Disetujui" fill="#1E40AF" radius={[4, 4, 0, 0]} stackId="a" />
+                <Bar dataKey="active" name="Aktif" fill="#3B82F6" radius={[4, 4, 0, 0]} stackId="a" />
+                <Bar dataKey="rejected" name="Ditolak" fill="#DC2626" radius={[4, 4, 0, 0]} stackId="a" />
               </BarChart>
             </ResponsiveContainer>
           )}

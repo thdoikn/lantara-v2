@@ -17,12 +17,12 @@ export default function VerifierLayout() {
     .toUpperCase() ?? "?";
 
   return (
-    <div className="min-h-screen flex bg-[#f5f4ed]">
+    <div className="min-h-screen flex bg-surface">
       {/* ── Dark sidebar (signals staff workspace per CLAUDE.md §4) ── */}
       <aside
         aria-label="Navigasi verifikator"
         className="w-56 shrink-0 flex flex-col bg-sidebar ring-1 ring-sidebar-border"
-        style={{ backgroundColor: "#1e1e1b" }}
+        style={{ backgroundColor: "#060D2E" }}
       >
         {/* Brand */}
         <div className="px-4 h-14 flex items-center gap-2.5 border-b"
@@ -41,7 +41,7 @@ export default function VerifierLayout() {
         {/* Staff badge */}
         <div className="mx-3 mt-3 mb-1 flex items-center gap-2 rounded-lg px-3 py-2"
              style={{ backgroundColor: "rgba(255,255,255,0.05)" }}>
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0" style={{ color: "rgba(66,138,64,0.9)" }} aria-hidden="true" />
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0" style={{ color: "rgba(37,99,235,0.95)" }} aria-hidden="true" />
           <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>
             Verifikator
           </span>
@@ -100,7 +100,7 @@ export default function VerifierLayout() {
       <div className="flex-1 flex flex-col">
         {/* Thin top bar */}
         <header className="h-10 flex items-center px-6 border-b bg-white/60 backdrop-blur-sm"
-                style={{ borderColor: "#dddcc8" }}>
+                style={{ borderColor: "#DBE3F4" }}>
           <span className="text-xs font-semibold text-buana uppercase tracking-widest">
             Antrean Verifikasi
           </span>

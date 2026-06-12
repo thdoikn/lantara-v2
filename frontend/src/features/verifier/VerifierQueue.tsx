@@ -113,7 +113,7 @@ export default function VerifierQueue() {
                 ? cn("bg-buana-dark text-white shadow-sm", accent)
                 : "text-buana hover:text-foreground hover:bg-muted"
             )}
-            style={i === activeTab ? { backgroundColor: "#242421" } : undefined}
+            style={i === activeTab ? { backgroundColor: "#0D1F5C" } : undefined}
           >
             {label}
           </button>

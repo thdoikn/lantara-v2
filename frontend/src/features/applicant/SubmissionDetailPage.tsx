@@ -88,9 +88,9 @@ function StageTracker({
                 className={cn(
                   "h-8 w-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-all duration-200",
                   isDone
-                    ? "bg-jagawana border-jagawana text-white shadow-[0_0_0_3px_rgba(66,138,64,0.15)]"
+                    ? "bg-jagawana border-jagawana text-white shadow-[0_0_0_3px_rgba(30,64,175,0.18)]"
                     : isActive
-                    ? "border-jagawana text-jagawana bg-white shadow-[0_0_0_3px_rgba(66,138,64,0.10)]"
+                    ? "border-jagawana text-jagawana bg-white shadow-[0_0_0_3px_rgba(30,64,175,0.12)]"
                     : "border-border text-buana bg-white"
                 )}
               >

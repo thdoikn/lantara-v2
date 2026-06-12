@@ -47,18 +47,18 @@ interface KBLICheckResult {
   source: string;
 }
 
-// ── Zone type colours (Nusantara palette) ─────────────────────────────────────
+// ── Zone type colours (categorical map palette, royal-anchored) ───────────────
 
 const ZONE_COLORS: Record<string, string> = {
-  perkantoran: "#185088",
-  perumahan: "#428A40",
-  perdagangan: "#DBAF6C",
+  perkantoran: "#1E40AF",   // royal — civic/office
+  perumahan: "#3B82F6",     // royal-400 — residential
+  perdagangan: "#D4A017",   // gold — commerce
   pendidikan: "#7C5CBF",
   kesehatan: "#2CA0B5",
-  rth: "#2F6B2E",
-  industri: "#919191",
+  rth: "#2F6B2E",           // green open space (cartographic convention)
+  industri: "#64748B",
   campuran: "#E8884A",
-  transportasi: "#242421",
+  transportasi: "#03061A",  // royal-950 — infrastructure
   pertanian: "#8BC34A",
 };
 
@@ -240,7 +240,7 @@ function RDTRMap({
               "rth", ZONE_COLORS.rth,
               "industri", ZONE_COLORS.industri,
               "campuran", ZONE_COLORS.campuran,
-              "#919191",
+              "#64748B",
             ],
             "fill-opacity": 0.35,
           },
@@ -392,7 +392,7 @@ export default function RDTRPage() {
                 <div className="flex items-start gap-2">
                   <div
                     className="mt-1 h-3 w-3 rounded-sm shrink-0 opacity-70"
-                    style={{ backgroundColor: ZONE_COLORS[selectedZone.zone_type] ?? "#919191" }}
+                    style={{ backgroundColor: ZONE_COLORS[selectedZone.zone_type] ?? "#4B5E8A" }}
                   />
                   <div>
                     <p className="font-semibold text-sm">{selectedZone.name}</p>

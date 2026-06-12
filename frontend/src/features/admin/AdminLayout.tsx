@@ -27,12 +27,12 @@ export default function AdminLayout() {
     .toUpperCase() ?? "?";
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "#f5f4ed" }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: "#F8FAFF" }}>
       {/* ── Dark admin sidebar ── */}
       <aside
         aria-label="Navigasi admin"
         className="w-56 shrink-0 flex flex-col"
-        style={{ backgroundColor: "#1a1a18", borderRight: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ backgroundColor: "#03061A", borderRight: "1px solid rgba(255,255,255,0.06)" }}
       >
         {/* Brand */}
         <div className="px-4 h-14 flex items-center gap-2.5 border-b"
@@ -51,7 +51,7 @@ export default function AdminLayout() {
         {/* Engine badge */}
         <div className="mx-3 mt-3 mb-2 flex items-center gap-2 rounded-lg px-3 py-2"
              style={{ backgroundColor: "rgba(255,255,255,0.05)" }}>
-          <Cpu className="h-3.5 w-3.5" style={{ color: "rgba(219,175,108,0.9)" }} aria-hidden="true" />
+          <Cpu className="h-3.5 w-3.5" style={{ color: "rgba(212,160,23,0.95)" }} aria-hidden="true" />
           <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.50)" }}>
             Engine v2.0
           </span>
