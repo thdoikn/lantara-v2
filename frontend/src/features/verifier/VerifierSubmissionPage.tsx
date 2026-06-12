@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
 import { format, parseISO } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft } from "lucide-react";
+import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft, AlertTriangle, Clock } from "lucide-react";
+import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import type { Submission, AuditEntry, DocumentRequirement } from "@/types";
@@ -18,6 +19,7 @@ interface ActionConfig {
   label: string;
   icon: React.ReactNode;
   variant: string;
+  confirmVariant: string;
   requiresNote?: boolean;
 }
 
@@ -25,28 +27,32 @@ const ACTIONS: ActionConfig[] = [
   {
     type: "approve",
     label: "Setujui",
-    icon: <CheckCircle2 className="h-4 w-4" />,
-    variant: "bg-jagawana hover:bg-jagawana-deep text-white",
+    icon: <CheckCircle2 className="h-4 w-4" aria-hidden="true" />,
+    variant: "bg-jagawana/10 hover:bg-jagawana/20 text-jagawana border border-jagawana/20",
+    confirmVariant: "bg-jagawana hover:bg-jagawana-deep text-white",
   },
   {
     type: "request_revision",
     label: "Minta Revisi",
-    icon: <RotateCcw className="h-4 w-4" />,
-    variant: "bg-terakota/10 hover:bg-terakota/20 text-terakota border border-terakota/30",
+    icon: <RotateCcw className="h-4 w-4" aria-hidden="true" />,
+    variant: "bg-terakota/8 hover:bg-terakota/15 text-amber-700 border border-terakota/20",
+    confirmVariant: "bg-terakota hover:bg-amber-600 text-white",
     requiresNote: true,
   },
   {
     type: "schedule_site_visit",
     label: "Jadwalkan Kunjungan",
-    icon: <MapPin className="h-4 w-4" />,
-    variant: "bg-khatulistiwa/10 hover:bg-khatulistiwa/20 text-khatulistiwa border border-khatulistiwa/30",
+    icon: <MapPin className="h-4 w-4" aria-hidden="true" />,
+    variant: "bg-khatulistiwa/8 hover:bg-khatulistiwa/15 text-khatulistiwa border border-khatulistiwa/20",
+    confirmVariant: "bg-khatulistiwa hover:bg-khatulistiwa-light text-white",
     requiresNote: true,
   },
   {
     type: "reject",
     label: "Tolak",
-    icon: <XCircle className="h-4 w-4" />,
-    variant: "bg-saka/10 hover:bg-saka/20 text-saka border border-saka/30",
+    icon: <XCircle className="h-4 w-4" aria-hidden="true" />,
+    variant: "bg-saka/8 hover:bg-saka/15 text-saka border border-saka/20",
+    confirmVariant: "bg-saka hover:bg-red-700 text-white",
     requiresNote: true,
   },
 ];
@@ -63,10 +69,7 @@ function ActionPanel({
   const [active, setActive] = useState<ActionType | null>(null);
   const [note, setNote] = useState("");
 
-  const availableActions = ACTIONS.filter(() => {
-    if (submission.status === "issued" || submission.status === "rejected") return false;
-    return true;
-  });
+  const isTerminal = submission.status === "issued" || submission.status === "rejected";
 
   function handleConfirm() {
     if (!active) return;
@@ -75,28 +78,41 @@ function ActionPanel({
     setNote("");
   }
 
+  if (isTerminal) {
+    return (
+      <div className="card p-5">
+        <h2 className="font-semibold text-sm mb-3">Tindakan</h2>
+        <p className="text-xs text-buana">
+          Permohonan ini sudah selesai diproses.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-2xl border border-border bg-white p-5 space-y-4">
+    <div className="card p-5 space-y-4">
       <h2 className="font-semibold text-sm">Tindakan</h2>
 
       {active ? (
         <div className="space-y-3">
-          <p className="text-sm font-medium">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            {ACTIONS.find((a) => a.type === active)?.icon}
             {ACTIONS.find((a) => a.type === active)?.label}
-          </p>
+          </div>
           {ACTIONS.find((a) => a.type === active)?.requiresNote && (
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
               placeholder="Catatan (wajib)…"
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-khatulistiwa resize-none"
+              className="input resize-none"
+              aria-label="Catatan tindakan"
             />
           )}
           <div className="flex gap-2">
             <button
               onClick={() => setActive(null)}
-              className="flex-1 rounded-lg border border-border py-2 text-sm font-medium hover:bg-muted transition-colors"
+              className="flex-1 btn-secondary py-2 text-sm"
             >
               Batal
             </button>
@@ -104,9 +120,12 @@ function ActionPanel({
               onClick={handleConfirm}
               disabled={
                 isPending ||
-                (ACTIONS.find((a) => a.type === active)?.requiresNote && !note.trim())
+                Boolean(ACTIONS.find((a) => a.type === active)?.requiresNote && !note.trim())
               }
-              className="flex-1 rounded-lg bg-jagawana py-2 text-sm font-semibold text-white hover:bg-jagawana-deep transition-colors disabled:opacity-60"
+              className={cn(
+                "flex-1 rounded-xl py-2 text-sm font-semibold transition-all duration-150 disabled:opacity-60",
+                ACTIONS.find((a) => a.type === active)?.confirmVariant
+              )}
             >
               {isPending ? "Menyimpan…" : "Konfirmasi"}
             </button>
@@ -114,12 +133,12 @@ function ActionPanel({
         </div>
       ) : (
         <div className="space-y-2">
-          {availableActions.map((action) => (
+          {ACTIONS.map((action) => (
             <button
               key={action.type}
               onClick={() => setActive(action.type)}
               className={cn(
-                "w-full flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
+                "w-full flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150",
                 action.variant
               )}
             >
@@ -133,7 +152,7 @@ function ActionPanel({
   );
 }
 
-// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+// ── Keyboard shortcut hook ───────────────────────────────────────────────────
 
 function useKeyboardShortcut(key: string, callback: () => void) {
   useEffect(() => {
@@ -188,7 +207,7 @@ export default function VerifierSubmissionPage() {
     return (
       <div className="max-w-5xl mx-auto space-y-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-xl bg-white animate-pulse" />
+          <div key={i} className="skeleton h-24 rounded-2xl" />
         ))}
       </div>
     );
@@ -209,22 +228,27 @@ export default function VerifierSubmissionPage() {
         onClick={() => navigate("/verifier")}
         className="flex items-center gap-1.5 text-sm text-buana hover:text-foreground transition-colors"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         Kembali ke Antrean
-        <span className="ml-1 text-xs opacity-60 hidden sm:inline">⌘←</span>
+        <span className="ml-1 text-xs opacity-50 hidden sm:inline">⌘←</span>
       </button>
 
       {/* Header */}
-      <div className="rounded-2xl border border-border bg-white p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="card p-6"
+      >
         <div className="flex flex-wrap gap-4 items-start justify-between">
           <div>
-            <p className="text-xs text-buana uppercase tracking-wide">{submission.sektor_name}</p>
-            <h1 className="font-display text-xl font-bold mt-1">{submission.permit_type_name}</h1>
+            <p className="section-label mb-1">{submission.sektor_name}</p>
+            <h1 className="font-display text-xl font-bold">{submission.permit_type_name}</h1>
             <p className="text-sm font-mono text-buana mt-1">{submission.reference_number}</p>
           </div>
           <div className="text-right text-sm">
-            <p className="font-medium">{submission.applicant_name}</p>
-            <p className="text-buana">{submission.applicant_email}</p>
+            <p className="font-semibold">{submission.applicant_name}</p>
+            <p className="text-buana text-xs mt-0.5">{submission.applicant_email}</p>
             {submission.submitted_at && (
               <p className="text-xs text-buana mt-1">
                 Diajukan{" "}
@@ -235,13 +259,13 @@ export default function VerifierSubmissionPage() {
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-5">
         {/* Left: form data + docs */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-4">
           {/* Form data */}
-          <div className="rounded-2xl border border-border bg-white p-5">
+          <div className="card p-5">
             <h2 className="font-semibold text-sm mb-4">Data Permohonan</h2>
             <dl className="space-y-3">
               {submission.schema_snapshot?.form_fields?.map((f) => {
@@ -261,7 +285,7 @@ export default function VerifierSubmissionPage() {
 
           {/* Documents */}
           {(submission.schema_snapshot?.doc_requirements?.length ?? 0) > 0 && (
-            <div className="rounded-2xl border border-border bg-white p-5">
+            <div className="card p-5">
               <DocumentUploadSection
                 submissionId={submission.id}
                 requirements={
@@ -274,14 +298,14 @@ export default function VerifierSubmissionPage() {
 
           {/* Audit log */}
           {auditEntries.length > 0 && (
-            <div className="rounded-2xl border border-border bg-white p-5">
+            <div className="card p-5">
               <h2 className="font-semibold text-sm mb-4">Riwayat Aktivitas</h2>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {auditEntries.map((entry) => (
                   <div key={entry.id} className="flex gap-3 text-sm">
                     <div className="w-2 h-2 rounded-full bg-khatulistiwa mt-1.5 shrink-0" />
                     <div>
-                      <p className="font-medium">{entry.action}</p>
+                      <p className="font-semibold">{entry.action}</p>
                       {entry.notes && <p className="text-buana text-xs mt-0.5">{entry.notes}</p>}
                       <p className="text-xs text-buana mt-0.5">
                         {format(parseISO(entry.created_at), "d MMM yyyy, HH:mm", {
@@ -306,32 +330,41 @@ export default function VerifierSubmissionPage() {
           />
 
           {actMutation.isError && (
-            <div className="rounded-lg bg-saka/5 border border-saka/30 px-4 py-3 text-sm text-saka">
+            <div className="rounded-xl bg-saka/5 ring-1 ring-saka/20 px-4 py-3 text-sm text-saka font-medium">
               Terjadi kesalahan. Silakan coba lagi.
             </div>
           )}
 
           {actMutation.isSuccess && (
-            <div className="rounded-lg bg-jagawana/5 border border-jagawana/30 px-4 py-3 text-sm text-jagawana">
+            <div className="rounded-xl bg-jagawana/5 ring-1 ring-jagawana/20 px-4 py-3 text-sm text-jagawana font-medium">
               Tindakan berhasil disimpan.
             </div>
           )}
 
           {/* SLA info */}
           {submission.sla_due_at && (
-            <div className="rounded-2xl border border-border bg-white p-5 text-sm space-y-2">
+            <div className="card p-5 text-sm space-y-3">
               <h2 className="font-semibold">Informasi SLA</h2>
-              <div className="flex justify-between text-buana">
-                <span>Batas SLA</span>
-                <span className={cn("font-medium", submission.is_sla_breached && "text-saka")}>
+              <div className="flex justify-between items-center">
+                <span className="text-buana">Batas SLA</span>
+                <span className={cn(
+                  "font-semibold",
+                  submission.is_sla_breached ? "text-saka" : "text-foreground"
+                )}>
                   {format(parseISO(submission.sla_due_at), "d MMM yyyy", { locale: localeId })}
                 </span>
               </div>
               {submission.is_sla_breached && (
-                <p className="text-xs text-saka font-semibold">⚠ SLA telah terlampaui</p>
+                <div className="flex items-center gap-1.5 text-xs text-saka font-semibold">
+                  <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                  SLA telah terlampaui
+                </div>
               )}
               {submission.is_sla_at_risk && !submission.is_sla_breached && (
-                <p className="text-xs text-terakota font-semibold">⚠ Mendekati batas SLA</p>
+                <div className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold">
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                  Mendekati batas SLA
+                </div>
               )}
             </div>
           )}

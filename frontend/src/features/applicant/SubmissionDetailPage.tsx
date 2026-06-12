@@ -25,14 +25,14 @@ function SLACountdown({ dueAt, breached }: { dueAt: string; breached: boolean })
   return (
     <span
       className={cn(
-        "flex items-center gap-1 text-xs font-medium",
+        "flex items-center gap-1.5 text-xs font-semibold",
         breached || overdue ? "text-saka" : "text-terakota"
       )}
     >
       {breached || overdue ? (
-        <AlertTriangle className="h-3.5 w-3.5" />
+        <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
       ) : (
-        <Clock className="h-3.5 w-3.5" />
+        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
       )}
       {overdue
         ? `Terlampaui ${formatDistanceToNow(due, { locale: localeId })}`
@@ -86,25 +86,28 @@ function StageTracker({
             <div className="flex flex-col items-center">
               <div
                 className={cn(
-                  "h-8 w-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-colors",
+                  "h-8 w-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-all duration-200",
                   isDone
-                    ? "bg-jagawana border-jagawana text-white"
+                    ? "bg-jagawana border-jagawana text-white shadow-[0_0_0_3px_rgba(66,138,64,0.15)]"
                     : isActive
-                    ? "border-jagawana text-jagawana bg-white"
+                    ? "border-jagawana text-jagawana bg-white shadow-[0_0_0_3px_rgba(66,138,64,0.10)]"
                     : "border-border text-buana bg-white"
                 )}
               >
                 {isDone ? (
-                  <CheckCircle2 className="h-4 w-4" />
+                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                 ) : isActive ? (
                   <div className="h-3 w-3 rounded-full bg-jagawana animate-pulse" />
                 ) : (
-                  <Circle className="h-4 w-4" />
+                  <Circle className="h-4 w-4" aria-hidden="true" />
                 )}
               </div>
               {idx < stages.length - 1 && (
                 <div
-                  className={cn("w-0.5 flex-1 min-h-[2rem]", isDone ? "bg-jagawana" : "bg-border")}
+                  className={cn(
+                    "w-0.5 flex-1 min-h-[2rem] transition-colors duration-300",
+                    isDone ? "bg-jagawana/60" : "bg-border"
+                  )}
                 />
               )}
             </div>
@@ -113,7 +116,7 @@ function StageTracker({
             <div className={cn("pb-6 flex-1", idx === stages.length - 1 && "pb-0")}>
               <p
                 className={cn(
-                  "text-sm font-medium",
+                  "text-sm font-semibold",
                   isDone ? "text-jagawana" : isActive ? "text-foreground" : "text-buana"
                 )}
               >
@@ -131,7 +134,7 @@ function StageTracker({
                 </p>
               )}
               {isPending && (
-                <p className="text-xs text-buana mt-0.5">Menunggu</p>
+                <p className="text-xs text-buana/60 mt-0.5">Menunggu</p>
               )}
             </div>
           </motion.div>
@@ -156,12 +159,12 @@ const ACTION_LABEL: Record<string, string> = {
 
 function AuditTimeline({ entries }: { entries: AuditEntry[] }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {entries.map((entry) => (
         <div key={entry.id} className="flex gap-3 text-sm">
           <div className="w-2 h-2 rounded-full bg-khatulistiwa mt-1.5 shrink-0" />
           <div>
-            <p className="font-medium">{ACTION_LABEL[entry.action] ?? entry.action}</p>
+            <p className="font-semibold">{ACTION_LABEL[entry.action] ?? entry.action}</p>
             {entry.notes && <p className="text-buana text-xs mt-0.5">{entry.notes}</p>}
             <p className="text-xs text-buana mt-0.5">
               {format(parseISO(entry.created_at), "d MMM yyyy, HH:mm", { locale: localeId })}
@@ -207,12 +210,12 @@ function TTEStatusBadge({ permitId }: { permitId: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
         data.status === "signed"
-          ? "bg-jagawana/10 text-jagawana"
+          ? "bg-jagawana/10 text-jagawana ring-1 ring-jagawana/20"
           : data.is_mock
-          ? "bg-buana/10 text-buana"
-          : "bg-khatulistiwa/10 text-khatulistiwa"
+          ? "bg-buana/10 text-buana ring-1 ring-buana/20"
+          : "bg-khatulistiwa/10 text-khatulistiwa ring-1 ring-khatulistiwa/20"
       )}
     >
       {label}
@@ -220,20 +223,22 @@ function TTEStatusBadge({ permitId }: { permitId: string }) {
   );
 }
 
-// ── Main page ────────────────────────────────────────────────────────────────
+// ── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
-  draft: { text: "Draft", className: "badge-pending" },
-  submitted: { text: "Diajukan", className: "badge-pending" },
-  in_review: { text: "Sedang Diverifikasi", className: "badge-info" },
-  revision: { text: "Perlu Revisi", className: "badge-warn" },
-  approved: { text: "Disetujui", className: "badge-success" },
-  rejected: { text: "Ditolak", className: "badge-danger" },
-  publishing: { text: "Penerbitan", className: "badge-info" },
-  collection: { text: "Siap Diambil", className: "badge-success" },
-  collected: { text: "Selesai", className: "badge-success" },
-  issued: { text: "Diterbitkan", className: "badge-success" },
+  draft:      { text: "Draft",             className: "badge-pending" },
+  submitted:  { text: "Diajukan",          className: "badge-pending" },
+  in_review:  { text: "Sedang Diverifikasi", className: "badge-info" },
+  revision:   { text: "Perlu Revisi",      className: "badge-warn" },
+  approved:   { text: "Disetujui",         className: "badge-success" },
+  rejected:   { text: "Ditolak",           className: "badge-danger" },
+  publishing: { text: "Penerbitan",        className: "badge-info" },
+  collection: { text: "Siap Diambil",      className: "badge-success" },
+  collected:  { text: "Selesai",           className: "badge-success" },
+  issued:     { text: "Diterbitkan",       className: "badge-success" },
 };
+
+// ── Main page ────────────────────────────────────────────────────────────────
 
 export default function SubmissionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -254,7 +259,7 @@ export default function SubmissionDetailPage() {
     return (
       <div className="max-w-3xl mx-auto space-y-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
+          <div key={i} className="skeleton h-20 rounded-2xl" />
         ))}
       </div>
     );
@@ -278,22 +283,25 @@ export default function SubmissionDetailPage() {
   const isIssued = ["issued", "collected", "approved"].includes(submission.status);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-5">
       {/* Header card */}
-      <div className="rounded-2xl border border-border bg-white p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="card p-6"
+      >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs text-buana uppercase tracking-wide">
-              {submission.sektor_name}
-            </p>
-            <h1 className="font-display text-xl font-bold mt-1">{submission.permit_type_name}</h1>
+            <p className="section-label mb-1">{submission.sektor_name}</p>
+            <h1 className="font-display text-xl font-bold">{submission.permit_type_name}</h1>
             <p className="text-sm text-buana mt-1 font-mono">{submission.reference_number}</p>
           </div>
           <span className={cn("badge", statusCfg.className)}>{statusCfg.text}</span>
         </div>
 
         {submission.sla_due_at && !isIssued && (
-          <div className="mt-4">
+          <div className="mt-4 pt-4 border-t border-border/50">
             <SLACountdown
               dueAt={submission.sla_due_at}
               breached={submission.is_sla_breached}
@@ -302,22 +310,28 @@ export default function SubmissionDetailPage() {
         )}
 
         {isIssued && submission.issued_permit_id && (
-          <div className="mt-4 flex flex-wrap gap-3 items-center">
+          <div className="mt-4 pt-4 border-t border-border/50 flex flex-wrap gap-3 items-center">
             <Link
               to={`/validate/${submission.issued_permit_validation_uuid}`}
-              className="inline-flex items-center gap-1.5 text-sm text-khatulistiwa hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm text-khatulistiwa font-semibold hover:underline"
             >
-              <FileText className="h-4 w-4" /> Lihat / Unduh Izin
+              <FileText className="h-4 w-4" aria-hidden="true" />
+              Lihat / Unduh Izin
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
             <TTEStatusBadge permitId={submission.issued_permit_id} />
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <div className="grid md:grid-cols-5 gap-6">
+      <div className="grid md:grid-cols-5 gap-5">
         {/* Left: tracker */}
-        <div className="md:col-span-2 rounded-2xl border border-border bg-white p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08, duration: 0.35 }}
+          className="md:col-span-2 card p-6"
+        >
           <h2 className="font-semibold text-sm mb-5">Status Proses</h2>
           {stages.length > 0 ? (
             <StageTracker
@@ -329,24 +343,28 @@ export default function SubmissionDetailPage() {
           ) : (
             <p className="text-xs text-buana">Data tahap tidak tersedia.</p>
           )}
-        </div>
+        </motion.div>
 
         {/* Right: details + audit */}
-        <div className="md:col-span-3 space-y-5">
+        <div className="md:col-span-3 space-y-4">
           {/* Revision notice */}
           {needsRevision && (
-            <div className="rounded-xl border border-saka/30 bg-saka/5 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-xl border border-saka/30 bg-saka/5 p-4"
+            >
               <p className="text-sm font-semibold text-saka mb-1">Revisi Diperlukan</p>
               <p className="text-xs text-buana">
                 Verifikator meminta perbaikan. Lihat catatan di bawah dan unggah ulang dokumen
                 atau perbaiki data yang diminta.
               </p>
-            </div>
+            </motion.div>
           )}
 
           {/* Document section */}
           {(submission.schema_snapshot?.doc_requirements?.length ?? 0) > 0 && (
-            <div className="rounded-2xl border border-border bg-white p-5">
+            <div className="card p-5">
               <DocumentUploadSection
                 submissionId={submission.id}
                 requirements={submission.schema_snapshot.doc_requirements}
@@ -357,14 +375,14 @@ export default function SubmissionDetailPage() {
 
           {/* Audit timeline */}
           {auditEntries.length > 0 && (
-            <div className="rounded-2xl border border-border bg-white p-5">
+            <div className="card p-5">
               <h2 className="font-semibold text-sm mb-4">Riwayat Aktivitas</h2>
               <AuditTimeline entries={auditEntries} />
             </div>
           )}
 
           {/* Form data summary */}
-          <div className="rounded-2xl border border-border bg-white p-5">
+          <div className="card p-5">
             <h2 className="font-semibold text-sm mb-4">Data Permohonan</h2>
             <dl className="space-y-3">
               {submission.schema_snapshot?.form_fields?.map((f: { key: string; label: string }) => {
