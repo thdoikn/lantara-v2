@@ -191,7 +191,11 @@ export default function VerifierQueue() {
 
                       {/* SLA indicator */}
                       {sub.sla_due_at && (
-                        <div className={cn("flex items-center gap-1 text-xs font-semibold shrink-0", sla.text)}>
+                        <div className={cn(
+                          "flex items-center gap-1 text-xs font-semibold shrink-0",
+                          sla.text,
+                          level === "breached" && "animate-pulse"
+                        )}>
                           {sla.icon}
                           {sub.is_sla_breached
                             ? "SLA Terlampaui"

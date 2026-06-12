@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { format, parseISO } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft, AlertTriangle, Clock } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import type { Submission, AuditEntry, DocumentRequirement } from "@/types";
@@ -138,7 +138,8 @@ function ActionPanel({
               key={action.type}
               onClick={() => setActive(action.type)}
               className={cn(
-                "w-full flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150",
+                "w-full flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold",
+                "transition-[transform,background-color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98]",
                 action.variant
               )}
             >
@@ -329,17 +330,31 @@ export default function VerifierSubmissionPage() {
             isPending={actMutation.isPending}
           />
 
-          {actMutation.isError && (
-            <div className="rounded-xl bg-saka/5 ring-1 ring-saka/20 px-4 py-3 text-sm text-saka font-medium">
-              Terjadi kesalahan. Silakan coba lagi.
-            </div>
-          )}
+          <AnimatePresence>
+            {actMutation.isError && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="rounded-xl bg-saka/5 ring-1 ring-saka/20 px-4 py-3 text-sm text-saka font-medium"
+              >
+                Terjadi kesalahan. Silakan coba lagi.
+              </motion.div>
+            )}
 
-          {actMutation.isSuccess && (
-            <div className="rounded-xl bg-jagawana/5 ring-1 ring-jagawana/20 px-4 py-3 text-sm text-jagawana font-medium">
-              Tindakan berhasil disimpan.
-            </div>
-          )}
+            {actMutation.isSuccess && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="rounded-xl bg-jagawana/5 ring-1 ring-jagawana/20 px-4 py-3 text-sm text-jagawana font-medium"
+              >
+                Tindakan berhasil disimpan.
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* SLA info */}
           {submission.sla_due_at && (
