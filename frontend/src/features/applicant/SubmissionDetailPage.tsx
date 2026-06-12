@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { format, parseISO, formatDistanceToNow, isPast } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { CheckCircle2, Circle, Clock, AlertTriangle, FileText, ChevronRight } from "lucide-react";
+import { Circle, Clock, AlertTriangle, FileText, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -49,6 +49,25 @@ interface StageRow {
   order: number;
 }
 
+// Hand-drawn check that strokes itself in — the tracker's signature flourish
+function DrawnCheck() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor"
+      strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12.5l4 4L19 7" className="animate-draw" style={{ ["--len" as string]: "24" }} />
+    </svg>
+  );
+}
+
+const trackerList = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.12, delayChildren: 0.08 } },
+};
+const trackerRow = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } },
+};
+
 function StageTracker({
   stages,
   currentKey,
@@ -64,62 +83,65 @@ function StageTracker({
   const currentOrder = stages.find((s) => s.key === currentKey)?.order ?? 0;
 
   return (
-    <div className="space-y-0">
+    <motion.div className="space-y-0" variants={trackerList} initial="hidden" animate="show">
       {stages.map((stage, idx) => {
         const isDone = stage.order < currentOrder || terminalDone;
         const isActive = stage.key === currentKey && !terminalDone;
         const isPending = stage.order > currentOrder;
+        const isLast = idx === stages.length - 1;
 
         const entryForStage = auditEntries.find(
           (e) => e.to_stage_key === stage.key || e.from_stage_key === stage.key
         );
 
         return (
-          <motion.div
-            key={stage.key}
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="flex gap-4"
-          >
+          <motion.div key={stage.key} variants={trackerRow} className="flex gap-4">
             {/* Timeline column */}
             <div className="flex flex-col items-center">
-              <div
+              <motion.div
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.08 + idx * 0.12, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 className={cn(
-                  "h-8 w-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-all duration-200",
+                  "h-8 w-8 rounded-full flex items-center justify-center border-2 shrink-0",
                   isDone
-                    ? "bg-jagawana border-jagawana text-white shadow-[0_0_0_3px_rgba(30,64,175,0.18)]"
+                    ? "bg-jagawana border-jagawana text-white"
                     : isActive
-                    ? "border-jagawana text-jagawana bg-white shadow-[0_0_0_3px_rgba(30,64,175,0.12)]"
+                    ? "border-jagawana text-jagawana bg-white animate-ring-pulse"
                     : "border-border text-buana bg-white"
                 )}
               >
                 {isDone ? (
-                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  <DrawnCheck />
                 ) : isActive ? (
-                  <div className="h-3 w-3 rounded-full bg-jagawana animate-pulse" />
+                  <span className="relative flex h-3 w-3">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-jagawana/60 animate-ping" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-jagawana" />
+                  </span>
                 ) : (
                   <Circle className="h-4 w-4" aria-hidden="true" />
                 )}
-              </div>
-              {idx < stages.length - 1 && (
-                <div
-                  className={cn(
-                    "w-0.5 flex-1 min-h-[2rem] transition-colors duration-300",
-                    isDone ? "bg-jagawana/60" : "bg-border"
-                  )}
-                />
+              </motion.div>
+
+              {!isLast && (
+                <div className="relative w-0.5 flex-1 min-h-[2rem] bg-border overflow-hidden">
+                  {/* fill draws downward as the stage completes */}
+                  <motion.div
+                    className="absolute inset-0 bg-jagawana origin-top"
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: isDone ? 1 : 0 }}
+                    transition={{ delay: 0.2 + idx * 0.12, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
               )}
             </div>
 
             {/* Content */}
-            <div className={cn("pb-6 flex-1", idx === stages.length - 1 && "pb-0")}>
-              <p
-                className={cn(
-                  "text-sm font-semibold",
-                  isDone ? "text-jagawana" : isActive ? "text-foreground" : "text-buana"
-                )}
-              >
+            <div className={cn("pb-6 flex-1", isLast && "pb-0")}>
+              <p className={cn(
+                "text-sm font-semibold",
+                isDone ? "text-jagawana" : isActive ? "text-foreground" : "text-buana"
+              )}>
                 {stage.name}
               </p>
               {isActive && (
@@ -127,20 +149,16 @@ function StageTracker({
               )}
               {entryForStage && isDone && (
                 <p className="text-xs text-buana mt-0.5">
-                  {format(parseISO(entryForStage.created_at), "d MMM yyyy HH:mm", {
-                    locale: localeId,
-                  })}
+                  {format(parseISO(entryForStage.created_at), "d MMM yyyy HH:mm", { locale: localeId })}
                   {entryForStage.actor_name && ` · ${entryForStage.actor_name}`}
                 </p>
               )}
-              {isPending && (
-                <p className="text-xs text-buana/60 mt-0.5">Menunggu</p>
-              )}
+              {isPending && <p className="text-xs text-buana/60 mt-0.5">Menunggu</p>}
             </div>
           </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }
 
