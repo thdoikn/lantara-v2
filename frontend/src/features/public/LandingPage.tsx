@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useId } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Clock, Shield, Smartphone, CheckCircle2,
-  ChevronDown, Search, MessageCircle, Building2, FileText, Check,
+  ChevronDown, Search, MessageCircle, Building2,
 } from "lucide-react";
 import api from "@/lib/api";
 import { getSektorVisual } from "@/lib/sektorVisuals";
@@ -35,22 +35,27 @@ function BatikBorder({ flip = false, opacity = 1 }: { flip?: boolean; opacity?: 
   );
 }
 
-// ── Section wave transition ────────────────────────────────────────────────────
+// ── Section wave transitions ───────────────────────────────────────────────────
 
-function WaveTransition({ from, to }: { from: string; to: string }) {
+function WaveTransition({ from, to, inverse = false }: { from: string; to: string; inverse?: boolean }) {
   return (
     <div
       style={{ background: from, height: "40px", overflow: "hidden", marginBottom: "-1px", lineHeight: 0 }}
       aria-hidden="true"
     >
       <svg viewBox="0 0 1440 40" width="100%" height="40" preserveAspectRatio="none">
-        <path d="M0,40 L0,0 Q720,40 1440,0 L1440,40 Z" fill={to} />
+        <path
+          d={inverse
+            ? "M0,0 L0,40 Q720,0 1440,40 L1440,0 Z"
+            : "M0,40 L0,0 Q720,40 1440,0 L1440,40 Z"}
+          fill={to}
+        />
       </svg>
     </div>
   );
 }
 
-// ── Hero ───────────────────────────────────────────────────────────────────────
+// ── CHANGE 1 — Hero with integrated search bar ─────────────────────────────────
 
 const HERO_BG = `
   radial-gradient(ellipse 60% 50% at 20% 50%, rgba(24,80,136,0.25) 0%, transparent 60%),
@@ -59,9 +64,30 @@ const HERO_BG = `
   #04182A`;
 
 function Hero() {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Global '/' shortcut focuses the search bar
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (document.activeElement as HTMLElement)?.tagName;
+      if (e.key === "/" && tag !== "INPUT" && tag !== "TEXTAREA") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  function handleSearchSubmit() {
+    navigate(q.trim() ? `/layanan?q=${encodeURIComponent(q.trim())}` : "/layanan");
+  }
+
   return (
     <section
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden"
       style={{ background: HERO_BG }}
       aria-label="Hero Lantara"
     >
@@ -71,105 +97,86 @@ function Hero() {
         initial={{ opacity: 0, y: 28 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 px-4 text-center flex flex-col items-center pb-16"
+        className="relative z-10 pt-24 pb-4 flex flex-col items-center w-full max-w-4xl mx-auto"
       >
+        {/* Official badge */}
+        <div className="inline-flex items-center gap-2 bg-white/[0.07] border border-white/[0.12] rounded-full px-5 py-2 mb-8">
+          <span className="w-2 h-2 rounded-full bg-terakota-400 flex-shrink-0" aria-hidden="true" />
+          <span className="text-white/60 text-xs font-semibold tracking-wide">
+            Portal Resmi Otorita Ibu Kota Nusantara
+          </span>
+        </div>
+
+        {/* Main heading */}
         <h1
-          className="font-display font-black text-white text-7xl md:text-9xl tracking-tight leading-none"
-          style={{ textShadow: "0 0 80px rgba(46,133,200,0.35)" }}
+          className="font-display font-black text-white leading-none mb-6"
+          style={{ fontSize: "clamp(4rem, 12vw, 9rem)", textShadow: "0 0 80px rgba(46,133,200,0.35)" }}
         >
           Lantara
         </h1>
 
-        <p className="text-xl md:text-2xl font-display font-medium text-khatulistiwa-200/80 mt-6 max-w-[600px]">
+        <p className="text-khatulistiwa-200/80 font-display font-medium text-xl md:text-2xl mb-3 max-w-2xl">
           Layanan Perizinan Digital Ibu Kota Nusantara
         </p>
-        <p className="text-base text-white/50 mt-4 max-w-[480px] leading-relaxed">
+        <p className="text-white/40 text-base mb-10 max-w-lg leading-relaxed">
           Satu portal untuk mengajukan, memantau, dan menerima izin Anda — cepat, transparan, dan sepenuhnya digital.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3 mt-10">
+        {/* Search bar */}
+        <div className="w-full max-w-2xl mb-8">
+          <div className="flex items-center bg-white/[0.08] border border-white/[0.15] rounded-2xl px-5 py-4 gap-3
+                          focus-within:border-terakota-400/50 focus-within:bg-white/[0.11] transition-all
+                          shadow-[0_8px_40px_rgba(0,0,0,0.3)]">
+            <Search className="w-5 h-5 text-white/30 flex-shrink-0" aria-hidden="true" />
+            <input
+              ref={searchRef}
+              value={q}
+              className="flex-1 bg-transparent text-white placeholder-white/30 text-base outline-none"
+              placeholder="Cari jenis izin, sektor, atau kode KBLI..."
+              aria-label="Cari layanan perizinan"
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSearchSubmit(); }}
+            />
+            <button
+              onClick={handleSearchSubmit}
+              className="bg-khatulistiwa-600 hover:bg-khatulistiwa-500 text-white px-5 py-2 rounded-xl
+                         font-semibold text-sm transition-colors flex items-center gap-2 flex-shrink-0"
+            >
+              <Search className="w-4 h-4" aria-hidden="true" />
+              Cari
+            </button>
+          </div>
+          <p className="text-white/25 text-xs mt-2.5 text-center">
+            Tekan{" "}
+            <kbd className="bg-white/10 border border-white/15 px-1.5 py-0.5 rounded text-xs font-mono">
+              /
+            </kbd>{" "}
+            untuk fokus
+          </p>
+        </div>
+
+        {/* CTA buttons */}
+        <div className="flex items-center gap-4 flex-wrap justify-center">
           <Link
             to="/auth/register"
-            className="group inline-flex items-center justify-center gap-2 bg-khatulistiwa-600 hover:bg-khatulistiwa-500 text-white rounded-xl px-8 py-3.5 font-semibold transition-all shadow-[0_8px_30px_rgba(24,80,136,0.4)]"
+            className="inline-flex items-center gap-2 bg-khatulistiwa-600 hover:bg-khatulistiwa-500 text-white
+                       font-display font-semibold px-8 py-3.5 rounded-xl transition-all
+                       shadow-lg shadow-khatulistiwa-600/30"
           >
             Ajukan Izin Sekarang
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </Link>
           <Link
             to="/layanan"
-            className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white rounded-xl px-8 py-3.5 font-semibold transition-all"
+            className="inline-flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.15]
+                       text-white font-semibold px-8 py-3.5 rounded-xl transition-all"
           >
             Lihat Katalog
           </Link>
         </div>
-
-        {/* Live status pills */}
-        <div className="mt-16 flex items-center justify-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5 bg-white/[0.06] border border-white/10 rounded-full px-5 py-2.5 backdrop-blur-sm">
-            <span className="w-2 h-2 rounded-full bg-jagawana-400 shadow-[0_0_8px_rgba(94,168,92,0.8)] animate-pulse" />
-            <span className="text-white/70 text-sm font-medium">Sistem Aktif</span>
-          </div>
-          <div className="flex items-center gap-2.5 bg-white/[0.06] border border-white/10 rounded-full px-5 py-2.5 backdrop-blur-sm">
-            <span className="text-terakota-500 text-sm font-bold">46+</span>
-            <span className="text-white/70 text-sm">Jenis Izin Tersedia</span>
-          </div>
-          <div className="flex items-center gap-2.5 bg-white/[0.06] border border-white/10 rounded-full px-5 py-2.5 backdrop-blur-sm">
-            <span className="text-terakota-500 text-sm font-bold">Rp 0</span>
-            <span className="text-white/70 text-sm">Biaya Layanan</span>
-          </div>
-        </div>
-
-        {/* Decorative permit card preview — fills hero dead space */}
-        <div className="mt-12 max-w-lg mx-auto w-full">
-          <div className="bg-white/[0.06] border border-white/[0.12] rounded-2xl p-5 backdrop-blur-sm text-left" aria-hidden="true">
-            {/* Card header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-terakota-500/20 flex items-center justify-center shrink-0">
-                  <FileText className="w-4 h-4 text-terakota-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-white/80 font-semibold text-sm">Izin Pendirian Non Panti Sosial</p>
-                  <p className="text-white/40 text-xs">Sektor Sosial · Direktorat P5</p>
-                </div>
-              </div>
-              <span className="shrink-0 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs px-3 py-1 rounded-full font-semibold">
-                Disetujui
-              </span>
-            </div>
-
-            {/* Progress bar */}
-            <div className="mb-3">
-              <div className="flex justify-between text-xs text-white/40 mb-1.5">
-                <span>Progres Permohonan</span>
-                <span>3 / 4 tahap</span>
-              </div>
-              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full w-3/4 bg-gradient-to-r from-khatulistiwa-400 to-terakota-400 rounded-full" />
-              </div>
-            </div>
-
-            {/* Step indicators */}
-            <div className="flex items-center gap-2 mt-3">
-              {["Pengajuan", "Verifikasi", "Penerbitan", "Penyerahan"].map((step, i) => (
-                <div key={i} className="flex items-center gap-2 flex-1 min-w-0">
-                  <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                      i < 3 ? "bg-emerald-500" : "bg-white/15 border border-white/20"
-                    }`}
-                  >
-                    {i < 3 && <Check className="w-3 h-3 text-white" />}
-                  </div>
-                  <span className={`text-xs truncate ${i < 3 ? "text-white/60" : "text-white/30"}`}>{step}</span>
-                  {i < 3 && <div className="flex-1 h-px bg-emerald-500/30 min-w-0" />}
-                </div>
-              ))}
-            </div>
-          </div>
-          <p className="text-white/25 text-xs text-center mt-3">Contoh tampilan permohonan aktif</p>
-        </div>
       </motion.div>
 
+      {/* Batik border at bottom */}
       <div className="absolute bottom-0 inset-x-0">
         <BatikBorder opacity={0.6} />
       </div>
@@ -209,7 +216,7 @@ function StatsStrip() {
   );
 }
 
-// ── Sektor cards — white on cream ──────────────────────────────────────────────
+// ── Sektor cards — CHANGE 2: asymmetric featured center ────────────────────────
 
 const LIGHT_SEKTOR_STYLES = [
   { topBar: "bg-khatulistiwa-600", iconBg: "bg-khatulistiwa-100", iconText: "text-khatulistiwa-600", badge: "bg-khatulistiwa-100 text-khatulistiwa-700" },
@@ -242,11 +249,14 @@ function SektorCards({ sektors }: { sektors: Sektor[] }) {
           </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+        {/* Asymmetric featured center grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
           {sektors.map((sektor, i) => {
             const v = getSektorVisual(sektor.key, sektor.name);
             const Icon = v.Icon;
             const ls = getLightSektorStyle(v.dot);
+            const isFeatured = i === 1;
+
             return (
               <motion.div
                 key={sektor.key}
@@ -254,35 +264,64 @@ function SektorCards({ sektors }: { sektors: Sektor[] }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full"
+                className={isFeatured ? "-mt-4" : ""}
               >
                 <Link
                   to={`/layanan#${sektor.key}`}
-                  className="group flex flex-col h-full bg-white rounded-2xl border border-pertiwi-muted
-                             shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden"
+                  className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 ${
+                    isFeatured
+                      ? "bg-khatulistiwa-800 border-khatulistiwa-600/50 shadow-[0_20px_60px_rgba(24,80,136,0.35)] hover:shadow-[0_28px_80px_rgba(24,80,136,0.5)] hover:-translate-y-2"
+                      : "bg-white border-pertiwi-muted shadow-md hover:shadow-xl hover:-translate-y-1.5"
+                  }`}
                 >
-                  {/* Sektor accent bar */}
-                  <div className={`h-1 w-full shrink-0 ${ls.topBar}`} aria-hidden="true" />
+                  {/* Top accent bar */}
+                  <div
+                    className={`h-1.5 w-full shrink-0 ${isFeatured ? "bg-terakota-500" : ls.topBar}`}
+                    aria-hidden="true"
+                  />
 
-                  <div className="p-6 flex flex-col flex-1">
-                    <div className="flex items-start justify-between mb-5">
-                      <div className={`w-12 h-12 rounded-2xl ${ls.iconBg} flex items-center justify-center`}>
-                        <Icon className={`w-6 h-6 ${ls.iconText}`} aria-hidden="true" />
+                  <div className="p-7 flex flex-col flex-1">
+                    {/* Icon + count row */}
+                    <div className="flex items-start justify-between mb-6">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                        isFeatured ? "bg-white/15" : ls.iconBg
+                      }`}>
+                        <Icon className={`w-7 h-7 ${isFeatured ? "text-white" : ls.iconText}`} aria-hidden="true" />
                       </div>
-                      <span className={`${ls.badge} text-xs font-bold px-3 py-1.5 rounded-full`}>
+                      <span className={`text-sm font-bold px-3 py-1.5 rounded-full ${
+                        isFeatured
+                          ? "bg-terakota-500/20 text-terakota-300"
+                          : ls.badge
+                      }`}>
                         {sektor.permit_count} izin
                       </span>
                     </div>
 
-                    <h3 className="text-khatulistiwa-900 font-display font-bold text-xl">{sektor.name}</h3>
-                    <p className="text-khatulistiwa-500/70 text-sm mt-1.5 line-clamp-2 flex-1">
+                    {/* Name + directorate */}
+                    <h3 className={`font-display font-black mb-2 ${
+                      isFeatured ? "text-white text-2xl" : "text-khatulistiwa-900 text-xl"
+                    }`}>
+                      {sektor.name}
+                    </h3>
+                    <p className={`text-sm leading-relaxed mb-6 flex-1 ${
+                      isFeatured ? "text-khatulistiwa-200/60" : "text-khatulistiwa-500/70"
+                    }`}>
                       {sektor.pengampu || "Layanan perizinan sektor"}
                     </p>
 
-                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-pertiwi-muted">
-                      <span className="text-khatulistiwa-400/50 text-xs">Layanan aktif</span>
-                      <span className="text-khatulistiwa-600 text-sm font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">
-                        Lihat Izin <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    {/* Footer CTA */}
+                    <div className={`flex items-center justify-between pt-5 border-t ${
+                      isFeatured ? "border-white/10" : "border-pertiwi-muted"
+                    }`}>
+                      <span className={`text-xs ${
+                        isFeatured ? "text-khatulistiwa-300/40" : "text-khatulistiwa-400/50"
+                      }`}>
+                        Layanan aktif
+                      </span>
+                      <span className={`text-sm font-semibold flex items-center gap-1.5 group-hover:gap-2.5 transition-all ${
+                        isFeatured ? "text-terakota-400" : "text-khatulistiwa-600"
+                      }`}>
+                        Lihat Izin <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                       </span>
                     </div>
                   </div>
@@ -306,49 +345,7 @@ function SektorCards({ sektors }: { sektors: Sektor[] }) {
   );
 }
 
-// ── "Cari Layanan" search ──────────────────────────────────────────────────────
-
-function SearchSection() {
-  const [q, setQ] = useState("");
-  const navigate = useNavigate();
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    navigate(q.trim() ? `/layanan?q=${encodeURIComponent(q.trim())}` : "/layanan");
-  }
-  return (
-    <section className="bg-khatulistiwa-900 py-14">
-      <div className="max-w-2xl mx-auto px-4 text-center">
-        <h2 className="text-white font-display font-bold text-2xl md:text-3xl mb-2">Cari Layanan</h2>
-        <p className="text-khatulistiwa-300/50 text-sm mb-7">Temukan jenis izin berdasarkan sektor atau kode KBLI.</p>
-        <form onSubmit={submit}>
-          <div className="relative">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 pointer-events-none" aria-hidden="true" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Cari jenis izin, sektor, atau KBLI…"
-              className="w-full bg-white/[0.07] border border-white/[0.12] rounded-2xl pl-14 pr-28 py-4
-                         text-white placeholder-white/30 text-base outline-none
-                         focus:border-terakota-400/50 focus:bg-white/[0.10] transition-all"
-              aria-label="Cari layanan perizinan"
-            />
-            <button
-              type="submit"
-              className="absolute right-2 top-2 bottom-2 bg-khatulistiwa-600 hover:bg-khatulistiwa-500
-                         text-white px-5 rounded-xl font-semibold text-sm transition-colors
-                         flex items-center gap-2"
-            >
-              <Search className="w-4 h-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Cari</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </section>
-  );
-}
-
-// ── Cara Kerja — horizontal timeline on cream ──────────────────────────────────
+// ── Cara Kerja — CHANGE 3: left-align card text ────────────────────────────────
 
 const STEPS = [
   { title: "Daftar & Verifikasi", desc: "Buat akun dengan NIK dan email. Verifikasi dengan OTP satu langkah." },
@@ -381,9 +378,9 @@ function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className="flex flex-col items-center text-center relative"
+              className="flex flex-col items-center relative"
             >
-              {/* Dark number circle — contrasts against cream */}
+              {/* Dark number circle */}
               <div className="relative z-10 w-20 h-20 rounded-full bg-khatulistiwa-800 border-4 border-pertiwi-warm
                               shadow-xl flex items-center justify-center mb-5">
                 <span className="text-terakota-400 font-display font-black text-2xl">
@@ -391,8 +388,8 @@ function HowItWorks() {
                 </span>
               </div>
 
-              {/* White card */}
-              <div className="bg-white rounded-2xl border border-pertiwi-muted shadow-sm p-5 w-full">
+              {/* CHANGE 3 — left-aligned white card */}
+              <div className="bg-white rounded-2xl border border-pertiwi-muted shadow-sm p-5 w-full text-left">
                 <h3 className="text-khatulistiwa-900 font-display font-bold text-base">{step.title}</h3>
                 <p className="text-khatulistiwa-500/70 text-sm mt-2 leading-relaxed">{step.desc}</p>
               </div>
@@ -404,7 +401,7 @@ function HowItWorks() {
   );
 }
 
-// ── Mengapa Lantara — dark, redesigned cards ───────────────────────────────────
+// ── Mengapa Lantara — CHANGE 4: horizontal icon+text layout ───────────────────
 
 const FEATURES = [
   { Icon: Clock,        title: "SLA Transparan",       desc: "Setiap tahap punya batas waktu. Pantau kapan izin Anda akan selesai secara real-time." },
@@ -422,7 +419,8 @@ function Features() {
           <h2 className="text-white font-display font-black text-4xl md:text-5xl">Mengapa Lantara?</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl mx-auto">
+        {/* CHANGE 4 — horizontal icon+text layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
           {FEATURES.map(({ Icon, title, desc }, i) => (
             <motion.div
               key={title}
@@ -430,21 +428,20 @@ function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.07 }}
-              className="group relative bg-khatulistiwa-900/60 border border-khatulistiwa-700/30 rounded-2xl p-7
-                         hover:border-terakota-500/40 hover:bg-khatulistiwa-800/60 transition-all duration-300 overflow-hidden"
+              className="group flex gap-5 p-7 rounded-2xl bg-khatulistiwa-900/50 border border-khatulistiwa-700/25
+                         hover:bg-khatulistiwa-800/60 hover:border-terakota-500/30 transition-all duration-300 cursor-default"
             >
-              {/* Corner glow */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-terakota-500/5 rounded-full blur-2xl group-hover:bg-terakota-500/10 transition-colors" aria-hidden="true" />
+              {/* Compact icon — left side */}
+              <div className="w-12 h-12 rounded-xl bg-terakota-500/10 border border-terakota-500/20
+                              flex items-center justify-center flex-shrink-0 mt-0.5
+                              group-hover:bg-terakota-500/20 transition-colors">
+                <Icon className="w-5 h-5 text-terakota-400" aria-hidden="true" />
+              </div>
 
-              <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-terakota-500/10 border border-terakota-500/20 flex items-center justify-center mb-5 group-hover:bg-terakota-500/20 transition-colors">
-                  <Icon className="w-7 h-7 text-terakota-400" aria-hidden="true" />
-                </div>
-                <h3 className="text-white font-display font-bold text-xl mb-3">{title}</h3>
-                <p className="text-khatulistiwa-300/60 text-sm leading-relaxed">{desc}</p>
-
-                {/* Bottom accent on hover */}
-                <div className="absolute -bottom-7 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-terakota-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+              {/* Text — right side */}
+              <div>
+                <h3 className="text-white font-display font-bold text-lg mb-2">{title}</h3>
+                <p className="text-khatulistiwa-300/55 text-sm leading-relaxed">{desc}</p>
               </div>
             </motion.div>
           ))}
@@ -454,7 +451,7 @@ function Features() {
   );
 }
 
-// ── FAQ — white accordion on cream ────────────────────────────────────────────
+// ── FAQ — CHANGE 5: swap eyebrow and heading ──────────────────────────────────
 
 const FAQS = [
   { q: "Apakah layanan Lantara berbayar?", a: "Tidak. Seluruh layanan perizinan melalui Lantara 100% gratis untuk masyarakat. Tidak ada biaya administrasi atau biaya tersembunyi apa pun." },
@@ -501,9 +498,12 @@ function FAQ() {
   return (
     <section className="bg-pertiwi-warm py-20">
       <div className="max-w-2xl mx-auto px-4">
+        {/* CHANGE 5 — FAQ as eyebrow, Pertanyaan Umum as heading */}
         <div className="text-center mb-12">
-          <p className="text-terakota-600 text-xs font-bold tracking-[0.2em] uppercase mb-3">Pertanyaan Umum</p>
-          <h2 className="text-khatulistiwa-900 font-display font-black text-4xl md:text-5xl">FAQ</h2>
+          <p className="text-terakota-600 text-xs font-bold tracking-[0.2em] uppercase mb-3">FAQ</p>
+          <h2 className="text-khatulistiwa-900 font-display font-black text-4xl md:text-5xl">
+            Pertanyaan Umum
+          </h2>
         </div>
         <div className="space-y-3">
           {FAQS.map((f, i) => (
@@ -622,7 +622,7 @@ function Footer() {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Page — updated rhythm after removing SearchSection ────────────────────────
 
 export default function LandingPage() {
   const { data: sektors } = useQuery<Sektor[]>({
@@ -635,19 +635,15 @@ export default function LandingPage() {
       <PublicNav />
       <Hero />
       <main id="main-content">
-        {/* Hero (dark #04182A) → StatsStrip (gold) — BatikBorder handles this */}
+        {/* Hero (dark #04182A) → StatsStrip (gold) — BatikBorder inside Hero handles this visually */}
         <StatsStrip />
         {/* gold → cream */}
         <WaveTransition from="#DBAF6C" to="#F5F0E8" />
+        {/* Sektor cards + Cara Kerja — both cream, no transition needed */}
         <SektorCards sektors={sektors ?? []} />
-        {/* cream → dark khatulistiwa-900 */}
-        <WaveTransition from="#F5F0E8" to="#0A2540" />
-        <SearchSection />
-        {/* dark → cream */}
-        <WaveTransition from="#0A2540" to="#F5F0E8" />
         <HowItWorks />
-        {/* cream → dark khatulistiwa-950 */}
-        <WaveTransition from="#F5F0E8" to="#04182A" />
+        {/* cream → dark (inverse arch) */}
+        <WaveTransition from="#F5F0E8" to="#04182A" inverse />
         <Features />
         {/* dark → cream */}
         <WaveTransition from="#04182A" to="#F5F0E8" />
@@ -655,7 +651,7 @@ export default function LandingPage() {
         {/* cream → brand blue */}
         <WaveTransition from="#F5F0E8" to="#0D3060" />
         <CTA />
-        {/* blue → footer dark — Footer's BatikBorder provides the visual separator */}
+        {/* blue → footer dark */}
         <WaveTransition from="#1E6BA8" to="#04182A" />
       </main>
       <Footer />
