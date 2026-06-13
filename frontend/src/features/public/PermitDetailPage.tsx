@@ -236,7 +236,8 @@ export default function PermitDetailPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="grid sm:grid-cols-3 gap-4 mt-6"
+              className="grid gap-4 mt-6"
+              style={{ gridTemplateColumns: "1fr 2fr 1.2fr" }}
             >
               {/* Biaya — always shown */}
               <div className="bg-khatulistiwa-900 rounded-2xl p-5 border border-khatulistiwa-700/30">
@@ -266,7 +267,7 @@ export default function PermitDetailPage() {
                     {permit.legal_basis.map((lb, i) => (
                       <div key={i} className="flex items-start gap-2">
                         <span className="text-terakota-500/60 text-xs mt-0.5 shrink-0">§</span>
-                        <p className="text-khatulistiwa-200/70 text-xs leading-relaxed">{lb}</p>
+                        <p className="text-khatulistiwa-200/65 text-xs leading-relaxed">{lb}</p>
                       </div>
                     ))}
                   </div>
