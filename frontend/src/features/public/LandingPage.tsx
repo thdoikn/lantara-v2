@@ -157,7 +157,7 @@ function Hero() {
                        font-display font-semibold px-8 py-3.5 rounded-xl transition-all
                        shadow-lg shadow-khatulistiwa-600/30"
           >
-            Ajukan Izin Sekarang
+            {isAuthenticated ? "Pantau Permohonan Saya" : "Ajukan Izin Sekarang"}
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </button>
           <button
@@ -396,7 +396,7 @@ function HowItWorks() {
         viewBox="0 0 1440 48"
         className="w-full block mt-12"
         preserveAspectRatio="none"
-        style={{ height: "48px", display: "block" }}
+        style={{ height: "48px", display: "block", marginBottom: "-1px" }}
         aria-hidden="true"
       >
         <path d="M0,0 L0,48 Q720,0 1440,48 L1440,0 Z" fill="#04182A" />
@@ -454,7 +454,7 @@ function Features() {
         viewBox="0 0 1440 48"
         className="w-full block mt-12"
         preserveAspectRatio="none"
-        style={{ height: "48px", display: "block" }}
+        style={{ height: "48px", display: "block", marginBottom: "-1px" }}
         aria-hidden="true"
       >
         <path d="M0,48 L0,0 Q720,48 1440,0 L1440,48 Z" fill="#F5F0E8" />
