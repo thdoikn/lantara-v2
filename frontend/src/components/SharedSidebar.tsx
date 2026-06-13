@@ -127,6 +127,13 @@ export default function SharedSidebar({
                   aria-hidden="true"
                 />
                 <span className={cn("flex-1", collapsed && "lg:hidden")}>{label}</span>
+                {/* Active dot indicator (no badge) */}
+                {active && !badge && (
+                  <span
+                    className={cn("h-1.5 w-1.5 rounded-full bg-terakota-400 shrink-0", collapsed && "lg:hidden")}
+                    aria-hidden="true"
+                  />
+                )}
                 {!!badge && (
                   <span
                     className={cn(
