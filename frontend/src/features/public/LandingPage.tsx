@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useId } from "react";
+import { useState, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Clock, Shield, Smartphone, CheckCircle2,
-  ChevronDown, Search, MessageCircle,
+  ChevronDown, Search, MessageCircle, Building2,
 } from "lucide-react";
 import api from "@/lib/api";
 import { getSektorVisual } from "@/lib/sektorVisuals";
