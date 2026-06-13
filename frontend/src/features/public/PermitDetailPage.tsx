@@ -231,39 +231,61 @@ export default function PermitDetailPage() {
               </motion.div>
             )}
 
-            {/* FIX 4 — restructured info strip */}
+            {/* Info strip: Biaya+Pengaduan row, then Dasar Hukum full-width */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="grid gap-4 mt-6"
-              style={{ gridTemplateColumns: "1fr 2fr 1.2fr" }}
+              className="space-y-4 mt-6"
             >
-              {/* Biaya — always shown */}
-              <div className="bg-khatulistiwa-900 rounded-2xl p-5 border border-khatulistiwa-700/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <CreditCard className="w-4 h-4 text-terakota-400" aria-hidden="true" />
-                  <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Biaya</p>
+              {/* Row 1: Biaya + Pengaduan */}
+              <div className={`grid gap-4 ${permit.complaint_info ? "grid-cols-2" : "grid-cols-1"}`}>
+                {/* Biaya — always shown */}
+                <div className="bg-khatulistiwa-900 rounded-2xl p-5 border border-khatulistiwa-700/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CreditCard className="w-4 h-4 text-terakota-400" aria-hidden="true" />
+                    <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Biaya</p>
+                  </div>
+                  <p className="text-white font-display font-black text-2xl">Rp 0</p>
+                  <p className="text-khatulistiwa-300/50 text-xs mt-1">
+                    {permit.fee_description || "Gratis s/d 2035"}
+                  </p>
+                  <div className="mt-3 flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                    <span className="text-emerald-400 text-xs font-medium">Tanpa biaya tersembunyi</span>
+                  </div>
                 </div>
-                <p className="text-white font-display font-black text-2xl">Rp 0</p>
-                <p className="text-khatulistiwa-300/50 text-xs mt-1">
-                  {permit.fee_description || "Gratis s/d 2035"}
-                </p>
-                <div className="mt-3 flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
-                  <span className="text-emerald-400 text-xs font-medium">Tanpa biaya tersembunyi</span>
-                </div>
+
+                {/* Pengaduan */}
+                {permit.complaint_info && (
+                  <div className="bg-khatulistiwa-900 rounded-2xl p-5 border border-khatulistiwa-700/30">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ShieldCheck className="w-4 h-4 text-terakota-400" aria-hidden="true" />
+                      <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Pengaduan</p>
+                    </div>
+                    <p className="text-khatulistiwa-200/70 text-xs leading-relaxed mb-3">{permit.complaint_info}</p>
+                    <a
+                      href="https://wa.me/6280000000000"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/25 text-emerald-300
+                                 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-emerald-500/25 transition-colors"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                      WhatsApp Satu Nomor IKN
+                    </a>
+                  </div>
+                )}
               </div>
 
-              {/* Dasar Hukum */}
+              {/* Row 2: Dasar Hukum — full width */}
               {permit.legal_basis && permit.legal_basis.length > 0 && (
                 <div className="bg-khatulistiwa-900 rounded-2xl p-5 border border-khatulistiwa-700/30">
                   <div className="flex items-center gap-2 mb-3">
                     <Scale className="w-4 h-4 text-terakota-400" aria-hidden="true" />
                     <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Dasar Hukum</p>
                   </div>
-                  {/* FIX 4 — plain text with § prefix, NOT blue hyperlinks */}
-                  <div className="space-y-2">
+                  <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
                     {permit.legal_basis.map((lb, i) => (
                       <div key={i} className="flex items-start gap-2">
                         <span className="text-terakota-500/60 text-xs mt-0.5 shrink-0">§</span>
@@ -271,27 +293,6 @@ export default function PermitDetailPage() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Pengaduan */}
-              {permit.complaint_info && (
-                <div className="bg-khatulistiwa-900 rounded-2xl p-5 border border-khatulistiwa-700/30">
-                  <div className="flex items-center gap-2 mb-3">
-                    <ShieldCheck className="w-4 h-4 text-terakota-400" aria-hidden="true" />
-                    <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Pengaduan</p>
-                  </div>
-                  <p className="text-khatulistiwa-200/70 text-xs leading-relaxed mb-3">{permit.complaint_info}</p>
-                  <a
-                    href="https://wa.me/6280000000000"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/25 text-emerald-300
-                               px-3 py-2 rounded-xl text-xs font-semibold hover:bg-emerald-500/25 transition-colors"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                    WhatsApp Satu Nomor IKN
-                  </a>
                 </div>
               )}
             </motion.div>
