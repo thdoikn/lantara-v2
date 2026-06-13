@@ -399,7 +399,7 @@ function HowItWorks() {
         style={{ height: "48px", display: "block", marginBottom: "-1px" }}
         aria-hidden="true"
       >
-        <path d="M0,0 L0,48 Q720,0 1440,48 L1440,0 Z" fill="#04182A" />
+        <path d="M0,48 L0,0 Q720,48 1440,0 L1440,48 Z" fill="#04182A" />
       </svg>
     </section>
   );
