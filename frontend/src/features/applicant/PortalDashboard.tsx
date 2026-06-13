@@ -141,7 +141,7 @@ export default function PortalDashboard() {
   const greeting = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 18 ? "Selamat sore" : "Selamat malam";
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* ── Welcome banner ── */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}

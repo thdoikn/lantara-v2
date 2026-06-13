@@ -24,7 +24,7 @@ const STATUS_LABEL: Record<SubmissionStatus, string> = {
 
 const FILTER_TABS: { label: string; statuses: SubmissionStatus[]; accent: string }[] = [
   { label: "Semua Aktif", statuses: ["submitted", "in_review", "revision", "publishing"], accent: "text-khatulistiwa" },
-  { label: "Baru Masuk",  statuses: ["submitted"],  accent: "text-amber-600" },
+  { label: "Baru Masuk",  statuses: ["submitted", "in_review"], accent: "text-amber-600" },
   { label: "Revisi",      statuses: ["revision"],   accent: "text-orange-600" },
   { label: "Selesai",     statuses: ["approved", "collected", "issued", "rejected"], accent: "text-jagawana" },
 ];
@@ -81,7 +81,7 @@ export default function VerifierQueue() {
   const submissions = data?.results ?? [];
 
   return (
-    <div className="max-w-3xl space-y-5">
+    <div className="max-w-3xl mx-auto space-y-5">
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -113,7 +113,7 @@ export default function VerifierQueue() {
                 ? cn("bg-buana-dark text-white shadow-sm", accent)
                 : "text-buana hover:text-foreground hover:bg-muted"
             )}
-            style={i === activeTab ? { backgroundColor: "#0D1F5C" } : undefined}
+            style={i === activeTab ? { backgroundColor: "#1E40AF" } : undefined}
           >
             {label}
           </button>

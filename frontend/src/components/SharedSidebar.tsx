@@ -12,8 +12,29 @@ export interface NavItem {
   badge?: number;
 }
 
+type PortalVariant = "pemohon" | "verifier" | "admin";
+
+const VARIANT_STYLES: Record<PortalVariant, { strip: string; logoRing: string; logoBg: string }> = {
+  pemohon: {
+    strip: "bg-khatulistiwa-500",
+    logoBg: "bg-khatulistiwa-600",
+    logoRing: "ring-khatulistiwa-500/30",
+  },
+  verifier: {
+    strip: "bg-emerald-500",
+    logoBg: "bg-emerald-600",
+    logoRing: "ring-emerald-500/30",
+  },
+  admin: {
+    strip: "bg-amber-500",
+    logoBg: "bg-amber-600",
+    logoRing: "ring-amber-500/30",
+  },
+};
+
 interface SharedSidebarProps {
   portalLabel: string;
+  variant?: PortalVariant;
   roleBadge?: { icon: React.ElementType; label: string };
   nav: NavItem[];
   collapsed: boolean;
@@ -24,6 +45,7 @@ interface SharedSidebarProps {
 
 export default function SharedSidebar({
   portalLabel,
+  variant = "pemohon",
   roleBadge,
   nav,
   collapsed,
@@ -31,6 +53,7 @@ export default function SharedSidebar({
   mobileOpen,
   onMobileClose,
 }: SharedSidebarProps) {
+  const vStyle = VARIANT_STYLES[variant];
   const { user, logout } = useAuthStore();
   const location = useLocation();
 
@@ -60,6 +83,9 @@ export default function SharedSidebar({
         )}
         style={{ background: "linear-gradient(180deg, #04182A 0%, #0A2540 100%)" }}
       >
+        {/* ── Portal accent strip ── */}
+        <div className={cn("h-0.5 w-full shrink-0", vStyle.strip)} aria-hidden="true" />
+
         {/* ── Logo ── */}
         <div
           className={cn(
@@ -68,7 +94,7 @@ export default function SharedSidebar({
           )}
         >
           <Link to="/" className="flex items-center gap-3 min-w-0" aria-label="Lantara beranda">
-            <div className="w-9 h-9 rounded-xl bg-khatulistiwa-600 flex items-center justify-center shrink-0">
+            <div className={cn("w-9 h-9 rounded-xl ring-1 flex items-center justify-center shrink-0", vStyle.logoBg, vStyle.logoRing)}>
               <Building2 className="w-5 h-5 text-white" aria-hidden="true" />
             </div>
             {/* Mobile: always show text. Desktop: hide when collapsed. */}
