@@ -149,7 +149,7 @@ function Hero() {
           </p>
         </div>
 
-        {/* CTA buttons */}
+        {/* CTA buttons — identical layout for both auth states */}
         <div className="flex items-center gap-4 flex-wrap justify-center">
           <button
             onClick={() => navigate(isAuthenticated ? "/portal" : "/auth/register")}
@@ -157,26 +157,15 @@ function Hero() {
                        font-display font-semibold px-8 py-3.5 rounded-xl transition-all
                        shadow-lg shadow-khatulistiwa-600/30"
           >
-            {isAuthenticated ? "Ajukan Izin Sekarang" : "Daftar & Ajukan Izin"}
+            Ajukan Izin Sekarang
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </button>
-          <Link
-            to="/layanan"
+          <button
+            onClick={() => navigate("/layanan")}
             className="inline-flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.15]
                        text-white font-semibold px-8 py-3.5 rounded-xl transition-all"
           >
             Lihat Katalog
-          </Link>
-        </div>
-
-        {/* Compact portal link — quiet, non-competing */}
-        <div className="mt-5 flex items-center justify-center gap-2">
-          <span className="text-white/30 text-sm">Sudah punya akun?</span>
-          <button
-            onClick={() => navigate(isAuthenticated ? "/portal" : "/auth/login")}
-            className="text-terakota-400 hover:text-terakota-300 text-sm font-semibold underline underline-offset-2 transition-colors"
-          >
-            {isAuthenticated ? "Buka Portal Pemohon →" : "Masuk ke Portal →"}
           </button>
         </div>
       </motion.div>
@@ -361,8 +350,8 @@ const STEPS = [
 
 function HowItWorks() {
   return (
-    <section className="bg-pertiwi-warm pt-20 pb-0 overflow-hidden">
-      <div className="max-w-5xl mx-auto px-8 pb-16">
+    <section className="bg-[#F5F0E8] pt-16 pb-0">
+      <div className="max-w-5xl mx-auto px-8">
         <div className="text-center mb-14">
           <p className="text-terakota-600 text-xs font-bold tracking-[0.2em] uppercase mb-3">CARA KERJA</p>
           <h2 className="text-khatulistiwa-900 font-display font-black text-4xl md:text-5xl">Empat Langkah Mudah</h2>
@@ -402,15 +391,15 @@ function HowItWorks() {
           ))}
         </div>
       </div>
-      {/* Single SVG cream→dark transition — no separate wrapper div */}
+      {/* EXIT transition: cream → dark */}
       <svg
-        viewBox="0 0 1440 40"
-        className="w-full block -mb-px"
+        viewBox="0 0 1440 48"
+        className="w-full block mt-12"
         preserveAspectRatio="none"
-        style={{ height: "40px" }}
+        style={{ height: "48px", display: "block" }}
         aria-hidden="true"
       >
-        <path d="M0,0 L0,40 Q720,0 1440,40 L1440,0 Z" fill="#04182A" />
+        <path d="M0,0 L0,48 Q720,0 1440,48 L1440,0 Z" fill="#04182A" />
       </svg>
     </section>
   );
@@ -427,14 +416,14 @@ const FEATURES = [
 
 function Features() {
   return (
-    <section className="py-20 bg-khatulistiwa-950">
+    <section className="bg-[#04182A] pt-12 pb-0">
       <div className="max-w-5xl mx-auto px-8">
         <div className="text-center mb-14">
           <p className="text-terakota-500 text-xs font-bold tracking-[0.2em] uppercase mb-3">Keunggulan</p>
           <h2 className="text-white font-display font-black text-4xl md:text-5xl">Mengapa Lantara?</h2>
         </div>
 
-        {/* CHANGE 4 — horizontal icon+text layout */}
+        {/* Horizontal icon+text layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
           {FEATURES.map(({ Icon, title, desc }, i) => (
             <motion.div
@@ -446,14 +435,11 @@ function Features() {
               className="group flex gap-5 p-7 rounded-2xl bg-khatulistiwa-900/50 border border-khatulistiwa-700/25
                          hover:bg-khatulistiwa-800/60 hover:border-terakota-500/30 transition-all duration-300 cursor-default"
             >
-              {/* Compact icon — left side */}
               <div className="w-12 h-12 rounded-xl bg-terakota-500/10 border border-terakota-500/20
                               flex items-center justify-center flex-shrink-0 mt-0.5
                               group-hover:bg-terakota-500/20 transition-colors">
                 <Icon className="w-5 h-5 text-terakota-400" aria-hidden="true" />
               </div>
-
-              {/* Text — right side */}
               <div>
                 <h3 className="text-white font-display font-bold text-lg mb-2">{title}</h3>
                 <p className="text-khatulistiwa-300/55 text-sm leading-relaxed">{desc}</p>
@@ -462,6 +448,17 @@ function Features() {
           ))}
         </div>
       </div>
+
+      {/* EXIT transition: dark → cream (no second SVG at top — HowItWorks owns the entry) */}
+      <svg
+        viewBox="0 0 1440 48"
+        className="w-full block mt-12"
+        preserveAspectRatio="none"
+        style={{ height: "48px", display: "block" }}
+        aria-hidden="true"
+      >
+        <path d="M0,48 L0,0 Q720,48 1440,0 L1440,48 Z" fill="#F5F0E8" />
+      </svg>
     </section>
   );
 }
@@ -658,8 +655,6 @@ export default function LandingPage() {
         <SektorCards sektors={sektors ?? []} />
         <HowItWorks />
         <Features />
-        {/* dark → cream */}
-        <WaveTransition from="#04182A" to="#F5F0E8" />
         <FAQ />
         {/* cream → brand blue */}
         <WaveTransition from="#F5F0E8" to="#0D3060" />
