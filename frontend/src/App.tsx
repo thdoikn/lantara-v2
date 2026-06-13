@@ -19,6 +19,7 @@ const PortalLayout = lazy(() => import("./features/applicant/PortalLayout"));
 const PortalDashboard = lazy(() => import("./features/applicant/PortalDashboard"));
 const NewSubmissionPage = lazy(() => import("./features/applicant/NewSubmissionPage"));
 const SubmissionDetailPage = lazy(() => import("./features/applicant/SubmissionDetailPage"));
+const NotificationsPage = lazy(() => import("./features/applicant/NotificationsPage"));
 
 // Verifier workspace
 const VerifierLayout = lazy(() => import("./features/verifier/VerifierLayout"));
@@ -51,6 +52,7 @@ export default function App() {
         {/* ── Public ── */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/layanan" element={<ServiceCatalog />} />
+        <Route path="/validate" element={<PermitValidatePage />} />
         <Route path="/validate/:uuid" element={<PermitValidatePage />} />
 
         {/* ── Auth ── */}
@@ -71,6 +73,7 @@ export default function App() {
           <Route index element={<PortalDashboard />} />
           <Route path="new/:permitKey" element={<NewSubmissionPage />} />
           <Route path="submissions/:id" element={<SubmissionDetailPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* ── Verifier workspace ── */}
@@ -102,15 +105,8 @@ export default function App() {
           <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
 
-        {/* ── RDTR (Phase 3) ── */}
-        <Route
-          path="/rdtr"
-          element={
-            <ProtectedRoute>
-              <RDTRPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* ── RDTR (Phase 3) — public map viewer, no auth required ── */}
+        <Route path="/rdtr" element={<RDTRPage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

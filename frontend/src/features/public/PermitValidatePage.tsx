@@ -1,8 +1,9 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { CheckCircle2, XCircle, Shield, Leaf, CalendarDays, User, Building2, FileCheck2 } from "lucide-react";
+import { CheckCircle2, XCircle, Shield, Leaf, CalendarDays, User, Building2, FileCheck2, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "@/lib/api";
 
@@ -37,8 +38,70 @@ const DETAIL_FIELDS: { label: string; key: keyof ValidateResult; icon: React.Ele
   { label: "Diterbitkan Oleh", key: "issued_by", icon: Building2 },
 ];
 
+function ValidateHub() {
+  const navigate = useNavigate();
+  const [input, setInput] = useState("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = input.trim();
+    if (trimmed) navigate(`/validate/${trimmed}`);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="rounded-2xl bg-white/5 ring-1 ring-white/12 p-8 space-y-6"
+    >
+      <div className="text-center space-y-2">
+        <div className="h-14 w-14 rounded-2xl bg-khatulistiwa-600/20 ring-1 ring-khatulistiwa-500/30 flex items-center justify-center mx-auto">
+          <FileCheck2 className="h-7 w-7 text-khatulistiwa-400" aria-hidden="true" />
+        </div>
+        <h1 className="font-display text-xl font-bold text-white">Validasi Dokumen Izin</h1>
+        <p className="text-sm text-white/45">
+          Masukkan nomor izin atau UUID dari QR code untuk memverifikasi keaslian dokumen.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <label htmlFor="uuid-input" className="block text-xs font-medium text-white/55 mb-1.5">
+            Nomor Izin / UUID Dokumen
+          </label>
+          <input
+            id="uuid-input"
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Contoh: 550e8400-e29b-41d4-a716-446655440000"
+            className="w-full rounded-xl bg-white/[0.06] border border-white/15 px-4 py-3 text-sm text-white
+                       placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-khatulistiwa-500/60
+                       focus:border-khatulistiwa-500/40 transition-all"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={!input.trim()}
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500
+                     disabled:opacity-50 px-4 py-3 text-sm font-semibold text-white transition-all"
+        >
+          <Search className="h-4 w-4" aria-hidden="true" />
+          Validasi Dokumen
+        </button>
+      </form>
+
+      <div className="flex items-center gap-2 text-xs text-white/30 pt-1">
+        <Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span>Validasi dilakukan secara real-time terhadap database Otorita IKN</span>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function PermitValidatePage() {
-  const { uuid } = useParams<{ uuid: string }>();
+  const { uuid } = useParams<{ uuid?: string }>();
 
   const { data, isLoading, isError } = useQuery<ValidateResult>({
     queryKey: ["validate", uuid],
@@ -65,6 +128,11 @@ export default function PermitValidatePage() {
 
       <main className="flex-1 flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-md">
+          {/* No UUID — show input hub */}
+          {!uuid && <ValidateHub />}
+
+          {/* UUID present — show validation result */}
+          {uuid && <>
           {/* Loading */}
           {isLoading && (
             <div className="rounded-2xl bg-white/6 ring-1 ring-white/10 p-12 text-center space-y-4">
@@ -156,6 +224,7 @@ export default function PermitValidatePage() {
               </div>
             </motion.div>
           )}
+          </>}
         </div>
       </main>
     </div>

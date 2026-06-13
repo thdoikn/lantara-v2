@@ -337,16 +337,22 @@ export default function RDTRPage() {
   });
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* Phase 3 header bar */}
+      <div className="shrink-0 flex items-center justify-between px-4 h-12 border-b border-border bg-white/90 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-khatulistiwa" aria-hidden="true" />
+          <span className="font-display font-semibold text-sm">Peta RDTR IKN</span>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-full bg-terakota/10 border border-terakota/30 px-3 py-1 text-xs text-terakota font-medium">
+          <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+          Fase 3 — Data mock, bukan OneMap resmi
+        </div>
+      </div>
+      <div className="flex flex-1 overflow-hidden">
       {/* Map (fills remaining space) */}
       <div className="relative flex-1">
         <RDTRMap geojson={geojson} onZoneClick={setSelectedZone} />
-
-        {/* Mock data disclaimer */}
-        <div className="absolute bottom-3 left-3 rounded-lg bg-terakota/10 border border-terakota/30 px-3 py-1.5 text-xs text-terakota font-medium flex items-center gap-1.5 pointer-events-none">
-          <AlertTriangle className="h-3.5 w-3.5" />
-          Data spasial mock — bukan OneMap resmi
-        </div>
 
         {/* Legend */}
         <div className="absolute top-3 left-3">
@@ -450,6 +456,7 @@ export default function RDTRPage() {
             <KBLIChecker zones={zones} />
           )}
         </div>
+      </div>
       </div>
     </div>
   );
