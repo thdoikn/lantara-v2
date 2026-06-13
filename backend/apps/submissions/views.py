@@ -26,7 +26,7 @@ from .sla import compute_submission_sla
 
 class SubmissionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    filterset_fields = ["status", "permit_type__sektor__key", "permit_type__key"]
+    filterset_fields = ["permit_type__sektor__key", "permit_type__key"]
     search_fields = ["reference_number", "applicant__full_name", "applicant__email"]
     ordering_fields = ["created_at", "submitted_at", "sla_due_at", "status"]
 
@@ -39,6 +39,14 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         # Applicants see only their own submissions
         if not user.is_staff and not user.is_sektor_admin and not user.has_any_role("superadmin"):
             qs = qs.filter(applicant=user)
+
+        # Support comma-separated status filter: ?status=in_review,submitted
+        status_param = self.request.query_params.get("status", "")
+        if status_param:
+            statuses = [s.strip() for s in status_param.split(",") if s.strip()]
+            if statuses:
+                qs = qs.filter(status__in=statuses)
+
         return qs.order_by("-created_at")
 
     def get_serializer_class(self):
@@ -68,8 +76,12 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             stage_entered_at=timezone.now(),
         )
 
-        # Move to first stage
-        first_stage = pt.stages.order_by("order").first()
+        # Move to first verifier stage (skip applicant-role stages)
+        stages = list(pt.stages.order_by("order"))
+        first_stage = next(
+            (s for s in stages if s.actor_role != "applicant"),
+            stages[0] if stages else None,
+        )
         if first_stage:
             sub.current_stage_key = first_stage.key
             sub.current_stage_order = first_stage.order
@@ -111,16 +123,43 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
         if act == "approve":
             self._do_approve(sub, request.user, notes)
-        elif act == "revise":
+        elif act in ("revise", "request_revision"):
             self._do_revise(sub, request.user, notes, data.get("revision_fields", []))
         elif act == "reject":
             self._do_reject(sub, request.user, notes, data.get("rejection_reason", ""))
+        elif act == "schedule_site_visit":
+            AuditEntry.objects.create(
+                submission=sub,
+                action=AuditEntry.ActionType.VISIT_SCHEDULED,
+                actor=request.user,
+                notes=notes,
+                from_stage_key=sub.current_stage_key,
+                to_stage_key=sub.current_stage_key,
+                from_status=sub.status,
+                to_status=sub.status,
+            )
 
         sub.last_actor = request.user
         sub.last_acted_at = timezone.now()
         sub.save()
         _upsert_index(sub)
         return Response(SubmissionDetailSerializer(sub).data)
+
+    # Maps stage_type → the Submission.Status that applies while IN that stage
+    _STAGE_TYPE_STATUS = {
+        WorkflowStage.StageType.VERIFICATION: Submission.Status.IN_REVIEW,
+        WorkflowStage.StageType.PAYMENT: Submission.Status.IN_REVIEW,
+        WorkflowStage.StageType.EXTERNAL: Submission.Status.IN_REVIEW,
+        WorkflowStage.StageType.PUBLISH: Submission.Status.PUBLISHING,
+        WorkflowStage.StageType.COLLECTION: Submission.Status.COLLECTION,
+    }
+
+    # Maps stage_type → the final Submission.Status when approved past that stage
+    _STAGE_COMPLETION_STATUS = {
+        WorkflowStage.StageType.COLLECTION: Submission.Status.COLLECTED,
+        WorkflowStage.StageType.PUBLISH: Submission.Status.APPROVED,
+        WorkflowStage.StageType.VERIFICATION: Submission.Status.APPROVED,
+    }
 
     def _do_approve(self, sub, actor, notes):
         from_stage = sub.current_stage_key
@@ -130,18 +169,27 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         current_idx = next(
             (i for i, s in enumerate(stages) if s.key == sub.current_stage_key), -1
         )
-        if current_idx < len(stages) - 1:
-            next_stage = stages[current_idx + 1]
+        current_stage = stages[current_idx] if current_idx >= 0 else None
+
+        # Skip any following applicant-role stages automatically
+        next_idx = current_idx + 1
+        while next_idx < len(stages) and stages[next_idx].actor_role == "applicant":
+            next_idx += 1
+
+        if next_idx < len(stages):
+            next_stage = stages[next_idx]
             sub.current_stage_key = next_stage.key
             sub.current_stage_order = next_stage.order
             sub.stage_entered_at = timezone.now()
-            sub.status = (
-                Submission.Status.PUBLISHING
-                if next_stage.stage_type == WorkflowStage.StageType.PUBLISH
-                else Submission.Status.IN_REVIEW
+            sub.status = self._STAGE_TYPE_STATUS.get(
+                next_stage.stage_type, Submission.Status.IN_REVIEW
             )
         else:
-            sub.status = Submission.Status.APPROVED
+            # No more stages — terminal status depends on the stage we just completed
+            sub.status = self._STAGE_COMPLETION_STATUS.get(
+                current_stage.stage_type if current_stage else None,
+                Submission.Status.APPROVED,
+            )
 
         compute_submission_sla(sub)
         AuditEntry.objects.create(

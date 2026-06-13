@@ -23,7 +23,25 @@ interface ActionConfig {
   requiresNote?: boolean;
 }
 
-const ACTIONS: ActionConfig[] = [
+// Label for the "approve" button varies by stage type
+const APPROVE_LABEL: Record<string, string> = {
+  verification: "Setujui & Lanjutkan",
+  publish: "Terbitkan Izin",
+  collection: "Konfirmasi Penyerahan",
+  payment: "Konfirmasi Pembayaran",
+  external: "Konfirmasi Proses",
+};
+
+// Actions available per stage type — collection/publish don't need site-visit or revision
+const ACTIONS_FOR_STAGE: Record<string, ActionType[]> = {
+  verification: ["approve", "request_revision", "schedule_site_visit", "reject"],
+  publish: ["approve", "reject"],
+  collection: ["approve"],
+  payment: ["approve", "reject"],
+  external: ["approve", "reject"],
+};
+
+const ALL_ACTIONS: ActionConfig[] = [
   {
     type: "approve",
     label: "Setujui",
@@ -57,19 +75,43 @@ const ACTIONS: ActionConfig[] = [
   },
 ];
 
+const ACTION_LABEL: Record<string, string> = {
+  submit: "Permohonan Diajukan",
+  approve: "Disetujui / Lanjut Tahap",
+  revise: "Revisi Diminta",
+  request_revision: "Revisi Diminta",
+  reject: "Ditolak",
+  resubmit: "Revisi Dikirim Pemohon",
+  visit_scheduled: "Kunjungan Lapangan Dijadwalkan",
+  generate: "Draf Izin Diterbitkan",
+  sign: "Izin Ditandatangani",
+  publish: "Izin Diterbitkan",
+  collect: "Izin Diambil Pemohon",
+};
+
 function ActionPanel({
   submission,
+  stageType,
   onAction,
   isPending,
 }: {
   submission: Submission;
+  stageType: string;
   onAction: (type: ActionType, note: string) => void;
   isPending: boolean;
 }) {
   const [active, setActive] = useState<ActionType | null>(null);
   const [note, setNote] = useState("");
 
-  const isTerminal = submission.status === "issued" || submission.status === "rejected";
+  const allowedTypes = ACTIONS_FOR_STAGE[stageType] ?? ACTIONS_FOR_STAGE.verification;
+  const actions = ALL_ACTIONS.filter((a) => allowedTypes.includes(a.type)).map((a) =>
+    a.type === "approve" ? { ...a, label: APPROVE_LABEL[stageType] ?? a.label } : a
+  );
+
+  const isTerminal =
+    submission.status === "approved" ||
+    submission.status === "collected" ||
+    submission.status === "rejected";
 
   function handleConfirm() {
     if (!active) return;
@@ -96,10 +138,10 @@ function ActionPanel({
       {active ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            {ACTIONS.find((a) => a.type === active)?.icon}
-            {ACTIONS.find((a) => a.type === active)?.label}
+            {actions.find((a) => a.type === active)?.icon}
+            {actions.find((a) => a.type === active)?.label}
           </div>
-          {ACTIONS.find((a) => a.type === active)?.requiresNote && (
+          {actions.find((a) => a.type === active)?.requiresNote && (
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -120,11 +162,11 @@ function ActionPanel({
               onClick={handleConfirm}
               disabled={
                 isPending ||
-                Boolean(ACTIONS.find((a) => a.type === active)?.requiresNote && !note.trim())
+                Boolean(actions.find((a) => a.type === active)?.requiresNote && !note.trim())
               }
               className={cn(
                 "flex-1 rounded-xl py-2 text-sm font-semibold transition-all duration-150 disabled:opacity-60",
-                ACTIONS.find((a) => a.type === active)?.confirmVariant
+                actions.find((a) => a.type === active)?.confirmVariant
               )}
             >
               {isPending ? "Menyimpan…" : "Konfirmasi"}
@@ -133,7 +175,7 @@ function ActionPanel({
         </div>
       ) : (
         <div className="space-y-2">
-          {ACTIONS.map((action) => (
+          {actions.map((action) => (
             <button
               key={action.type}
               onClick={() => setActive(action.type)}
@@ -298,34 +340,53 @@ export default function VerifierSubmissionPage() {
           )}
 
           {/* Audit log */}
-          {auditEntries.length > 0 && (
-            <div className="card p-5">
-              <h2 className="font-semibold text-sm mb-4">Riwayat Aktivitas</h2>
-              <div className="space-y-4">
+          <div className="card p-5">
+            <h2 className="font-semibold text-sm mb-4">Riwayat Aktivitas</h2>
+            {auditEntries.length === 0 ? (
+              <p className="text-xs text-buana">Belum ada aktivitas tercatat.</p>
+            ) : (
+              <ol className="relative border-l border-border ml-2 space-y-5">
                 {auditEntries.map((entry) => (
-                  <div key={entry.id} className="flex gap-3 text-sm">
-                    <div className="w-2 h-2 rounded-full bg-khatulistiwa mt-1.5 shrink-0" />
-                    <div>
-                      <p className="font-semibold">{entry.action}</p>
-                      {entry.notes && <p className="text-buana text-xs mt-0.5">{entry.notes}</p>}
-                      <p className="text-xs text-buana mt-0.5">
-                        {format(parseISO(entry.created_at), "d MMM yyyy, HH:mm", {
-                          locale: localeId,
-                        })}
-                        {entry.actor_name && ` · ${entry.actor_name}`}
-                      </p>
-                    </div>
-                  </div>
+                  <li key={entry.id} className="ml-4 text-sm">
+                    <span className={cn(
+                      "absolute -left-[7px] w-3.5 h-3.5 rounded-full border-2 border-white",
+                      entry.action === "approve" ? "bg-jagawana" :
+                      entry.action === "reject" ? "bg-saka" :
+                      entry.action === "revise" || entry.action === "request_revision" ? "bg-amber-500" :
+                      entry.action === "visit_scheduled" ? "bg-khatulistiwa" :
+                      "bg-buana"
+                    )} />
+                    <p className="font-semibold leading-tight">
+                      {ACTION_LABEL[entry.action] ?? entry.action}
+                    </p>
+                    {entry.actor_name && (
+                      <p className="text-xs text-ink mt-0.5">oleh <span className="font-medium">{entry.actor_name}</span></p>
+                    )}
+                    {entry.notes && (
+                      <p className="text-xs text-buana mt-0.5 italic">"{entry.notes}"</p>
+                    )}
+                    <p className="text-xs text-buana mt-0.5">
+                      {format(parseISO(entry.created_at), "d MMM yyyy, HH:mm", { locale: localeId })}
+                      {entry.to_stage_key && entry.from_stage_key !== entry.to_stage_key && (
+                        <span className="ml-1">· → {entry.to_stage_key.replace(/-/g, " ")}</span>
+                      )}
+                    </p>
+                  </li>
                 ))}
-              </div>
-            </div>
-          )}
+              </ol>
+            )}
+          </div>
         </div>
 
         {/* Right: actions + SLA */}
         <div className="space-y-4">
           <ActionPanel
             submission={submission}
+            stageType={
+              submission.schema_snapshot?.stages?.find(
+                (s) => s.key === submission.current_stage_key
+              )?.stage_type ?? "verification"
+            }
             onAction={handleAction}
             isPending={actMutation.isPending}
           />

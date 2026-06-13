@@ -167,7 +167,7 @@ export interface Submission {
   form_data: Record<string, unknown>;
   schema_version_snapshot: number;
   schema_snapshot: {
-    stages: Array<{ key: string; name: string; order: number }>;
+    stages: Array<{ key: string; name: string; order: number; stage_type: string; actor_role: string }>;
     form_fields: Array<{ key: string; label: string }>;
     doc_requirements: DocumentRequirement[];
   };

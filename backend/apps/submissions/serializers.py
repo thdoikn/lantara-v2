@@ -107,9 +107,10 @@ class SubmissionCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError({"permit_type_key": "Izin tidak ditemukan atau belum diterbitkan."})
 
         # Validate required form fields
+        form_data = data["form_data"]
         errors = {}
         for field in pt.form_fields.filter(required=True):
-            val = data["form_data"].get(field.key)
+            val = form_data.get(field.key)
             if val is None or val == "":
                 errors[field.key] = f"{field.label} wajib diisi."
         if errors:
@@ -126,7 +127,7 @@ class SubmissionActionSerializer(serializers.Serializer):
         pass
 
     action = serializers.ChoiceField(
-        choices=["approve", "revise", "reject", "advance"]
+        choices=["approve", "revise", "request_revision", "reject", "advance", "schedule_site_visit"]
     )
     notes = serializers.CharField(required=False, allow_blank=True)
     revision_fields = serializers.ListField(

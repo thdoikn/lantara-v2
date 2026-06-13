@@ -255,7 +255,7 @@ function TTEStatusBadge({ permitId }: { permitId: string }) {
     queryKey: ["tte-status", permitId],
     queryFn: () =>
       import("@/lib/api").then((m) =>
-        m.default.get(`/tte/${permitId}/status/`).then((r) => r.data)
+        m.default.get(`/tte/${permitId}/status/`).then((r) => r.data).catch(() => null)
       ),
     staleTime: 30_000,
     retry: false,
@@ -326,6 +326,7 @@ export default function SubmissionDetailPage() {
 
   const stages: StageRow[] = submission.schema_snapshot?.stages ?? [];
   const needsRevision = submission.status === "revision";
+  const canUploadDocs = submission.status === "revision" || submission.status === "in_review";
   const isIssued = ["issued", "collected", "approved"].includes(submission.status);
 
   return (
@@ -433,7 +434,7 @@ export default function SubmissionDetailPage() {
               <DocumentUploadSection
                 submissionId={submission.id}
                 requirements={submission.schema_snapshot.doc_requirements}
-                readOnly={!needsRevision}
+                readOnly={!canUploadDocs}
               />
             </div>
           )}

@@ -36,10 +36,9 @@ export default function DocumentUploadSection({ submissionId, requirements, read
     setUploading((p) => ({ ...p, [requirementKey]: true }));
     try {
       const fd = new FormData();
-      fd.append("submission", submissionId);
       fd.append("requirement_key", requirementKey);
       fd.append("file", file);
-      await api.post("/documents/", fd, {
+      await api.post(`/submissions/${submissionId}/documents/`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       qc.invalidateQueries({ queryKey: ["submissions", submissionId, "documents"] });

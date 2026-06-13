@@ -63,7 +63,7 @@ function buildZodSchema(fields: FormField[]): z.ZodObject<z.ZodRawShape> {
     }
 
     const isRequired =
-      f.validation_json?.required !== false &&
+      f.required !== false &&
       f.field_type !== "boolean" &&
       f.field_type !== "file";
 
@@ -176,8 +176,8 @@ export default function DynamicForm({
 
         return (
           <div key={f.key}>
-            {/* Text / email / number / currency / tel */}
-            {["text", "email", "number", "currency", "tel"].includes(f.field_type) && (
+            {/* Text / email / number / currency / tel / nik / npwp / phone */}
+            {["text", "email", "number", "currency", "tel", "nik", "npwp", "phone"].includes(f.field_type) && (
               <div>
                 <FieldLabel field={f} error={errMsg} />
                 <input
@@ -187,13 +187,21 @@ export default function DynamicForm({
                       ? "email"
                       : f.field_type === "number" || f.field_type === "currency"
                       ? "number"
-                      : f.field_type === "tel"
+                      : f.field_type === "tel" || f.field_type === "phone"
                       ? "tel"
                       : "text"
                   }
+                  inputMode={
+                    f.field_type === "nik" || f.field_type === "npwp" ? "numeric" : undefined
+                  }
                   {...register(f.key)}
                   className={cn(inputBase, errMsg && "border-saka focus:ring-saka")}
-                  placeholder={f.validation_json?.placeholder ?? ""}
+                  placeholder={
+                    f.validation_json?.placeholder ??
+                    (f.field_type === "nik" ? "Masukkan 16 digit NIK" :
+                     f.field_type === "npwp" ? "Masukkan nomor NPWP" :
+                     f.field_type === "phone" ? "Contoh: 08123456789" : "")
+                  }
                 />
               </div>
             )}

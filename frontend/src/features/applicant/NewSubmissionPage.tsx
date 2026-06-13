@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import api from "@/lib/api";
-import type { PermitType } from "@/types";
+import type { PermitType, UploadedDocument } from "@/types";
 import DynamicForm from "./DynamicForm";
 import DocumentUploadSection from "./DocumentUploadSection";
 
@@ -22,19 +22,26 @@ export default function NewSubmissionPage() {
     enabled: !!permitKey,
   });
 
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const createMutation = useMutation({
     mutationFn: (data: { permit_type_key: string; form_data: Record<string, unknown> }) =>
       api.post("/submissions/", data),
     onSuccess: (res) => {
+      setApiError(null);
       setSubmissionId(res.data.id);
       setStep("documents");
     },
+    onError: (err: unknown) => {
+      const axiosErr = err as { response?: { data?: { detail?: string; permit_type_key?: string; form_data?: Record<string, string[]> } } };
+      const detail = axiosErr.response?.data?.detail
+        ?? axiosErr.response?.data?.permit_type_key
+        ?? JSON.stringify(axiosErr.response?.data?.form_data ?? "")
+        ?? "Terjadi kesalahan. Silakan coba lagi.";
+      setApiError(detail || "Terjadi kesalahan. Silakan coba lagi.");
+    },
   });
 
-  const submitMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/submissions/${id}/act/`, { action: "submit" }),
-    onSuccess: (_, id) => navigate(`/portal/submissions/${id}`),
-  });
 
   function handleFormSubmit(data: Record<string, unknown>) {
     setFormData(data);
@@ -123,36 +130,22 @@ export default function NewSubmissionPage() {
             onSubmit={handleFormSubmit}
             isSubmitting={createMutation.isPending}
           />
-          {createMutation.isError && (
-            <p className="mt-4 text-sm text-saka">
-              Terjadi kesalahan. Silakan coba lagi.
-            </p>
+          {apiError && (
+            <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {apiError}
+            </div>
           )}
         </div>
       )}
 
       {/* Step: Documents */}
       {step === "documents" && submissionId && (
-        <div className="rounded-2xl border border-border bg-white p-6 space-y-6">
-          <DocumentUploadSection
-            submissionId={submissionId}
-            requirements={permitType.doc_requirements ?? []}
-          />
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={() => setStep("form")}
-              className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-muted transition-colors"
-            >
-              Kembali
-            </button>
-            <button
-              onClick={() => setStep("review")}
-              className="flex-1 rounded-lg bg-jagawana py-2.5 text-sm font-semibold text-white hover:bg-jagawana-deep transition-colors"
-            >
-              Lanjut ke Konfirmasi
-            </button>
-          </div>
-        </div>
+        <DocumentStepSection
+          submissionId={submissionId}
+          requirements={permitType.doc_requirements ?? []}
+          onBack={() => setStep("form")}
+          onNext={() => setStep("review")}
+        />
       )}
 
       {/* Step: Review */}
@@ -189,15 +182,69 @@ export default function NewSubmissionPage() {
               Kembali
             </button>
             <button
-              onClick={() => submitMutation.mutate(submissionId)}
-              disabled={submitMutation.isPending}
-              className="flex-1 rounded-lg bg-jagawana py-2.5 text-sm font-semibold text-white hover:bg-jagawana-deep transition-colors disabled:opacity-60"
+              onClick={() => navigate(`/portal/submissions/${submissionId}`)}
+              className="flex-1 rounded-lg bg-jagawana py-2.5 text-sm font-semibold text-white hover:bg-jagawana-deep transition-colors"
             >
-              {submitMutation.isPending ? "Mengirim…" : "Kirim Permohonan"}
+              Kirim Permohonan
             </button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Document step with required-doc gate ──────────────────────────────────────
+
+function DocumentStepSection({
+  submissionId,
+  requirements,
+  onBack,
+  onNext,
+}: {
+  submissionId: string;
+  requirements: import("@/types").DocumentRequirement[];
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  const { data: docs = [] } = useQuery<UploadedDocument[]>({
+    queryKey: ["submissions", submissionId, "documents"],
+    queryFn: () =>
+      api.get(`/submissions/${submissionId}/documents/`).then((r) => r.data.results ?? r.data),
+    refetchInterval: 3000,
+  });
+
+  const requiredKeys = requirements.filter((r) => r.required).map((r) => r.key);
+  const uploadedKeys = new Set(docs.filter((d) => d.is_active).map((d) => d.requirement_key));
+  const missingRequired = requiredKeys.filter((k) => !uploadedKeys.has(k));
+  const canProceed = missingRequired.length === 0;
+
+  return (
+    <div className="rounded-2xl border border-border bg-white p-6 space-y-6">
+      <DocumentUploadSection
+        submissionId={submissionId}
+        requirements={requirements}
+      />
+      {!canProceed && (
+        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Unggah semua dokumen wajib (bertanda *) sebelum melanjutkan.
+        </p>
+      )}
+      <div className="flex gap-3 pt-2">
+        <button
+          onClick={onBack}
+          className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          Kembali
+        </button>
+        <button
+          onClick={onNext}
+          disabled={!canProceed}
+          className="flex-1 rounded-lg bg-jagawana py-2.5 text-sm font-semibold text-white hover:bg-jagawana-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Lanjut ke Konfirmasi
+        </button>
+      </div>
     </div>
   );
 }
