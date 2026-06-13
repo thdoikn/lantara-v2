@@ -7,6 +7,7 @@ import {
   ChevronDown, Search, MessageCircle, Building2,
 } from "lucide-react";
 import api from "@/lib/api";
+import { useAuthStore } from "@/lib/auth";
 import { getSektorVisual } from "@/lib/sektorVisuals";
 import PublicNav from "@/components/PublicNav";
 import type { Sektor } from "@/types";
@@ -66,6 +67,7 @@ const HERO_BG = `
 function Hero() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Global '/' shortcut focuses the search bar
@@ -99,14 +101,6 @@ function Hero() {
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 pt-24 pb-4 flex flex-col items-center w-full max-w-4xl mx-auto"
       >
-        {/* Official badge */}
-        <div className="inline-flex items-center gap-2 bg-white/[0.07] border border-white/[0.12] rounded-full px-5 py-2 mb-8">
-          <span className="w-2 h-2 rounded-full bg-terakota-400 flex-shrink-0" aria-hidden="true" />
-          <span className="text-white/60 text-xs font-semibold tracking-wide">
-            Portal Resmi Otorita Ibu Kota Nusantara
-          </span>
-        </div>
-
         {/* Main heading */}
         <h1
           className="font-display font-black text-white leading-none mb-6"
@@ -157,15 +151,15 @@ function Hero() {
 
         {/* CTA buttons */}
         <div className="flex items-center gap-4 flex-wrap justify-center">
-          <Link
-            to="/auth/register"
+          <button
+            onClick={() => navigate(isAuthenticated ? "/portal" : "/auth/register")}
             className="inline-flex items-center gap-2 bg-khatulistiwa-600 hover:bg-khatulistiwa-500 text-white
                        font-display font-semibold px-8 py-3.5 rounded-xl transition-all
                        shadow-lg shadow-khatulistiwa-600/30"
           >
-            Ajukan Izin Sekarang
+            {isAuthenticated ? "Ajukan Izin Sekarang" : "Daftar & Ajukan Izin"}
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
-          </Link>
+          </button>
           <Link
             to="/layanan"
             className="inline-flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.15]
@@ -173,6 +167,17 @@ function Hero() {
           >
             Lihat Katalog
           </Link>
+        </div>
+
+        {/* Compact portal link — quiet, non-competing */}
+        <div className="mt-5 flex items-center justify-center gap-2">
+          <span className="text-white/30 text-sm">Sudah punya akun?</span>
+          <button
+            onClick={() => navigate(isAuthenticated ? "/portal" : "/auth/login")}
+            className="text-terakota-400 hover:text-terakota-300 text-sm font-semibold underline underline-offset-2 transition-colors"
+          >
+            {isAuthenticated ? "Buka Portal Pemohon →" : "Masuk ke Portal →"}
+          </button>
         </div>
       </motion.div>
 
@@ -356,8 +361,8 @@ const STEPS = [
 
 function HowItWorks() {
   return (
-    <section className="bg-pertiwi-warm py-20 px-8">
-      <div className="max-w-5xl mx-auto">
+    <section className="bg-pertiwi-warm pt-20 pb-0 overflow-hidden">
+      <div className="max-w-5xl mx-auto px-8 pb-16">
         <div className="text-center mb-14">
           <p className="text-terakota-600 text-xs font-bold tracking-[0.2em] uppercase mb-3">CARA KERJA</p>
           <h2 className="text-khatulistiwa-900 font-display font-black text-4xl md:text-5xl">Empat Langkah Mudah</h2>
@@ -397,6 +402,16 @@ function HowItWorks() {
           ))}
         </div>
       </div>
+      {/* Single SVG cream→dark transition — no separate wrapper div */}
+      <svg
+        viewBox="0 0 1440 40"
+        className="w-full block -mb-px"
+        preserveAspectRatio="none"
+        style={{ height: "40px" }}
+        aria-hidden="true"
+      >
+        <path d="M0,0 L0,40 Q720,0 1440,40 L1440,0 Z" fill="#04182A" />
+      </svg>
     </section>
   );
 }
@@ -642,8 +657,6 @@ export default function LandingPage() {
         {/* Sektor cards + Cara Kerja — both cream, no transition needed */}
         <SektorCards sektors={sektors ?? []} />
         <HowItWorks />
-        {/* cream → dark (inverse arch) */}
-        <WaveTransition from="#F5F0E8" to="#04182A" inverse />
         <Features />
         {/* dark → cream */}
         <WaveTransition from="#04182A" to="#F5F0E8" />
