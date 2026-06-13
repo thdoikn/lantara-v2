@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import {
-  ArrowLeft, Clock, FileText, CheckCircle2, ChevronRight,
-  ShieldCheck, Banknote, Scale, AlertCircle, Loader2, Users,
+  Clock, FileText, CheckCircle2, ChevronRight,
+  ShieldCheck, Banknote, Scale, AlertCircle, Loader2, Users, Plus,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import PublicNav from "@/components/PublicNav";
@@ -20,9 +20,7 @@ export default function PermitDetailPage() {
     enabled: !!permitKey,
   });
 
-  const applyHref = isAuthenticated
-    ? `/portal/new/${permitKey}`
-    : `/auth/register`;
+  const applyHref = isAuthenticated ? `/portal/new/${permitKey}` : `/auth/register`;
 
   if (isLoading) {
     return (
@@ -42,7 +40,7 @@ export default function PermitDetailPage() {
           <h1 className="text-white font-display font-bold text-2xl mb-2">Izin tidak ditemukan</h1>
           <p className="text-khatulistiwa-300/60 mb-6">Layanan yang Anda cari tidak tersedia atau telah dihapus.</p>
           <Link to="/layanan" className="inline-flex items-center gap-2 text-sm text-khatulistiwa-300 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Kembali ke Katalog
+            ← Kembali ke Katalog
           </Link>
         </div>
       </main>
@@ -55,116 +53,136 @@ export default function PermitDetailPage() {
   const optionalDocs = sortedDocs.filter((d) => !d.required);
 
   return (
-    <main id="main-content" className="min-h-screen bg-khatulistiwa-950">
+    <main id="main-content" className="min-h-screen bg-pertiwi-warm">
       <PublicNav />
 
-      {/* Hero */}
-      <div className="relative overflow-hidden">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(24,80,136,0.35) 0%, transparent 65%)" }}
-          aria-hidden="true"
-        />
-        <div className="relative z-10 max-w-4xl mx-auto px-4 pt-24 pb-10">
-          <Link
-            to="/layanan"
-            className="inline-flex items-center gap-1.5 text-sm text-khatulistiwa-300/50 hover:text-white mb-7 transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="font-bold text-terakota-400/90">Lantara</span>
-            <span className="text-white/25 mx-0.5">/</span>
-            Katalog Layanan
-          </Link>
+      {/* ── Dark hero header ── */}
+      <div
+        className="relative"
+        style={{ background: "linear-gradient(160deg, #04182A 0%, #0A2540 70%)" }}
+      >
+        <div className="max-w-5xl mx-auto px-8 pt-28 pb-14">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-2 text-xs text-khatulistiwa-300/40 mb-6 flex-wrap" aria-label="Breadcrumb">
+            <Link to="/" className="hover:text-terakota-400 transition-colors">Lantara</Link>
+            <span aria-hidden="true">/</span>
+            <Link to="/layanan" className="hover:text-terakota-400 transition-colors">Katalog Layanan</Link>
+            <span aria-hidden="true">/</span>
+            <span className="text-white/50 truncate max-w-xs">{permit.name}</span>
+          </nav>
 
-          <div className="flex items-start justify-between gap-6 flex-wrap">
+          <div className="flex items-start justify-between gap-8 flex-wrap">
+            {/* Left: permit title + meta */}
             <div className="flex-1 min-w-0">
-              <p className="text-terakota-500 text-xs font-bold tracking-[0.18em] uppercase mb-2">
+              <p className="text-terakota-400 text-xs font-bold tracking-[0.2em] uppercase mb-3">
                 {permit.sektor_name}
               </p>
-              <h1 className="font-display font-black text-white text-3xl md:text-4xl leading-tight mb-4">
+              <h1 className="text-white font-display font-black text-4xl md:text-5xl leading-tight max-w-2xl">
                 {permit.name}
               </h1>
-              {permit.product_name && permit.product_name !== permit.name && (
-                <p className="text-khatulistiwa-300/60 text-base">
-                  Produk: <span className="text-khatulistiwa-200">{permit.product_name}</span>
-                </p>
-              )}
+
+              <div className="flex items-center gap-3 mt-5 flex-wrap">
+                <div className="flex items-center gap-2 bg-white/[0.08] border border-white/[0.12] rounded-full px-4 py-2">
+                  <Clock className="w-4 h-4 text-terakota-400" aria-hidden="true" />
+                  <span className="text-white text-sm font-semibold">{permit.sla_days} hari kerja</span>
+                </div>
+                {permit.fee_description && (
+                  <div className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/25 rounded-full px-4 py-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+                    <span className="text-emerald-300 text-sm font-semibold">{permit.fee_description}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-col items-end gap-3 shrink-0">
-              <div className="flex items-center gap-2 bg-khatulistiwa-800/60 border border-khatulistiwa-600/30 rounded-xl px-4 py-2.5">
-                <Clock className="h-4 w-4 text-khatulistiwa-300" aria-hidden="true" />
-                <span className="text-white font-semibold text-sm">{permit.sla_days} hari kerja</span>
-              </div>
+            {/* Right: CTA button */}
+            <div className="shrink-0 mt-2">
+              <Link
+                to={applyHref}
+                className="flex items-center gap-3 bg-terakota-500 hover:bg-terakota-400 text-khatulistiwa-900
+                           font-display font-bold px-8 py-4 rounded-2xl transition-all
+                           shadow-xl shadow-terakota-500/30 hover:shadow-terakota-400/40 hover:-translate-y-0.5"
+              >
+                <Plus className="w-5 h-5" aria-hidden="true" />
+                {isAuthenticated ? "Ajukan Izin Ini" : "Daftar & Ajukan"}
+              </Link>
+              <p className="text-khatulistiwa-300/40 text-xs text-center mt-2">
+                {isAuthenticated ? "Proses sepenuhnya digital" : "Daftar gratis, proses digital"}
+              </p>
             </div>
           </div>
         </div>
+
+        {/* Curved wave transition to cream */}
+        <svg
+          viewBox="0 0 1440 32"
+          className="w-full block"
+          preserveAspectRatio="none"
+          style={{ height: "32px" }}
+          aria-hidden="true"
+        >
+          <path d="M0,32 L0,0 Q720,32 1440,0 L1440,32 Z" fill="#F5F0E8" />
+        </svg>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 pb-20 space-y-8">
+      {/* ── Two-column content — cream bg ── */}
+      <div className="max-w-5xl mx-auto px-8 py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-7">
 
-        {/* CTA card */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl bg-gradient-to-br from-khatulistiwa-800/70 to-khatulistiwa-900/80
-                     border border-khatulistiwa-600/30 p-6 flex items-center justify-between gap-4 flex-wrap"
-        >
-          <div>
-            <p className="text-white font-display font-bold text-lg">Siap mengajukan?</p>
-            <p className="text-khatulistiwa-300/60 text-sm mt-0.5">
-              {isAuthenticated
-                ? "Mulai permohonan Anda sekarang — proses sepenuhnya digital."
-                : "Daftar gratis untuk memulai permohonan secara digital."}
-            </p>
-          </div>
-          <Link
-            to={applyHref}
-            className="inline-flex items-center gap-2 rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500
-                       text-white px-6 py-3 text-sm font-semibold transition-colors shrink-0"
-          >
-            {isAuthenticated ? "Ajukan Permohonan" : "Daftar & Ajukan"}
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </motion.div>
+          {/* ── LEFT COL (3/5): Documents + Info strip ── */}
+          <div className="lg:col-span-3 space-y-5">
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Persyaratan Dokumen */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            aria-labelledby="docs-heading"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-khatulistiwa-600/20 border border-khatulistiwa-500/20 flex items-center justify-center">
-                <FileText className="h-4 w-4 text-khatulistiwa-300" aria-hidden="true" />
+            {/* Section heading */}
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-khatulistiwa-800 flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 text-terakota-400" aria-hidden="true" />
               </div>
-              <h2 id="docs-heading" className="text-white font-display font-bold text-lg">
+              <h2 className="text-khatulistiwa-900 font-display font-bold text-xl">
                 Persyaratan Dokumen
               </h2>
             </div>
 
             {sortedDocs.length === 0 ? (
-              <p className="text-khatulistiwa-300/50 text-sm">Belum ada persyaratan dokumen terdaftar.</p>
+              <div className="bg-white rounded-2xl border border-pertiwi-muted shadow-sm p-6 text-center">
+                <p className="text-khatulistiwa-500/60 text-sm">Belum ada persyaratan dokumen terdaftar.</p>
+              </div>
             ) : (
-              <div className="space-y-3">
-                {requiredDocs.map((doc) => (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                className="space-y-3"
+              >
+                {requiredDocs.map((doc, i) => (
                   <div
                     key={doc.id}
-                    className="flex items-start gap-3 rounded-xl bg-khatulistiwa-900/50 border border-khatulistiwa-700/20 p-3.5"
+                    className="bg-white rounded-2xl border border-pertiwi-muted shadow-sm p-5 flex gap-4 items-start"
                   >
-                    <CheckCircle2 className="h-4 w-4 text-status-success mt-0.5 shrink-0" aria-hidden="true" />
-                    <div className="min-w-0">
-                      <p className="text-white text-sm font-medium">{doc.title}</p>
+                    <div className="w-8 h-8 rounded-full bg-khatulistiwa-50 border border-khatulistiwa-100
+                                    flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-khatulistiwa-600 font-bold text-xs">{i + 1}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-khatulistiwa-900 font-semibold text-sm">{doc.title}</h4>
+                        <span className="bg-red-50 text-red-500 border border-red-100 text-xs px-2 py-0.5 rounded-full font-medium">
+                          Wajib
+                        </span>
+                      </div>
                       {doc.description && (
-                        <p className="text-khatulistiwa-300/55 text-xs mt-0.5">{doc.description}</p>
+                        <p className="text-khatulistiwa-500/70 text-xs mt-1.5 leading-relaxed">{doc.description}</p>
                       )}
                       {doc.allowed_types?.length > 0 && (
-                        <p className="text-khatulistiwa-300/40 text-xs mt-1">
-                          Format: {doc.allowed_types.join(", ").toUpperCase()}
-                        </p>
+                        <div className="flex items-center gap-3 mt-2.5">
+                          <span className="bg-khatulistiwa-50 text-khatulistiwa-500 text-xs px-2.5 py-1 rounded-lg border border-khatulistiwa-100">
+                            {doc.allowed_types.join(", ").toUpperCase()}
+                          </span>
+                          {doc.max_bytes > 0 && (
+                            <span className="text-khatulistiwa-400/50 text-xs">
+                              Maks {Math.round(doc.max_bytes / 1024 / 1024)} MB
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -172,157 +190,174 @@ export default function PermitDetailPage() {
 
                 {optionalDocs.length > 0 && (
                   <>
-                    <p className="text-khatulistiwa-300/40 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
-                      Opsional
+                    <p className="text-khatulistiwa-400/50 text-xs font-bold uppercase tracking-wider pt-2 pb-1">
+                      Dokumen Opsional
                     </p>
-                    {optionalDocs.map((doc) => (
+                    {optionalDocs.map((doc, i) => (
                       <div
                         key={doc.id}
-                        className="flex items-start gap-3 rounded-xl bg-khatulistiwa-900/30 border border-khatulistiwa-700/15 p-3.5 opacity-75"
+                        className="bg-white/70 rounded-2xl border border-pertiwi-muted p-5 flex gap-4 items-start opacity-80"
                       >
-                        <CheckCircle2 className="h-4 w-4 text-khatulistiwa-400/50 mt-0.5 shrink-0" aria-hidden="true" />
-                        <div className="min-w-0">
-                          <p className="text-khatulistiwa-200 text-sm font-medium">{doc.title}</p>
+                        <div className="w-8 h-8 rounded-full bg-khatulistiwa-50/60 border border-khatulistiwa-100/60
+                                        flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="text-khatulistiwa-400 font-bold text-xs">{requiredDocs.length + i + 1}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-khatulistiwa-700 font-semibold text-sm">{doc.title}</h4>
                           {doc.description && (
-                            <p className="text-khatulistiwa-300/50 text-xs mt-0.5">{doc.description}</p>
+                            <p className="text-khatulistiwa-500/60 text-xs mt-1 leading-relaxed">{doc.description}</p>
                           )}
                         </div>
                       </div>
                     ))}
                   </>
                 )}
-              </div>
+              </motion.div>
             )}
-          </motion.section>
 
-          {/* Alur Proses */}
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            aria-labelledby="stages-heading"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-khatulistiwa-600/20 border border-khatulistiwa-500/20 flex items-center justify-center">
-                <Users className="h-4 w-4 text-khatulistiwa-300" aria-hidden="true" />
-              </div>
-              <h2 id="stages-heading" className="text-white font-display font-bold text-lg">
-                Alur Proses
-              </h2>
-            </div>
-
-            {sortedStages.length === 0 ? (
-              <p className="text-khatulistiwa-300/50 text-sm">Belum ada alur proses terdaftar.</p>
-            ) : (
-              <ol className="relative space-y-0" aria-label="Tahapan proses perizinan">
-                {sortedStages.map((stage, i) => {
-                  const isLast = i === sortedStages.length - 1;
-                  return (
-                    <li key={stage.id} className="flex gap-4">
-                      {/* line + dot */}
-                      <div className="flex flex-col items-center">
-                        <div className="w-7 h-7 rounded-full bg-khatulistiwa-600/30 border border-khatulistiwa-500/40
-                                        flex items-center justify-center shrink-0 text-xs font-bold text-khatulistiwa-200">
-                          {i + 1}
-                        </div>
-                        {!isLast && <div className="w-px flex-1 bg-khatulistiwa-700/30 my-1" aria-hidden="true" />}
-                      </div>
-
-                      <div className={`pb-5 flex-1 min-w-0 ${isLast ? "pb-0" : ""}`}>
-                        <p className="text-white text-sm font-semibold leading-snug">{stage.name}</p>
-                        {stage.actor_role && (
-                          <p className="text-khatulistiwa-300/50 text-xs mt-0.5">{stage.actor_role}</p>
-                        )}
-                        {stage.sla_hours > 0 && (
-                          <p className="text-khatulistiwa-300/40 text-xs mt-0.5 flex items-center gap-1">
-                            <Clock className="h-3 w-3" aria-hidden="true" />
-                            {stage.sla_hours < 24
-                              ? `${stage.sla_hours} jam`
-                              : `${Math.round(stage.sla_hours / 8)} hari kerja`}
-                          </p>
-                        )}
-                        {stage.instructions && (
-                          <p className="text-khatulistiwa-300/50 text-xs mt-1">{stage.instructions}</p>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-          </motion.section>
-        </div>
-
-        {/* Info strip */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid sm:grid-cols-3 gap-4"
-        >
-          {permit.fee_description && (
-            <div className="rounded-xl bg-khatulistiwa-900/50 border border-khatulistiwa-700/20 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Banknote className="h-4 w-4 text-gold-500" aria-hidden="true" />
-                <p className="text-khatulistiwa-200 text-xs font-bold uppercase tracking-wider">Biaya</p>
-              </div>
-              <p className="text-white text-sm">{permit.fee_description}</p>
-            </div>
-          )}
-
-          {permit.legal_basis && permit.legal_basis.length > 0 && (
-            <div className={`rounded-xl bg-khatulistiwa-900/50 border border-khatulistiwa-700/20 p-4 ${!permit.fee_description ? "sm:col-span-2" : ""}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Scale className="h-4 w-4 text-khatulistiwa-300" aria-hidden="true" />
-                <p className="text-khatulistiwa-200 text-xs font-bold uppercase tracking-wider">Dasar Hukum</p>
-              </div>
-              <ul className="space-y-1">
-                {permit.legal_basis.map((lb, i) => (
-                  <li key={i} className="text-khatulistiwa-300/70 text-xs">{lb}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {permit.complaint_info && (
-            <div className="rounded-xl bg-khatulistiwa-900/50 border border-khatulistiwa-700/20 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <ShieldCheck className="h-4 w-4 text-status-success" aria-hidden="true" />
-                <p className="text-khatulistiwa-200 text-xs font-bold uppercase tracking-wider">Pengaduan</p>
-              </div>
-              <p className="text-khatulistiwa-300/70 text-xs">{permit.complaint_info}</p>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Bottom CTA */}
-        <div className="rounded-2xl bg-khatulistiwa-900/50 border border-khatulistiwa-700/20 p-6 text-center">
-          <p className="text-white font-display font-bold text-base mb-1">
-            {isAuthenticated ? "Siap memulai?" : "Belum punya akun?"}
-          </p>
-          <p className="text-khatulistiwa-300/55 text-sm mb-5">
-            {isAuthenticated
-              ? `Ajukan ${permit.name} sekarang — prosesnya sepenuhnya digital.`
-              : "Daftar gratis dan ajukan izin secara online — tanpa perlu datang ke kantor."}
-          </p>
-          <div className="flex gap-3 justify-center flex-wrap">
-            <Link
-              to={applyHref}
-              className="inline-flex items-center gap-2 rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500
-                         text-white px-6 py-3 text-sm font-semibold transition-colors"
+            {/* ── Info strip: Biaya / Dasar Hukum / Pengaduan — dark cards ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="grid sm:grid-cols-3 gap-4 pt-2"
             >
-              {isAuthenticated ? "Ajukan Permohonan" : "Daftar Gratis"}
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-            {!isAuthenticated && (
-              <Link
-                to="/auth/login"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.06]
-                           text-white px-6 py-3 text-sm font-semibold hover:bg-white/[0.12] transition-colors"
-              >
-                Sudah punya akun? Masuk
-              </Link>
-            )}
+              {permit.fee_description && (
+                <div className="bg-khatulistiwa-900 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Banknote className="w-4 h-4 text-terakota-400" aria-hidden="true" />
+                    <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Biaya</p>
+                  </div>
+                  <p className="text-white text-sm leading-relaxed">{permit.fee_description}</p>
+                </div>
+              )}
+
+              {permit.legal_basis && permit.legal_basis.length > 0 && (
+                <div className={`bg-khatulistiwa-900 rounded-2xl p-5 ${!permit.fee_description && !permit.complaint_info ? "sm:col-span-3" : !permit.fee_description || !permit.complaint_info ? "sm:col-span-2" : ""}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Scale className="w-4 h-4 text-terakota-400" aria-hidden="true" />
+                    <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Dasar Hukum</p>
+                  </div>
+                  <ul className="space-y-1">
+                    {permit.legal_basis.map((lb, i) => (
+                      <li key={i} className="text-khatulistiwa-300/70 text-xs leading-relaxed">{lb}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {permit.complaint_info && (
+                <div className="bg-khatulistiwa-900 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShieldCheck className="w-4 h-4 text-terakota-400" aria-hidden="true" />
+                    <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Pengaduan</p>
+                  </div>
+                  <p className="text-khatulistiwa-300/70 text-xs leading-relaxed">{permit.complaint_info}</p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+
+          {/* ── RIGHT COL (2/5): Alur Proses — sticky ── */}
+          <div className="lg:col-span-2">
+            <div className="lg:sticky lg:top-24 space-y-3">
+
+              {/* Section heading */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-xl bg-khatulistiwa-800 flex items-center justify-center shrink-0">
+                  <Users className="w-4 h-4 text-terakota-400" aria-hidden="true" />
+                </div>
+                <h2 className="text-khatulistiwa-900 font-display font-bold text-xl">Alur Proses</h2>
+              </div>
+
+              {/* Stage cards — dark on cream */}
+              {sortedStages.length === 0 ? (
+                <div className="bg-khatulistiwa-900 rounded-2xl p-5">
+                  <p className="text-khatulistiwa-400/60 text-sm">Belum ada alur proses terdaftar.</p>
+                </div>
+              ) : (
+                <ol aria-label="Tahapan proses perizinan" className="space-y-3">
+                  {sortedStages.map((stage, i) => {
+                    const isLast = i === sortedStages.length - 1;
+                    return (
+                      <li key={stage.id} className="relative">
+                        <div className="bg-khatulistiwa-900 rounded-2xl p-4 relative overflow-hidden">
+                          {/* Terakota top accent on first step */}
+                          {i === 0 && (
+                            <div className="absolute top-0 left-0 right-0 h-0.5 bg-terakota-500/60" aria-hidden="true" />
+                          )}
+
+                          <div className="flex items-start gap-3">
+                            <div className="w-7 h-7 rounded-full bg-khatulistiwa-700 border border-khatulistiwa-600
+                                            flex items-center justify-center shrink-0">
+                              <span className="text-terakota-400 font-bold text-xs">{i + 1}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-display font-semibold text-sm leading-snug">{stage.name}</p>
+                              {stage.actor_role && (
+                                <p className="text-khatulistiwa-300/60 text-xs mt-0.5">{stage.actor_role}</p>
+                              )}
+                              {stage.sla_hours > 0 && (
+                                <div className="flex items-center gap-1 mt-2">
+                                  <Clock className="w-3 h-3 text-terakota-400/60" aria-hidden="true" />
+                                  <span className="text-terakota-400/80 text-xs">
+                                    {stage.sla_hours < 24
+                                      ? `${stage.sla_hours} jam`
+                                      : `${Math.round(stage.sla_hours / 8)} hari kerja`}
+                                  </span>
+                                </div>
+                              )}
+                              {stage.instructions && (
+                                <p className="text-khatulistiwa-400/50 text-xs mt-1.5 leading-relaxed">{stage.instructions}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Connector line between cards */}
+                        {!isLast && (
+                          <div
+                            className="absolute -bottom-1.5 left-[1.65rem] w-px h-4 bg-khatulistiwa-700"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+
+              {/* Sticky CTA card — white on cream */}
+              <div className="bg-white rounded-2xl border border-pertiwi-muted shadow-sm p-5 text-center mt-5">
+                <p className="text-khatulistiwa-900 font-display font-bold text-base">
+                  {isAuthenticated ? "Siap mengajukan?" : "Belum punya akun?"}
+                </p>
+                <p className="text-khatulistiwa-400/70 text-xs mt-1 mb-4">
+                  {isAuthenticated
+                    ? "Mulai permohonan — proses sepenuhnya digital."
+                    : "Daftar gratis dan ajukan izin tanpa perlu datang ke kantor."}
+                </p>
+                <Link
+                  to={applyHref}
+                  className="flex items-center justify-center gap-2 w-full bg-khatulistiwa-600 hover:bg-khatulistiwa-500
+                             text-white font-display font-bold py-3 rounded-xl transition-all
+                             shadow-md shadow-khatulistiwa-600/30"
+                >
+                  {isAuthenticated ? "Ajukan Permohonan" : "Daftar & Ajukan"}
+                  <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                </Link>
+                {!isAuthenticated && (
+                  <Link
+                    to="/auth/login"
+                    className="flex items-center justify-center w-full mt-2 border border-khatulistiwa-200
+                               text-khatulistiwa-600 font-semibold py-2.5 rounded-xl text-sm
+                               hover:bg-khatulistiwa-50 transition-all"
+                  >
+                    Sudah punya akun? Masuk
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

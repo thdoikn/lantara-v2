@@ -46,7 +46,11 @@ const config: Config = {
           400: "#5EA85C",
           300: "#8CC68A",
         },
-        pertiwi: "#FBF9D5", // cream surface
+        pertiwi: {
+          DEFAULT: "#FBF9D5",
+          warm:    "#F5F0E8",
+          muted:   "#EDE8D5",
+        },
         buana: {
           DEFAULT: "#919191",
           dark: "#242421", // near-black
