@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // Public
 const LandingPage = lazy(() => import("./features/public/LandingPage"));
 const ServiceCatalog = lazy(() => import("./features/public/ServiceCatalog"));
+const PermitDetailPage = lazy(() => import("./features/public/PermitDetailPage"));
 const PermitValidatePage = lazy(() => import("./features/public/PermitValidatePage"));
 const NotFoundPage = lazy(() => import("./features/public/NotFoundPage"));
 
@@ -52,6 +53,7 @@ export default function App() {
         {/* ── Public ── */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/layanan" element={<ServiceCatalog />} />
+        <Route path="/layanan/:permitKey" element={<PermitDetailPage />} />
         <Route path="/validate" element={<PermitValidatePage />} />
         <Route path="/validate/:uuid" element={<PermitValidatePage />} />
 

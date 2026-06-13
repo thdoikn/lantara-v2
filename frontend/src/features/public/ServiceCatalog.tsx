@@ -9,13 +9,6 @@ import { cn } from "@/lib/cn";
 import { getSektorVisual } from "@/lib/sektorVisuals";
 import type { Sektor, PermitType } from "@/types";
 
-// A second line that isn't a duplicate of the title
-function permitSubtitle(p: PermitType): string {
-  if (p.product_name && p.product_name !== p.name) return p.product_name;
-  if (p.legal_basis && p.legal_basis.length > 0) return p.legal_basis[0];
-  return "Lihat persyaratan lengkap →";
-}
-
 // ── Command palette search ────────────────────────────────────────────────────
 
 function CommandSearch({
@@ -43,7 +36,7 @@ function CommandSearch({
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => Math.min(s + 1, results.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => Math.max(s - 1, 0)); }
-    else if (e.key === "Enter" && results[selected]) navigate(`/portal/new/${results[selected].key}`);
+    else if (e.key === "Enter" && results[selected]) navigate(`/layanan/${results[selected].key}`);
     else if (e.key === "Escape") setQuery("");
   }
 
@@ -97,7 +90,7 @@ function CommandSearch({
             {results.slice(0, 8).map((p, i) => (
               <li key={p.id} role="option" aria-selected={i === selected}>
                 <Link
-                  to={`/portal/new/${p.key}`}
+                  to={`/layanan/${p.key}`}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 transition-colors",
                     i === selected ? "bg-white/[0.06]" : "hover:bg-white/[0.06]"
@@ -127,23 +120,22 @@ function CommandSearch({
 function PermitCard({ permit }: { permit: PermitType }) {
   return (
     <Link
-      to={`/portal/new/${permit.key}`}
+      to={`/layanan/${permit.key}`}
       className="group relative flex flex-col h-full rounded-xl p-5
                  bg-khatulistiwa-900/50 border border-khatulistiwa-700/20
                  hover:bg-khatulistiwa-800/60 hover:border-khatulistiwa-500/40
                  hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(24,80,136,0.25)]
                  transition-all duration-200"
     >
-      <h4 className="text-white font-display font-semibold text-base leading-snug">{permit.name}</h4>
-      <p className="text-khatulistiwa-300/50 text-xs mt-1.5 line-clamp-2">{permitSubtitle(permit)}</p>
+      <h4 className="text-white font-display font-semibold text-base leading-snug flex-1">{permit.name}</h4>
 
-      <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/[0.06]">
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/[0.06]">
         <div className="flex items-center gap-1.5 text-khatulistiwa-300/60 text-xs">
           <Clock className="w-3.5 h-3.5" aria-hidden="true" />
           <span>{permit.sla_days} hari kerja</span>
         </div>
         <span className="text-terakota-400 text-xs font-semibold flex items-center gap-1 group-hover:text-terakota-300 transition-colors">
-          Ajukan <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+          Pelajari <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
         </span>
       </div>
     </Link>
