@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, MapPin, Info, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
+import PublicNav from "@/components/PublicNav";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -338,13 +339,14 @@ export default function RDTRPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Phase 3 header bar */}
-      <div className="shrink-0 flex items-center justify-between px-4 h-12 border-b border-border bg-white/90 backdrop-blur-sm">
+      <PublicNav />
+      {/* Phase 3 disclaimer bar (below fixed nav, content starts at pt-16) */}
+      <div className="shrink-0 flex items-center justify-between px-4 h-10 border-b border-border bg-white/90 backdrop-blur-sm mt-16">
         <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-khatulistiwa" aria-hidden="true" />
-          <span className="font-display font-semibold text-sm">Peta RDTR IKN</span>
+          <MapPin className="h-3.5 w-3.5 text-khatulistiwa" aria-hidden="true" />
+          <span className="font-semibold text-xs text-foreground">Peta RDTR IKN</span>
         </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-terakota/10 border border-terakota/30 px-3 py-1 text-xs text-terakota font-medium">
+        <div className="flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs text-amber-700 font-medium">
           <AlertTriangle className="h-3 w-3" aria-hidden="true" />
           Fase 3 — Data mock, bukan OneMap resmi
         </div>

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
+import PublicNav from "@/components/PublicNav";
 import { useState, useRef, useEffect } from "react";
 import { Search, ArrowLeft, ChevronRight, Clock, FileText, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -174,6 +175,7 @@ export default function ServiceCatalog() {
 
   return (
     <main id="main-content" className="min-h-screen bg-khatulistiwa-950">
+      <PublicNav />
       {/* ── Header ── */}
       <div className="relative overflow-hidden">
         <div
