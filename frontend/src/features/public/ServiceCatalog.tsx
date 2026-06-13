@@ -131,15 +131,20 @@ function PermitCard({ permit, accentClass }: { permit: PermitType; accentClass: 
           {permit.name}
         </h4>
 
-        <div className="flex items-center gap-1.5 mt-3">
-          <Clock className="w-3.5 h-3.5 text-khatulistiwa-400/60" aria-hidden="true" />
-          <span className="text-khatulistiwa-500/70 text-xs">{permit.sla_days} hari kerja</span>
+        {/* SLA pill + berusaha badge (only shown when is_berusaha is true) */}
+        <div className="flex items-center gap-2 mt-3 mb-1 flex-wrap">
+          <div className="flex items-center gap-1.5 bg-khatulistiwa-50 border border-khatulistiwa-100 rounded-lg px-3 py-1.5">
+            <Clock className="w-3.5 h-3.5 text-khatulistiwa-500" aria-hidden="true" />
+            <span className="text-khatulistiwa-600 text-xs font-semibold">{permit.sla_days} hari kerja</span>
+          </div>
+          {permit.is_berusaha && (
+            <span className="bg-amber-100 text-amber-700 border border-amber-200 text-xs px-2.5 py-1.5 rounded-lg font-medium">
+              Berusaha
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center justify-between pt-3 mt-3 border-t border-pertiwi-muted">
-          <span className="text-khatulistiwa-400/50 text-xs">
-            {permit.is_berusaha ? "Izin Berusaha" : "Non-Berusaha"}
-          </span>
+        <div className="flex items-center justify-end pt-3 mt-2 border-t border-pertiwi-muted">
           <span className="text-khatulistiwa-600 text-xs font-semibold flex items-center gap-1 group-hover:text-khatulistiwa-500 transition-colors">
             Pelajari <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
           </span>
