@@ -6,126 +6,111 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── Royal blue authority scale (primary brand) ──
+        // ── Khatulistiwa — THE primary blue (Nusantara official) ──
+        khatulistiwa: {
+          DEFAULT: "#185088", // = 600 (legacy `text-khatulistiwa` etc.)
+          light: "#2E85C8",   // = 400 (legacy `khatulistiwa-light`)
+          950: "#04182A",
+          900: "#0A2540",
+          800: "#0D3060",
+          700: "#124278",
+          600: "#185088",
+          500: "#1E6BA8",
+          400: "#2E85C8",
+          300: "#5BA3D8",
+          200: "#93C4E8",
+          100: "#CBE3F5",
+          50: "#EBF4FB",
+        },
+        // ── Terakota — THE gold/brown accent (Nusantara official) ──
+        terakota: {
+          DEFAULT: "#DBAF6C", // = 500 (legacy `text-terakota` etc.)
+          900: "#5C3A10",
+          800: "#7A4E18",
+          700: "#9A6520",
+          600: "#BA8030",
+          500: "#DBAF6C",
+          400: "#E4C08A",
+          300: "#EDCEA8",
+          200: "#F4E0C8",
+          100: "#FAF0E8",
+          50: "#FDF8F2",
+        },
+        // ── Jagawana — green secondary accent only ──
+        jagawana: {
+          DEFAULT: "#428A40",
+          deep: "#2F6B2E",
+          light: "#5EA85C",
+          600: "#2F6B2E",
+          500: "#428A40",
+          400: "#5EA85C",
+          300: "#8CC68A",
+        },
+        pertiwi: "#FBF9D5", // cream surface
+        buana: {
+          DEFAULT: "#919191",
+          dark: "#242421", // near-black
+          mid: "#919191",  // muted grey
+          darker: "#161614",
+        },
+        saka: "#DC2626", // danger
+
+        // ── Legacy aliases remapped onto the Nusantara system ──
+        //    royal/navy → khatulistiwa, gold → terakota, so globals.css and
+        //    authenticated components render correct colors without edits.
         royal: {
-          950: "#03061A",
-          900: "#060D2E",
-          800: "#0D1F5C",
-          700: "#1A3480",
-          600: "#1E40AF", // primary brand
-          500: "#2563EB",
-          400: "#3B82F6",
-          300: "#93C5FD",
-          200: "#BFDBFE",
-          100: "#DBEAFE",
-          50: "#EFF6FF",
+          950: "#04182A", 900: "#0A2540", 800: "#0D3060", 700: "#124278",
+          600: "#185088", 500: "#1E6BA8", 400: "#2E85C8", 300: "#5BA3D8",
+          200: "#93C4E8", 100: "#CBE3F5", 50: "#EBF4FB",
         },
-        // ── Navy scale (landing — dark capital-city world) ──
         navy: {
-          950: "#030A1A",
-          900: "#060D2E",
-          800: "#0B1B3E",
-          700: "#0F2456",
-          600: "#1A3480",
-          500: "#1E40AF",
-          400: "#2563EB",
-          300: "#3B82F6",
-          200: "#93C5FD",
-          100: "#DBEAFE",
-          50: "#EFF6FF",
+          950: "#04182A", 900: "#0A2540", 800: "#0D3060", 700: "#124278",
+          600: "#185088", 500: "#1E6BA8", 400: "#2E85C8", 300: "#5BA3D8",
+          200: "#93C4E8", 100: "#CBE3F5", 50: "#EBF4FB",
         },
-        // ── Gold accent (IKN official gold) ──
         gold: {
-          700: "#92600A",
-          600: "#B8860B",
-          500: "#D4A017",
-          400: "#EDB94A",
-          300: "#F5D87A",
-          200: "#FBF0C4",
-          100: "#FEF9E7",
+          700: "#9A6520", 600: "#BA8030", 500: "#DBAF6C", 400: "#E4C08A",
+          300: "#EDCEA8", 200: "#F4E0C8", 100: "#FAF0E8",
         },
+
         // ── Surfaces ──
         surface: {
-          DEFAULT: "#F8FAFF", // off-white with blue tint
+          DEFAULT: "#F8FAFF",
           card: "#FFFFFF",
-          dark: "#060D2E",
+          dark: "#0A2540",
         },
         // ── Ink (text) ──
         ink: {
-          DEFAULT: "#0D1F5C",
-          muted: "#4B5E8A",
+          DEFAULT: "#0D3060",
+          muted: "#4B6486",
           faint: "#94A3B8",
         },
         // ── Status ──
         status: {
-          success: "#059669",
-          warning: "#D97706",
+          success: "#428A40",
+          warning: "#BA8030",
           danger: "#DC2626",
-          info: "#2563EB",
-        },
-
-        // ── Legacy Nusantara names remapped onto the royal system ──
-        //    (kept so existing components rebrand without per-file edits)
-        jagawana: {
-          DEFAULT: "#1E40AF", // was green → now royal primary
-          deep: "#1A3480",
-          light: "#3B82F6",
-        },
-        khatulistiwa: {
-          DEFAULT: "#2563EB",
-          light: "#3B82F6",
-        },
-        terakota: "#D4A017", // warm accent → gold
-        saka: "#DC2626", // danger
-        pertiwi: "#EFF6FF", // light surface tint
-        buana: {
-          DEFAULT: "#4B5E8A", // muted navy-grey
-          dark: "#060D2E", // dark royal surface
-          darker: "#03061A",
+          info: "#185088",
         },
 
         // ── Semantic tokens ──
-        primary: {
-          DEFAULT: "#1E40AF",
-          foreground: "#ffffff",
-        },
-        secondary: {
-          DEFAULT: "#2563EB",
-          foreground: "#ffffff",
-        },
-        destructive: {
-          DEFAULT: "#DC2626",
-          foreground: "#ffffff",
-        },
-        warning: {
-          DEFAULT: "#D4A017",
-          foreground: "#ffffff",
-        },
+        primary: { DEFAULT: "#185088", foreground: "#ffffff" },
+        secondary: { DEFAULT: "#1E6BA8", foreground: "#ffffff" },
+        destructive: { DEFAULT: "#DC2626", foreground: "#ffffff" },
+        warning: { DEFAULT: "#DBAF6C", foreground: "#242421" },
         background: "#F8FAFF",
-        foreground: "#0D1F5C",
-        muted: {
-          DEFAULT: "#EFF6FF",
-          foreground: "#4B5E8A",
-        },
-        accent: {
-          DEFAULT: "#D4A017",
-          foreground: "#ffffff",
-        },
-        border: "#DBE3F4",
-        input: "#DBE3F4",
-        ring: "#2563EB",
-        card: {
-          DEFAULT: "#ffffff",
-          foreground: "#0D1F5C",
-        },
-        popover: {
-          DEFAULT: "#ffffff",
-          foreground: "#0D1F5C",
-        },
+        foreground: "#0D3060",
+        muted: { DEFAULT: "#EBF4FB", foreground: "#4B6486" },
+        accent: { DEFAULT: "#DBAF6C", foreground: "#242421" },
+        border: "#D3E0EE",
+        input: "#D3E0EE",
+        ring: "#185088",
+        card: { DEFAULT: "#ffffff", foreground: "#0D3060" },
+        popover: { DEFAULT: "#ffffff", foreground: "#0D3060" },
         // Dark surface colors for sidebars
         sidebar: {
-          DEFAULT: "#060D2E",
-          hover: "#0D1F5C",
+          DEFAULT: "#0A2540",
+          hover: "#0D3060",
           border: "rgba(255,255,255,0.08)",
           text: "rgba(255,255,255,0.72)",
           "text-muted": "rgba(255,255,255,0.45)",
@@ -167,19 +152,19 @@ const config: Config = {
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-jagawana": "linear-gradient(135deg, #1E40AF 0%, #1A3480 100%)",
-        "gradient-royal": "linear-gradient(135deg, #1E40AF 0%, #2563EB 100%)",
-        "gradient-gold": "linear-gradient(135deg, #D4A017 0%, #EDB94A 100%)",
-        "gradient-dark": "linear-gradient(135deg, #060D2E 0%, #03061A 100%)",
-        "gradient-hero": "linear-gradient(160deg, #060D2E 0%, #0D1F5C 55%, #1A3480 100%)",
-        "gradient-auth": "linear-gradient(150deg, #0D1F5C 0%, #060D2E 45%, #03061A 100%)",
+        "gradient-jagawana": "linear-gradient(135deg, #185088 0%, #124278 100%)",
+        "gradient-royal": "linear-gradient(135deg, #185088 0%, #1E6BA8 100%)",
+        "gradient-gold": "linear-gradient(135deg, #DBAF6C 0%, #E4C08A 100%)",
+        "gradient-dark": "linear-gradient(135deg, #0A2540 0%, #04182A 100%)",
+        "gradient-hero": "linear-gradient(160deg, #04182A 0%, #0A2540 55%, #124278 100%)",
+        "gradient-auth": "linear-gradient(150deg, #0A2540 0%, #04182A 45%, #04182A 100%)",
         "noise": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E\")",
       },
       boxShadow: {
-        "glow-green": "0 0 30px -5px rgba(30, 64, 175, 0.40)", // remapped → royal glow
-        "glow-blue": "0 0 30px -5px rgba(37, 99, 235, 0.40)",
-        "glow-royal": "0 0 30px -5px rgba(37, 99, 235, 0.45)",
-        "glow-warm": "0 0 30px -5px rgba(212, 160, 23, 0.40)", // gold
+        "glow-green": "0 0 30px -5px rgba(66, 138, 64, 0.40)", // jagawana green
+        "glow-blue": "0 0 30px -5px rgba(24, 80, 136, 0.40)",
+        "glow-royal": "0 0 30px -5px rgba(24, 80, 136, 0.45)",
+        "glow-warm": "0 0 30px -5px rgba(219, 175, 108, 0.40)", // terakota
         "card": "0 1px 3px rgba(13,31,92,0.06), 0 1px 2px rgba(13,31,92,0.04)",
         "card-hover": "0 4px 16px rgba(13,31,92,0.10), 0 2px 4px rgba(13,31,92,0.05)",
         "auth": "0 25px 60px rgba(3,6,26,0.30), 0 10px 25px rgba(3,6,26,0.18)",

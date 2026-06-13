@@ -240,9 +240,9 @@
 
   /* Soft attention pulse (current tracker stage / SLA breach) */
   @keyframes ringPulse {
-    0% { box-shadow: 0 0 0 0 var(--pulse, rgba(37,99,235,0.45)); }
-    70% { box-shadow: 0 0 0 8px rgba(37,99,235,0); }
-    100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+    0% { box-shadow: 0 0 0 0 var(--pulse, rgba(24,80,136,0.45)); }
+    70% { box-shadow: 0 0 0 8px rgba(24,80,136,0); }
+    100% { box-shadow: 0 0 0 0 rgba(24,80,136,0); }
   }
   .animate-ring-pulse { animation: ringPulse 2s var(--ease-out-quart) infinite; }
 

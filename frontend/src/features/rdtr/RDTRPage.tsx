@@ -50,9 +50,9 @@ interface KBLICheckResult {
 // ── Zone type colours (categorical map palette, royal-anchored) ───────────────
 
 const ZONE_COLORS: Record<string, string> = {
-  perkantoran: "#1E40AF",   // royal — civic/office
+  perkantoran: "#185088",   // royal — civic/office
   perumahan: "#3B82F6",     // royal-400 — residential
-  perdagangan: "#D4A017",   // gold — commerce
+  perdagangan: "#DBAF6C",   // gold — commerce
   pendidikan: "#7C5CBF",
   kesehatan: "#2CA0B5",
   rth: "#2F6B2E",           // green open space (cartographic convention)
