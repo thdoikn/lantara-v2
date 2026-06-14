@@ -79,6 +79,7 @@ const STATS = [
     color: "text-khatulistiwa-600",
     bg: "bg-khatulistiwa-50",
     border: "border-khatulistiwa-100",
+    accent: "bg-khatulistiwa-600",
   },
   {
     key: "pending" as const,
@@ -87,6 +88,7 @@ const STATS = [
     color: "text-amber-600",
     bg: "bg-amber-50",
     border: "border-amber-100",
+    accent: "bg-amber-500",
   },
   {
     key: "issued" as const,
@@ -95,6 +97,7 @@ const STATS = [
     color: "text-emerald-600",
     bg: "bg-emerald-50",
     border: "border-emerald-100",
+    accent: "bg-emerald-500",
   },
   {
     key: "needsAction" as const,
@@ -103,6 +106,7 @@ const STATS = [
     color: "text-red-500",
     bg: "bg-red-50",
     border: "border-red-100",
+    accent: "bg-red-500",
   },
 ];
 
@@ -179,27 +183,30 @@ export default function PortalDashboard() {
 
       {/* ── Stats grid ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {STATS.map(({ key, label, icon: Icon, color, bg, border }, i) => (
+        {STATS.map(({ key, label, icon: Icon, color, bg, border, accent }, i) => (
           <motion.div
             key={key}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.06 * i, duration: 0.35 }}
             className={cn(
-              "bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md transition-shadow",
+              "bg-white rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow",
               border
             )}
           >
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-4", bg)}>
-              <Icon className={cn("w-5 h-5", color)} aria-hidden="true" />
+            <div className={cn("h-1 w-full", accent)} aria-hidden="true" />
+            <div className="p-5">
+              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-4", bg)}>
+                <Icon className={cn("w-5 h-5", color)} aria-hidden="true" />
+              </div>
+              <p className="text-khatulistiwa-900 font-display font-black text-3xl tabular-nums">
+                {isLoading
+                  ? <span className="inline-block w-8 h-7 align-middle rounded bg-khatulistiwa-50 animate-pulse" />
+                  : <CountUp value={stats[key]} />
+                }
+              </p>
+              <p className="text-khatulistiwa-500/60 text-sm mt-1">{label}</p>
             </div>
-            <p className="text-khatulistiwa-900 font-display font-black text-3xl tabular-nums">
-              {isLoading
-                ? <span className="inline-block w-8 h-7 align-middle rounded bg-khatulistiwa-50 animate-pulse" />
-                : <CountUp value={stats[key]} />
-              }
-            </p>
-            <p className="text-khatulistiwa-500/60 text-sm mt-1">{label}</p>
           </motion.div>
         ))}
       </div>
@@ -220,7 +227,10 @@ export default function PortalDashboard() {
               Mulai ajukan izin dari katalog layanan kami. Proses 100% online.
             </p>
           </div>
-          <Link to="/layanan" className="btn-primary inline-flex">
+          <Link
+            to="/layanan"
+            className="inline-flex items-center gap-2 bg-khatulistiwa-600 hover:bg-khatulistiwa-500 text-white font-display font-bold px-6 py-3 rounded-xl transition-all shadow-md shadow-khatulistiwa-600/20"
+          >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Ajukan Izin Pertama
           </Link>
@@ -231,15 +241,8 @@ export default function PortalDashboard() {
       {submissions.length > 0 && (
         <div className="bg-white rounded-2xl border border-khatulistiwa-100 shadow-sm overflow-hidden">
           {/* Header */}
-          <div className="px-5 py-4 border-b border-khatulistiwa-50 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-khatulistiwa-50">
             <h2 className="text-khatulistiwa-900 font-display font-bold text-base">Permohonan Terbaru</h2>
-            <Link
-              to="/layanan"
-              className="text-khatulistiwa-600 text-sm font-semibold hover:text-khatulistiwa-500 flex items-center gap-1 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-              Ajukan Baru
-            </Link>
           </div>
 
           {/* Rows */}
@@ -268,7 +271,7 @@ export default function PortalDashboard() {
                         <p className="text-khatulistiwa-900 font-semibold text-sm truncate">
                           {sub.permit_type_name ?? sub.reference_number}
                         </p>
-                        <p className="text-khatulistiwa-400 text-xs mt-0.5">
+                        <p className="text-khatulistiwa-400/60 text-xs mt-0.5 font-mono">
                           {sub.reference_number} ·{" "}
                           {format(parseISO(sub.created_at), "d MMM yyyy", { locale: localeId })}
                           {sub.is_sla_breached && (
