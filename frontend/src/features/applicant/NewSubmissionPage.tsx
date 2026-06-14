@@ -74,18 +74,20 @@ export default function NewSubmissionPage() {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <p className="text-xs text-buana uppercase tracking-wide mb-1">{permitType.sektor_name}</p>
-        <h1 className="font-display text-xl font-bold">{permitType.name}</h1>
-        <p className="text-sm text-buana mt-1">
+      <div className="bg-khatulistiwa-900 rounded-2xl p-6">
+        <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase mb-1">
+          {permitType.sektor_name}
+        </p>
+        <h1 className="text-white font-display font-bold text-xl">{permitType.name}</h1>
+        <p className="text-khatulistiwa-300/50 text-xs mt-1">
           SLA: {permitType.sla_days} hari kerja · {permitType.product_name}
         </p>
       </div>
 
       {/* Step indicator */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-0">
         {stepLabels.map(({ id, label }, idx) => {
           const stepOrder = { form: 0, documents: 1, review: 2 };
           const current = stepOrder[step];
@@ -93,29 +95,29 @@ export default function NewSubmissionPage() {
           const done = thisIdx < current;
           const active = id === step;
           return (
-            <div key={id} className="flex items-center gap-2 flex-1">
-              <div className="flex items-center gap-2">
+            <div key={id} className="flex items-center gap-2.5 flex-1">
+              <div className="flex items-center gap-2.5">
                 <div
-                  className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
                     done
-                      ? "bg-jagawana border-jagawana text-white"
+                      ? "bg-emerald-500 text-white"
                       : active
-                      ? "border-jagawana text-jagawana bg-white"
-                      : "border-border text-buana bg-white"
+                      ? "bg-khatulistiwa-600 text-white ring-4 ring-khatulistiwa-200"
+                      : "bg-khatulistiwa-100 text-khatulistiwa-400"
                   }`}
                 >
                   {done ? "✓" : idx + 1}
                 </div>
                 <span
-                  className={`text-sm font-medium hidden sm:block ${
-                    active ? "text-jagawana" : done ? "text-jagawana" : "text-buana"
+                  className={`text-sm font-semibold hidden sm:block ${
+                    active ? "text-khatulistiwa-900" : "text-khatulistiwa-400/70"
                   }`}
                 >
                   {label}
                 </span>
               </div>
               {idx < stepLabels.length - 1 && (
-                <div className={`flex-1 h-px ${done ? "bg-jagawana" : "bg-border"}`} />
+                <div className={`flex-1 h-0.5 mx-2 ${done ? "bg-emerald-400" : "bg-khatulistiwa-100"}`} />
               )}
             </div>
           );
@@ -124,7 +126,7 @@ export default function NewSubmissionPage() {
 
       {/* Step: Form */}
       {step === "form" && (
-        <div className="rounded-2xl border border-border bg-white p-6">
+        <div className="bg-white rounded-2xl border border-khatulistiwa-100/60 shadow-sm p-6">
           <DynamicForm
             permitType={permitType}
             onSubmit={handleFormSubmit}
@@ -150,17 +152,19 @@ export default function NewSubmissionPage() {
 
       {/* Step: Review */}
       {step === "review" && submissionId && (
-        <div className="rounded-2xl border border-border bg-white p-6 space-y-6">
+        <div className="bg-white rounded-2xl border border-khatulistiwa-100/60 shadow-sm p-6 space-y-6">
           <div>
-            <h2 className="font-semibold mb-4">Ringkasan Permohonan</h2>
+            <h2 className="text-khatulistiwa-900 font-display font-bold text-base mb-4">
+              Ringkasan Permohonan
+            </h2>
             <dl className="space-y-3">
               {Object.entries(formData).map(([key, val]) => {
                 const field = permitType.form_fields?.find((f) => f.key === key);
                 if (!field || val === undefined || val === "") return null;
                 return (
-                  <div key={key} className="flex gap-4 text-sm">
-                    <dt className="w-48 shrink-0 text-buana">{field.label}</dt>
-                    <dd className="font-medium">
+                  <div key={key} className="flex gap-4 text-sm py-2 border-b border-khatulistiwa-50 last:border-0">
+                    <dt className="w-48 shrink-0 text-khatulistiwa-400/70">{field.label}</dt>
+                    <dd className="text-khatulistiwa-900 font-medium">
                       {Array.isArray(val) ? val.join(", ") : String(val)}
                     </dd>
                   </div>
@@ -169,7 +173,7 @@ export default function NewSubmissionPage() {
             </dl>
           </div>
 
-          <div className="rounded-lg bg-khatulistiwa/5 border border-khatulistiwa/20 p-4 text-sm text-khatulistiwa">
+          <div className="rounded-xl bg-khatulistiwa-50 border border-khatulistiwa-200/60 p-4 text-sm text-khatulistiwa-700">
             Dengan menekan "Kirim Permohonan", Anda menyatakan bahwa seluruh data dan dokumen yang
             diunggah adalah benar dan dapat dipertanggungjawabkan.
           </div>
@@ -177,13 +181,13 @@ export default function NewSubmissionPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setStep("documents")}
-              className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+              className="flex-1 rounded-xl border border-khatulistiwa-200 py-2.5 text-sm font-medium text-khatulistiwa-700 hover:bg-khatulistiwa-50 transition-colors"
             >
               Kembali
             </button>
             <button
               onClick={() => navigate(`/portal/submissions/${submissionId}`)}
-              className="flex-1 rounded-lg bg-jagawana py-2.5 text-sm font-semibold text-white hover:bg-jagawana-deep transition-colors"
+              className="flex-1 rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500 py-2.5 text-sm font-display font-bold text-white transition-all shadow-md shadow-khatulistiwa-600/20"
             >
               Kirim Permohonan
             </button>
@@ -220,27 +224,27 @@ function DocumentStepSection({
   const canProceed = missingRequired.length === 0;
 
   return (
-    <div className="rounded-2xl border border-border bg-white p-6 space-y-6">
+    <div className="bg-white rounded-2xl border border-khatulistiwa-100/60 shadow-sm p-6 space-y-6">
       <DocumentUploadSection
         submissionId={submissionId}
         requirements={requirements}
       />
       {!canProceed && (
-        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
           Unggah semua dokumen wajib (bertanda *) sebelum melanjutkan.
         </p>
       )}
       <div className="flex gap-3 pt-2">
         <button
           onClick={onBack}
-          className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+          className="flex-1 rounded-xl border border-khatulistiwa-200 py-2.5 text-sm font-medium text-khatulistiwa-700 hover:bg-khatulistiwa-50 transition-colors"
         >
           Kembali
         </button>
         <button
           onClick={onNext}
           disabled={!canProceed}
-          className="flex-1 rounded-lg bg-jagawana py-2.5 text-sm font-semibold text-white hover:bg-jagawana-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500 py-2.5 text-sm font-display font-bold text-white transition-all shadow-md shadow-khatulistiwa-600/20 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Lanjut ke Konfirmasi
         </button>
