@@ -190,6 +190,15 @@ function StageTracker({
 
 // ── Audit timeline ───────────────────────────────────────────────────────────
 
+const STAGE_LABELS: Record<string, string> = {
+  "pengajuan":             "Pengajuan Pemohon",
+  "verifikasi-teknis":     "Verifikasi Tim Teknis",
+  "tim-teknis-verifikasi": "Verifikasi Tim Teknis",
+  "kunjungan-lapangan":    "Kunjungan Lapangan",
+  "penerbitan":            "Penerbitan Izin",
+  "penyerahan":            "Penyerahan ke Pemohon",
+};
+
 const ACTION_LABEL: Record<string, string> = {
   submit: "Permohonan diajukan",
   approve: "Disetujui oleh verifikator",
@@ -227,7 +236,8 @@ function AuditTimeline({ entries }: { entries: AuditEntry[] }) {
                 <span className={cn("text-sm font-semibold", style.text)}>{label}</span>
                 {(entry.to_stage_key ?? entry.from_stage_key) && (
                   <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", style.bg, style.text)}>
-                    {entry.to_stage_key ?? entry.from_stage_key}
+                    {STAGE_LABELS[entry.to_stage_key ?? entry.from_stage_key ?? ""]
+                      ?? (entry.to_stage_key ?? entry.from_stage_key)}
                   </span>
                 )}
               </div>
