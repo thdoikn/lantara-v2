@@ -82,22 +82,22 @@ function buildZodSchema(fields: FormField[]): z.ZodObject<z.ZodRawShape> {
 // ── Field renderers ─────────────────────────────────────────────────────────
 
 const inputBase =
-  "w-full rounded-lg border border-border px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-khatulistiwa placeholder:text-buana disabled:bg-muted";
+  "w-full rounded-xl border border-khatulistiwa-200/70 px-4 py-3 text-sm bg-[#F8FAFF] text-khatulistiwa-900 focus:outline-none focus:border-khatulistiwa-500 focus:ring-2 focus:ring-khatulistiwa-500/15 placeholder:text-khatulistiwa-300/50 disabled:opacity-60 transition-all";
 
 function FieldLabel({ field, error }: { field: FormField; error?: string }) {
   return (
     <div>
-      <label htmlFor={field.key} className="block text-sm font-medium mb-1">
+      <label htmlFor={field.key} className="block text-khatulistiwa-900 font-semibold text-sm mb-1.5">
         {field.label}
         {field.validation_json?.required !== false && (
-          <span className="text-saka ml-0.5">*</span>
+          <span className="text-red-500 ml-0.5">*</span>
         )}
       </label>
       {field.validation_json?.help_text && (
-        <p className="text-xs text-buana mb-1">{field.validation_json.help_text}</p>
+        <p className="text-xs text-khatulistiwa-400/60 mb-1.5">{field.validation_json.help_text}</p>
       )}
       {error && (
-        <p className="mt-1 text-xs text-saka" role="alert">
+        <p className="mt-1 text-xs text-red-500" role="alert">
           {error}
         </p>
       )}
@@ -277,7 +277,7 @@ export default function DynamicForm({
                                     : [...current, opt.value]
                                 );
                               }}
-                              className="h-4 w-4 rounded border-border text-jagawana focus:ring-khatulistiwa"
+                              className="h-4 w-4 rounded border-khatulistiwa-200 text-khatulistiwa-600 focus:ring-khatulistiwa-500"
                             />
                             <span className="text-sm">{opt.label}</span>
                           </label>
@@ -307,7 +307,7 @@ export default function DynamicForm({
                       onClick={() => ctrl.onChange(!ctrl.value)}
                       className={cn(
                         "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-khatulistiwa",
-                        ctrl.value ? "bg-jagawana" : "bg-border"
+                        ctrl.value ? "bg-khatulistiwa-600" : "bg-khatulistiwa-200"
                       )}
                     >
                       <span
@@ -332,7 +332,7 @@ export default function DynamicForm({
                   type="file"
                   accept={f.validation_json?.acceptedTypes ?? "*"}
                   {...register(f.key)}
-                  className="text-sm text-buana file:mr-3 file:rounded-lg file:border-0 file:bg-jagawana/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-jagawana hover:file:bg-jagawana/20"
+                  className="text-sm text-khatulistiwa-600 file:mr-3 file:rounded-lg file:border-0 file:bg-khatulistiwa-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-khatulistiwa-600 hover:file:bg-khatulistiwa-100 transition-all"
                 />
               </div>
             )}
@@ -359,9 +359,9 @@ export default function DynamicForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg bg-jagawana py-3 text-sm font-semibold text-white hover:bg-jagawana-deep transition-colors disabled:opacity-60"
+          className="w-full rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500 py-3.5 text-sm font-display font-bold text-white transition-all shadow-md shadow-khatulistiwa-600/20 disabled:opacity-60"
         >
-          {isSubmitting ? "Mengirim…" : (submitLabel ?? "Kirim Permohonan")}
+          {isSubmitting ? "Mengirim…" : (submitLabel ?? "Lanjutkan →")}
         </button>
       </div>
     </form>

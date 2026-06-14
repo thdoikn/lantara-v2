@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, Trash2, File as FileIcon, ExternalLink } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import type { DocumentRequirement, UploadedDocument } from "@/types";
@@ -12,10 +12,10 @@ interface Props {
 }
 
 const STATUS_ICON = {
-  pending: <Clock className="h-4 w-4 text-terakota" />,
-  valid: <CheckCircle2 className="h-4 w-4 text-jagawana" />,
-  invalid: <XCircle className="h-4 w-4 text-saka" />,
-  infected: <XCircle className="h-4 w-4 text-saka" />,
+  pending:  <Clock className="h-4 w-4 text-terakota-500" />,
+  valid:    <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
+  invalid:  <XCircle className="h-4 w-4 text-red-500" />,
+  infected: <XCircle className="h-4 w-4 text-red-500" />,
 };
 
 export default function DocumentUploadSection({ submissionId, requirements, readOnly }: Props) {
@@ -53,7 +53,7 @@ export default function DocumentUploadSection({ submissionId, requirements, read
 
   return (
     <div className="space-y-4">
-      <h2 className="font-semibold">Persyaratan Dokumen</h2>
+      <h2 className="text-khatulistiwa-900 font-display font-bold text-sm">Persyaratan Dokumen</h2>
       {requirements.length === 0 && (
         <p className="text-sm text-buana">Tidak ada dokumen yang diperlukan untuk jenis izin ini.</p>
       )}
@@ -66,19 +66,19 @@ export default function DocumentUploadSection({ submissionId, requirements, read
             key={req.key}
             className={cn(
               "rounded-xl border p-4 space-y-3 transition-colors",
-              uploaded ? "border-jagawana/30 bg-jagawana/5" : "border-border bg-white"
+              uploaded ? "border-emerald-200 bg-emerald-50/50" : "border-khatulistiwa-100/60 bg-white"
             )}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium">
+                <p className="text-khatulistiwa-900 text-sm font-semibold">
                   {req.title}
-                  {req.required && <span className="text-saka ml-0.5">*</span>}
+                  {req.required && <span className="text-red-500 ml-0.5">*</span>}
                 </p>
                 {req.description && (
-                  <p className="text-xs text-buana mt-0.5">{req.description}</p>
+                  <p className="text-xs text-khatulistiwa-400/60 mt-0.5">{req.description}</p>
                 )}
-                <p className="text-xs text-buana mt-0.5">
+                <p className="text-xs text-khatulistiwa-400/50 mt-0.5">
                   Format:{" "}
                   {(req.allowed_types ?? []).join(", ").toUpperCase() || "Semua format"} ·
                   Maks {req.max_bytes ? `${(req.max_bytes / 1_048_576).toFixed(0)} MB` : "10 MB"}
@@ -92,19 +92,27 @@ export default function DocumentUploadSection({ submissionId, requirements, read
             </div>
 
             {uploaded ? (
-              <div className="flex items-center justify-between text-sm">
-                <a
-                  href={uploaded.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-khatulistiwa hover:underline truncate max-w-xs"
-                >
-                  {uploaded.original_filename ?? uploaded.file_url}
-                </a>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-khatulistiwa-50 border border-khatulistiwa-200 rounded-lg px-3 py-2 flex-1 min-w-0">
+                  <FileIcon className="w-3.5 h-3.5 text-khatulistiwa-500 flex-shrink-0" aria-hidden="true" />
+                  <span className="text-khatulistiwa-700 text-xs font-medium truncate">
+                    {uploaded.original_filename ?? uploaded.file_url.split("/").pop()}
+                  </span>
+                  <a
+                    href={uploaded.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-auto text-khatulistiwa-400 hover:text-khatulistiwa-600 flex-shrink-0 transition-colors"
+                    aria-label="Buka dokumen"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                  </a>
+                </div>
                 {!readOnly && (
                   <button
                     onClick={() => deleteMutation.mutate(uploaded.id)}
-                    className="text-buana hover:text-saka transition-colors ml-2 shrink-0"
+                    className="text-khatulistiwa-300/60 hover:text-red-500 transition-colors flex-shrink-0"
                     aria-label="Hapus dokumen"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -125,7 +133,7 @@ export default function DocumentUploadSection({ submissionId, requirements, read
                 />
                 <div
                   className={cn(
-                    "flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2 text-sm text-buana hover:border-jagawana hover:text-jagawana transition-colors",
+                    "flex items-center gap-2 rounded-lg border border-dashed border-khatulistiwa-200 px-4 py-2 text-sm text-khatulistiwa-400/70 hover:border-khatulistiwa-400 hover:text-khatulistiwa-600 transition-colors",
                     isUploading && "opacity-60 pointer-events-none"
                   )}
                 >
@@ -134,7 +142,7 @@ export default function DocumentUploadSection({ submissionId, requirements, read
                 </div>
               </label>
             ) : (
-              <p className="text-xs text-saka">Belum diunggah</p>
+              <p className="text-xs text-khatulistiwa-400/60">Belum diunggah</p>
             )}
           </div>
         );
