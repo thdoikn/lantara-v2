@@ -29,7 +29,7 @@ export default function VerifierLayout() {
   const sidebarWidth = collapsed ? "lg:pl-16" : "lg:pl-64";
 
   return (
-    <div className="min-h-screen flex bg-surface">
+    <div className="min-h-screen flex" style={{ background: "#F5F4EF" }}>
       <SharedSidebar
         portalLabel="Workspace"
         variant="verifier"
@@ -52,7 +52,7 @@ export default function VerifierLayout() {
 
       {/* ── Main area ── */}
       <div className={cn("flex-1 flex flex-col min-h-screen transition-all duration-300", sidebarWidth)}>
-        <main id="main-content" className="flex-1 p-6">
+        <main id="main-content" className="flex-1 px-8 py-8">
           <Outlet />
         </main>
       </div>
