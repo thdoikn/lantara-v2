@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Settings, FileText, Users, ArrowRight, TrendingUp, Layers } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
 
 interface Sektor {
@@ -21,72 +22,97 @@ export default function AdminDashboard() {
   const totalIzin = list.reduce((sum, s) => sum + s.permit_count, 0);
   const activeCount = list.filter((s) => s.is_active).length;
 
-  const QUICK_STATS = [
+  const QUICK_STATS: {
+    label: string;
+    value: number | string;
+    icon: LucideIcon;
+    navy?: boolean;
+    iconBg: string;
+    iconColor: string;
+    cardBg: string;
+    cardBorder: string;
+  }[] = [
     {
       label: "Total Sektor",
       value: list.length,
       icon: Layers,
-      gradient: "from-khatulistiwa/15 to-khatulistiwa/5",
-      iconColor: "text-khatulistiwa",
-      ring: "ring-khatulistiwa/15",
+      navy: true,
+      iconBg: "",
+      iconColor: "",
+      cardBg: "",
+      cardBorder: "",
     },
     {
       label: "Total Jenis Izin",
       value: totalIzin,
       icon: FileText,
-      gradient: "from-jagawana/15 to-jagawana/5",
-      iconColor: "text-jagawana",
-      ring: "ring-jagawana/15",
+      iconBg: "bg-emerald-100",
+      iconColor: "text-emerald-600",
+      cardBg: "bg-emerald-50",
+      cardBorder: "border-emerald-200",
     },
     {
       label: "Sektor Aktif",
       value: activeCount,
       icon: TrendingUp,
-      gradient: "from-terakota/20 to-terakota/5",
+      iconBg: "bg-amber-100",
       iconColor: "text-amber-600",
-      ring: "ring-terakota/20",
+      cardBg: "bg-amber-50",
+      cardBorder: "border-amber-200",
     },
     {
       label: "Versi Engine",
       value: "v2.0",
       icon: Users,
-      gradient: "from-purple-100/70 to-purple-50/30",
+      iconBg: "bg-purple-100",
       iconColor: "text-purple-600",
-      ring: "ring-purple-200/50",
+      cardBg: "bg-purple-50",
+      cardBorder: "border-purple-200",
     },
   ];
 
   return (
-    <div className="p-7 max-w-5xl mx-auto space-y-8">
+    <div className="px-8 py-8 max-w-5xl mx-auto space-y-8">
       {/* ── Header ── */}
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
       >
-        <h1 className="font-display text-2xl font-bold">Admin Dashboard</h1>
-        <p className="text-buana text-sm mt-1">
+        <h1 className="font-display text-2xl font-bold text-khatulistiwa-900">Admin Dashboard</h1>
+        <p className="text-khatulistiwa-600/70 text-sm mt-1">
           Kelola engine perizinan dan konfigurasi sektor Otorita IKN.
         </p>
       </motion.div>
 
       {/* ── Quick stats ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {QUICK_STATS.map(({ label, value, icon: Icon, gradient, iconColor, ring }, i) => (
+        {QUICK_STATS.map(({ label, value, icon: Icon, navy, iconBg, iconColor, cardBg, cardBorder }, i) => (
           <motion.div
             key={label}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
-            className="card p-5 space-y-3"
+            className={
+              navy
+                ? "relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between min-h-[140px] text-white"
+                : `rounded-2xl border p-5 flex flex-col justify-between min-h-[140px] ${cardBg} ${cardBorder}`
+            }
+            style={navy ? { background: "linear-gradient(135deg, #0D3060 0%, #185088 100%)" } : undefined}
           >
-            <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${gradient} ring-1 ${ring}
-                             flex items-center justify-center`}>
-              <Icon className={`h-5 w-5 ${iconColor}`} aria-hidden="true" />
+            {navy && (
+              <div
+                className="absolute -right-6 -top-6 w-28 h-28 rounded-full opacity-20 blur-2xl pointer-events-none"
+                style={{ background: "#DBAF6C" }}
+                aria-hidden="true"
+              />
+            )}
+            <div className={navy ? "h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center" : `h-10 w-10 rounded-xl ${iconBg} flex items-center justify-center`}>
+              <Icon className={navy ? "h-5 w-5 text-white" : `h-5 w-5 ${iconColor}`} aria-hidden="true" />
             </div>
             <div>
-              <p className="font-display text-2xl font-bold">{value}</p>
-              <p className="text-xs text-buana mt-0.5">{label}</p>
+              <p className={navy ? "font-display text-2xl font-bold text-white" : "font-display text-2xl font-bold text-khatulistiwa-900"}>{value}</p>
+              <p className={navy ? "text-xs text-white/70 mt-0.5" : "text-xs text-khatulistiwa-600/70 mt-0.5"}>{label}</p>
             </div>
           </motion.div>
         ))}
@@ -96,38 +122,38 @@ export default function AdminDashboard() {
       <div className="grid sm:grid-cols-2 gap-3">
         <Link
           to="/admin/engine"
-          className="group card-hover p-5 flex items-center gap-4"
+          className="group bg-white border border-khatulistiwa-100 hover:border-khatulistiwa-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 rounded-2xl p-5 flex items-center gap-4"
         >
-          <div className="h-11 w-11 rounded-xl bg-gradient-jagawana flex items-center justify-center shrink-0">
+          <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #0D3060 0%, #185088 100%)" }}>
             <Settings className="h-5 w-5 text-white" aria-hidden="true" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold">Engine Builder</p>
-            <p className="text-xs text-buana mt-0.5">Konfigurasi sektor, izin, dan alur kerja</p>
+            <p className="font-semibold text-khatulistiwa-900">Engine Builder</p>
+            <p className="text-xs text-khatulistiwa-600/70 mt-0.5">Konfigurasi sektor, izin, dan alur kerja</p>
           </div>
-          <ArrowRight className="h-4 w-4 text-buana opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+          <ArrowRight className="h-4 w-4 text-khatulistiwa-400 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
         </Link>
 
         <Link
           to="/admin/analytics"
-          className="group card-hover p-5 flex items-center gap-4"
+          className="group bg-white border border-khatulistiwa-100 hover:border-khatulistiwa-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 rounded-2xl p-5 flex items-center gap-4"
         >
-          <div className="h-11 w-11 rounded-xl bg-khatulistiwa/15 flex items-center justify-center shrink-0 ring-1 ring-khatulistiwa/20">
-            <TrendingUp className="h-5 w-5 text-khatulistiwa" aria-hidden="true" />
+          <div className="h-11 w-11 rounded-xl bg-khatulistiwa-50 flex items-center justify-center shrink-0 border border-khatulistiwa-200">
+            <TrendingUp className="h-5 w-5 text-khatulistiwa-600" aria-hidden="true" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold">Analitik</p>
-            <p className="text-xs text-buana mt-0.5">Statistik permohonan dan SLA</p>
+            <p className="font-semibold text-khatulistiwa-900">Analitik</p>
+            <p className="text-xs text-khatulistiwa-600/70 mt-0.5">Statistik permohonan dan SLA</p>
           </div>
-          <ArrowRight className="h-4 w-4 text-buana opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+          <ArrowRight className="h-4 w-4 text-khatulistiwa-400 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
         </Link>
       </div>
 
       {/* ── Sektor cards ── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-sm">Sektor Terdaftar</h2>
-          <Link to="/admin/engine" className="text-xs text-khatulistiwa hover:underline font-semibold">
+          <h2 className="font-display font-bold text-sm text-khatulistiwa-900">Sektor Terdaftar</h2>
+          <Link to="/admin/engine" className="text-xs text-khatulistiwa-600 hover:underline font-semibold">
             Kelola semua →
           </Link>
         </div>
@@ -135,7 +161,7 @@ export default function AdminDashboard() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {list.length === 0
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="skeleton h-20 rounded-2xl" />
+                <div key={i} className="h-20 rounded-2xl bg-white animate-pulse border border-khatulistiwa-100" />
               ))
             : list.map((s, i) => (
                 <motion.div
@@ -146,18 +172,18 @@ export default function AdminDashboard() {
                 >
                   <Link
                     to={`/admin/engine/${s.key}`}
-                    className="group card-hover p-4 block"
+                    className="group block bg-white border border-khatulistiwa-100 hover:border-khatulistiwa-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 rounded-2xl p-4"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold text-sm group-hover:text-jagawana transition-colors">
+                      <p className="font-semibold text-sm text-khatulistiwa-900 group-hover:text-khatulistiwa-600 transition-colors">
                         {s.name}
                       </p>
-                      <span className="text-[11px] text-buana bg-muted px-2 py-0.5 rounded-full shrink-0 font-medium">
+                      <span className="text-[11px] text-khatulistiwa-600/70 bg-khatulistiwa-50 px-2 py-0.5 rounded-full shrink-0 font-medium">
                         {s.permit_count} izin
                       </span>
                     </div>
-                    <p className="text-xs text-buana mt-1.5 flex items-center gap-1">
-                      <span className={`h-1.5 w-1.5 rounded-full ${s.is_active ? "bg-jagawana" : "bg-buana"}`} />
+                    <p className="text-xs text-khatulistiwa-600/70 mt-1.5 flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${s.is_active ? "bg-emerald-500" : "bg-khatulistiwa-300"}`} />
                       {s.is_active ? "Aktif" : "Nonaktif"}
                     </p>
                   </Link>

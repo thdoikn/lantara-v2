@@ -32,7 +32,7 @@ export default function AdminLayout() {
   const sidebarWidth = collapsed ? "lg:pl-16" : "lg:pl-64";
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "#F8FAFF" }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: "#F5F4EF" }}>
       <SharedSidebar
         portalLabel="Admin Panel"
         variant="admin"
