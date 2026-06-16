@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { ChevronDown } from "lucide-react";
 import type { FormField, DocumentRequirement, PermitType } from "@/types";
 import { cn } from "@/lib/cn";
 
@@ -82,7 +83,7 @@ function buildZodSchema(fields: FormField[]): z.ZodObject<z.ZodRawShape> {
 // ── Field renderers ─────────────────────────────────────────────────────────
 
 const inputBase =
-  "w-full rounded-xl border border-khatulistiwa-200/70 px-4 py-3 text-sm bg-[#F8FAFF] text-khatulistiwa-900 focus:outline-none focus:border-khatulistiwa-500 focus:ring-2 focus:ring-khatulistiwa-500/15 placeholder:text-khatulistiwa-300/50 disabled:opacity-60 transition-all";
+  "w-full bg-khatulistiwa-50/50 border border-khatulistiwa-100 rounded-xl px-4 py-3 text-khatulistiwa-900 placeholder-khatulistiwa-300 text-sm outline-none focus:bg-white focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/15 disabled:opacity-60 transition-all";
 
 function FieldLabel({ field, error }: { field: FormField; error?: string }) {
   return (
@@ -195,7 +196,7 @@ export default function DynamicForm({
                     f.field_type === "nik" || f.field_type === "npwp" ? "numeric" : undefined
                   }
                   {...register(f.key)}
-                  className={cn(inputBase, errMsg && "border-saka focus:ring-saka")}
+                  className={cn(inputBase, errMsg && "border-red-300 focus:ring-red-200/50")}
                   placeholder={
                     f.validation_json?.placeholder ??
                     (f.field_type === "nik" ? "Masukkan 16 digit NIK" :
@@ -214,7 +215,7 @@ export default function DynamicForm({
                   id={f.key}
                   {...register(f.key)}
                   rows={4}
-                  className={cn(inputBase, "resize-y", errMsg && "border-saka focus:ring-saka")}
+                  className={cn(inputBase, "resize-y", errMsg && "border-red-300 focus:ring-red-200/50")}
                   placeholder={f.validation_json?.placeholder ?? ""}
                 />
               </div>
@@ -228,7 +229,7 @@ export default function DynamicForm({
                   id={f.key}
                   type="date"
                   {...register(f.key)}
-                  className={cn(inputBase, errMsg && "border-saka focus:ring-saka")}
+                  className={cn(inputBase, errMsg && "border-red-300 focus:ring-red-200/50")}
                 />
               </div>
             )}
@@ -237,18 +238,24 @@ export default function DynamicForm({
             {f.field_type === "select" && (
               <div>
                 <FieldLabel field={f} error={errMsg} />
-                <select
-                  id={f.key}
-                  {...register(f.key)}
-                  className={cn(inputBase, errMsg && "border-saka focus:ring-saka")}
-                >
-                  <option value="">— Pilih —</option>
-                  {(f.options_json ?? []).map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    id={f.key}
+                    {...register(f.key)}
+                    className={cn(inputBase, "appearance-none pr-10", errMsg && "border-red-300 focus:ring-red-200/50")}
+                  >
+                    <option value="">— Pilih —</option>
+                    {(f.options_json ?? []).map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-khatulistiwa-400 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                </div>
               </div>
             )}
 
@@ -345,7 +352,7 @@ export default function DynamicForm({
                   id={f.key}
                   type="text"
                   {...register(f.key)}
-                  className={cn(inputBase, errMsg && "border-saka focus:ring-saka")}
+                  className={cn(inputBase, errMsg && "border-red-300 focus:ring-red-200/50")}
                   placeholder="Contoh: -6.200000,106.816666"
                 />
                 <p className="text-xs text-buana mt-1">Format: lintang,bujur (desimal)</p>

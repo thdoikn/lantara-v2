@@ -120,7 +120,7 @@ export default function DocumentUploadSection({ submissionId, requirements, read
                 )}
               </div>
             ) : !readOnly ? (
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="block cursor-pointer">
                 <input
                   type="file"
                   accept={(req.allowed_types ?? []).map((t) => `.${t}`).join(",")}
@@ -133,16 +133,19 @@ export default function DocumentUploadSection({ submissionId, requirements, read
                 />
                 <div
                   className={cn(
-                    "flex items-center gap-2 rounded-lg border border-dashed border-khatulistiwa-200 px-4 py-2 text-sm text-khatulistiwa-400/70 hover:border-khatulistiwa-400 hover:text-khatulistiwa-600 transition-colors",
+                    "flex flex-col items-center justify-center gap-2 bg-khatulistiwa-50/60 border-2 border-khatulistiwa-100 hover:border-khatulistiwa-300 hover:bg-khatulistiwa-50 rounded-xl px-4 py-4 text-sm text-khatulistiwa-400 transition-all",
                     isUploading && "opacity-60 pointer-events-none"
                   )}
                 >
-                  <Upload className="h-4 w-4" />
-                  {isUploading ? "Mengunggah…" : "Pilih file"}
+                  <Upload className="h-5 w-5 text-khatulistiwa-400" aria-hidden="true" />
+                  <span className="font-medium">{isUploading ? "Mengunggah…" : "Klik untuk pilih file"}</span>
                 </div>
               </label>
             ) : (
-              <p className="text-xs text-khatulistiwa-400/60">Belum diunggah</p>
+              <div className="flex items-center gap-2 bg-khatulistiwa-50 border border-dashed border-khatulistiwa-200 rounded-xl px-4 py-2.5">
+                <Upload className="w-3.5 h-3.5 text-khatulistiwa-300 flex-shrink-0" aria-hidden="true" />
+                <span className="text-khatulistiwa-400/60 text-xs">Belum diunggah</span>
+              </div>
             )}
           </div>
         );

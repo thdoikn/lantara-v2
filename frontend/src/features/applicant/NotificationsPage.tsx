@@ -9,6 +9,8 @@ import api from "@/lib/api";
 import type { Notification } from "@/types";
 import { cn } from "@/lib/cn";
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function timeAgo(iso: string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
   if (diff < 60) return "Baru saja";
@@ -17,12 +19,29 @@ function timeAgo(iso: string) {
   return `${Math.floor(diff / 86400)} hari lalu`;
 }
 
+function parseBody(body: string): { text: string; ref: string | null } {
+  const match = body.match(/[A-Z]+\/[A-Z]+\/\d{4}\/\w+/);
+  if (!match) return { text: body, ref: null };
+  const cleaned = body
+    .replace(match[0], "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/^[\s.,]+/, "")
+    .trim();
+  return { text: cleaned || body, ref: match[0] };
+}
+
+// ── Notification type config ──────────────────────────────────────────────────
+
 const NOTIF_CONFIG: Record<string, { Icon: ElementType; color: string; bg: string }> = {
   submission_update:   { Icon: ArrowRightCircle, color: "text-khatulistiwa-500", bg: "bg-khatulistiwa-50" },
-  submission_approved: { Icon: BadgeCheck,       color: "text-emerald-600",       bg: "bg-emerald-50" },
-  revision_requested:  { Icon: AlertCircle,      color: "text-amber-500",         bg: "bg-amber-50" },
-  submission_rejected: { Icon: AlertCircle,      color: "text-red-500",           bg: "bg-red-50" },
-  permit_issued:       { Icon: CheckCircle2,     color: "text-emerald-600",       bg: "bg-emerald-50" },
+  submission_approved: { Icon: BadgeCheck,       color: "text-emerald-600",      bg: "bg-emerald-50" },
+  revision_requested:  { Icon: AlertCircle,      color: "text-amber-500",        bg: "bg-amber-50" },
+  submission_rejected: { Icon: AlertCircle,      color: "text-red-500",          bg: "bg-red-50" },
+  permit_issued:       { Icon: CheckCircle2,     color: "text-emerald-600",      bg: "bg-emerald-50" },
+  pengajuan_diterima:  { Icon: CheckCircle2,     color: "text-emerald-600",      bg: "bg-emerald-50" },
+  pengajuan_berlanjut: { Icon: ArrowRightCircle, color: "text-khatulistiwa-500", bg: "bg-khatulistiwa-50" },
+  perlu_tindakan:      { Icon: AlertCircle,      color: "text-red-500",          bg: "bg-red-50" },
+  disetujui:           { Icon: BadgeCheck,       color: "text-emerald-600",      bg: "bg-emerald-50" },
 };
 
 const DEFAULT_CONFIG: { Icon: ElementType; color: string; bg: string } = {
@@ -30,6 +49,8 @@ const DEFAULT_CONFIG: { Icon: ElementType; color: string; bg: string } = {
   color: "text-khatulistiwa-400",
   bg: "bg-khatulistiwa-50",
 };
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function NotificationsPage() {
   const qc = useQueryClient();
@@ -57,12 +78,11 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="max-w-3xl">
-      {/* Header */}
+    <div className="max-w-2xl mx-auto">
+      {/* Page heading */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Bell className="w-5 h-5 text-khatulistiwa-600" aria-hidden="true" />
-          <h2 className="text-khatulistiwa-900 font-display font-bold text-xl">Notifikasi</h2>
+          <h2 className="text-khatulistiwa-900 font-display font-bold text-2xl">Notifikasi</h2>
           {unreadIds.length > 0 && (
             <span className="bg-terakota-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
               {unreadIds.length} baru
@@ -106,6 +126,7 @@ export default function NotificationsPage() {
           {notifications.map((n) => {
             const cfg = NOTIF_CONFIG[n.notif_type] ?? DEFAULT_CONFIG;
             const { Icon } = cfg;
+            const { text: bodyText, ref: bodyRef } = n.body ? parseBody(n.body) : { text: "", ref: null };
             return (
               <button
                 key={n.id}
@@ -138,10 +159,15 @@ export default function NotificationsPage() {
                       {timeAgo(n.created_at)}
                     </span>
                   </div>
-                  {n.body && (
+                  {bodyText && (
                     <p className="text-khatulistiwa-500/70 text-xs mt-1 leading-relaxed line-clamp-2">
-                      {n.body}
+                      {bodyText}
                     </p>
+                  )}
+                  {bodyRef && (
+                    <span className="inline-block mt-2 text-xs font-mono text-khatulistiwa-500 bg-khatulistiwa-50 border border-khatulistiwa-100 px-2 py-0.5 rounded-md">
+                      {bodyRef}
+                    </span>
                   )}
                 </div>
 

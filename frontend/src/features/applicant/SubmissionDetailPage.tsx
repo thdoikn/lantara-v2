@@ -3,38 +3,45 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { format, parseISO, formatDistanceToNow, isPast } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Circle, Clock, AlertTriangle, FileText, ChevronRight } from "lucide-react";
+import {
+  Circle, Clock, AlertTriangle, FileText, ChevronRight,
+  Eye, Send, PenLine, Package, BadgeCheck, Loader2, CheckCircle2, XCircle,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import type { Submission, AuditEntry } from "@/types";
 import DocumentUploadSection from "./DocumentUploadSection";
 
-// ── Status badge (standardised) ──────────────────────────────────────────────
+// ── Status badge — left bar + icon ────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
-  draft:      { label: "Draft",        classes: "bg-slate-100 text-slate-600 border-slate-200" },
-  submitted:  { label: "Diajukan",     classes: "bg-khatulistiwa-100 text-khatulistiwa-700 border-khatulistiwa-200" },
-  in_review:  { label: "Ditinjau",     classes: "bg-amber-100 text-amber-700 border-amber-200" },
-  revision:   { label: "Revisi",       classes: "bg-orange-100 text-orange-700 border-orange-200" },
-  approved:   { label: "Disetujui",    classes: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  rejected:   { label: "Ditolak",      classes: "bg-red-100 text-red-700 border-red-200" },
-  publishing: { label: "Penerbitan",   classes: "bg-khatulistiwa-100 text-khatulistiwa-700 border-khatulistiwa-200" },
-  collection: { label: "Siap Diambil", classes: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  collected:  { label: "Selesai",      classes: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  issued:     { label: "Diterbitkan",  classes: "bg-emerald-600 text-white border-emerald-700" },
+type StatusCfg = { label: string; icon: LucideIcon; bar: string; bg: string; text: string };
+
+const STATUS_CONFIG: Record<string, StatusCfg> = {
+  draft:      { label: "Draft",        icon: FileText,     bar: "bg-slate-400",        bg: "bg-slate-50",        text: "text-slate-700"        },
+  submitted:  { label: "Diajukan",     icon: Send,         bar: "bg-khatulistiwa-400", bg: "bg-khatulistiwa-50", text: "text-khatulistiwa-700" },
+  in_review:  { label: "Ditinjau",     icon: Eye,          bar: "bg-amber-400",        bg: "bg-amber-50",        text: "text-amber-700"        },
+  revision:   { label: "Revisi",       icon: PenLine,      bar: "bg-orange-400",       bg: "bg-orange-50",       text: "text-orange-700"       },
+  approved:   { label: "Disetujui",    icon: CheckCircle2, bar: "bg-emerald-400",      bg: "bg-emerald-50",      text: "text-emerald-700"      },
+  rejected:   { label: "Ditolak",      icon: XCircle,      bar: "bg-red-400",          bg: "bg-red-50",          text: "text-red-700"          },
+  publishing: { label: "Penerbitan",   icon: Loader2,      bar: "bg-blue-400",         bg: "bg-blue-50",         text: "text-blue-700"         },
+  collection: { label: "Siap Diambil", icon: Package,      bar: "bg-teal-400",         bg: "bg-teal-50",         text: "text-teal-700"         },
+  collected:  { label: "Selesai",      icon: BadgeCheck,   bar: "bg-khatulistiwa-400", bg: "bg-khatulistiwa-50", text: "text-khatulistiwa-700" },
+  issued:     { label: "Diterbitkan",  icon: BadgeCheck,   bar: "bg-emerald-500",      bg: "bg-emerald-100",     text: "text-emerald-700"      },
 };
 
 function StatusBadge({ status, large = false }: { status: string; large?: boolean }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.draft;
+  const Icon = cfg.icon;
   return (
-    <span className={cn(
-      "inline-flex items-center border font-semibold rounded-full",
-      large ? "px-4 py-1.5 text-sm" : "px-3 py-1 text-xs",
-      cfg.classes
-    )}>
-      {cfg.label}
-    </span>
+    <div className={cn("inline-flex items-center overflow-hidden rounded-lg", cfg.bg)}>
+      <div className={cn("w-1 self-stretch flex-shrink-0", cfg.bar)} />
+      <div className={cn("flex items-center gap-1.5", cfg.text, large ? "px-3 py-2" : "px-2.5 py-1.5")}>
+        <Icon className={cn("flex-shrink-0", large ? "w-4 h-4" : "w-3.5 h-3.5")} aria-hidden="true" />
+        <span className={cn("font-semibold whitespace-nowrap", large ? "text-sm" : "text-xs")}>{cfg.label}</span>
+      </div>
+    </div>
   );
 }
 
@@ -191,7 +198,9 @@ function StageTracker({
 // ── Audit timeline ───────────────────────────────────────────────────────────
 
 const STAGE_LABELS: Record<string, string> = {
+  "submit":                "Pengajuan",
   "pengajuan":             "Pengajuan Pemohon",
+  "verifikasi":            "Verifikasi Tim Teknis",
   "verifikasi-teknis":     "Verifikasi Tim Teknis",
   "tim-teknis-verifikasi": "Verifikasi Tim Teknis",
   "kunjungan-lapangan":    "Kunjungan Lapangan",
@@ -393,8 +402,10 @@ export default function SubmissionDetailPage() {
         </div>
 
         {submission.sla_due_at && !isIssued && (
-          <div className="mt-4 pt-4 border-t border-white/[0.08]">
-            <SLACountdown dueAt={submission.sla_due_at} breached={submission.is_sla_breached} />
+          <div className="mt-4">
+            <div className="inline-flex items-center gap-2 bg-terakota-500/15 border border-terakota-500/30 rounded-xl px-4 py-2.5">
+              <SLACountdown dueAt={submission.sla_due_at} breached={submission.is_sla_breached} />
+            </div>
           </div>
         )}
       </motion.div>
