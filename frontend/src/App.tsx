@@ -34,6 +34,7 @@ const EngineBuilderPage = lazy(() => import("./features/admin/EngineBuilderPage"
 const IzinListPage = lazy(() => import("./features/admin/IzinListPage"));
 const IzinBuilderPage = lazy(() => import("./features/admin/IzinBuilderPage"));
 const AnalyticsPage = lazy(() => import("./features/admin/AnalyticsPage"));
+const AdminUsersPage = lazy(() => import("./features/admin/AdminUsersPage"));
 
 // RDTR (Phase 3)
 const RDTRPage = lazy(() => import("./features/rdtr/RDTRPage"));
@@ -104,6 +105,7 @@ export default function App() {
           <Route path="engine" element={<EngineBuilderPage />} />
           <Route path="engine/:sektorKey" element={<IzinListPage />} />
           <Route path="engine/:sektorKey/:izinKey" element={<IzinBuilderPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
 

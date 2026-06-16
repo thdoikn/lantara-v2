@@ -89,9 +89,16 @@ class UserMeSerializer(serializers.ModelSerializer):
 
 
 class UserListSerializer(serializers.ModelSerializer):
+    roles = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "nik", "is_active", "is_email_verified", "created_at"]
+        fields = ["id", "email", "full_name", "nik", "is_active", "is_email_verified", "created_at", "roles"]
+
+    def get_roles(self, obj):
+        return list(
+            obj.user_roles.filter(is_active=True).values_list("role__key", flat=True)
+        )
 
 
 class RoleSerializer(serializers.ModelSerializer):
