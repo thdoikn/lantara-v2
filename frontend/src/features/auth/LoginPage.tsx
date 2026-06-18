@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, ArrowRight, Leaf, Loader2 } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import api from "@/lib/api";
 import { setTokens, useAuthStore } from "@/lib/auth";
@@ -63,9 +63,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-jagawana flex items-center justify-center shadow-glow-green">
-            <Leaf className="h-5 w-5 text-white" aria-hidden="true" />
-          </div>
+          <img src="/ikn-logo.png" alt="IKN" className="h-9 w-9 rounded-xl object-contain" />
           <span className="font-display font-bold text-xl text-white tracking-tight">Lantara</span>
         </div>
 
@@ -114,9 +112,7 @@ export default function LoginPage() {
         >
           {/* Mobile logo */}
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="h-8 w-8 rounded-xl bg-jagawana flex items-center justify-center">
-              <Leaf className="h-4 w-4 text-white" aria-hidden="true" />
-            </div>
+            <img src="/ikn-logo.png" alt="IKN" className="h-8 w-8 rounded-xl object-contain" />
             <span className="font-display font-bold text-lg text-jagawana">Lantara</span>
           </div>
 

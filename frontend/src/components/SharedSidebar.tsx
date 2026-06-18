@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Building2, ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import type React from "react";
@@ -94,9 +94,7 @@ export default function SharedSidebar({
           )}
         >
           <Link to="/" className="flex items-center gap-3 min-w-0" aria-label="Lantara beranda">
-            <div className={cn("w-9 h-9 rounded-xl ring-1 flex items-center justify-center shrink-0", vStyle.logoBg, vStyle.logoRing)}>
-              <Building2 className="w-5 h-5 text-white" aria-hidden="true" />
-            </div>
+            <img src="/ikn-logo.png" alt="IKN" className="w-9 h-9 rounded-xl object-contain shrink-0" />
             {/* Mobile: always show text. Desktop: hide when collapsed. */}
             <div className={cn("min-w-0", collapsed && "lg:hidden")}>
               <span className="text-white font-display font-bold text-base block leading-tight">Lantara</span>

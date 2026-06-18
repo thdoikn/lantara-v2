@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, Menu, X, LayoutDashboard, ShieldCheck, Settings } from "lucide-react";
+import { Menu, X, LayoutDashboard, ShieldCheck, Settings } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 
 const NAV_LINKS = [
@@ -92,10 +92,7 @@ export default function PublicNav() {
       <nav className="max-w-6xl mx-auto px-4 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         {/* Left: Logo */}
         <Link to="/" className="flex items-center gap-2.5" aria-label="Lantara beranda">
-          <div className="relative h-9 w-9 rounded-xl bg-royal-600 flex items-center justify-center shadow-[0_0_20px_rgba(30,64,175,0.4)]">
-            <Building2 className="h-5 w-5 text-white" aria-hidden="true" />
-            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-gold-500 ring-2 ring-royal-950" aria-hidden="true" />
-          </div>
+          <img src="/ikn-logo.png" alt="IKN" className="h-9 w-9 rounded-xl object-contain" />
           <span className="font-display font-extrabold text-white text-lg tracking-tight">Lantara</span>
         </Link>
 
