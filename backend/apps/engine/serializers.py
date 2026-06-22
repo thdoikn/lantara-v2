@@ -53,6 +53,7 @@ class PermitTypeListSerializer(serializers.ModelSerializer):
 
 
 class PermitTypeDetailSerializer(serializers.ModelSerializer):
+    sektor = serializers.SlugRelatedField(slug_field="key", queryset=Sektor.objects.all())
     sektor_name = serializers.CharField(source="sektor.name", read_only=True)
     sektor_key = serializers.CharField(source="sektor.key", read_only=True)
     stages = WorkflowStageSerializer(many=True, read_only=True)
@@ -63,7 +64,7 @@ class PermitTypeDetailSerializer(serializers.ModelSerializer):
         model = PermitType
         fields = [
             "id", "key", "name", "description",
-            "sektor_key", "sektor_name",
+            "sektor", "sektor_key", "sektor_name",
             "is_berusaha", "oss_covered", "oss_deeplink",
             "sla_days", "product_name", "legal_basis",
             "fee_description", "complaint_info",

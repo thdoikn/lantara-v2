@@ -74,8 +74,12 @@ class PermitTypeViewSet(viewsets.ReadOnlyModelViewSet):
 class AdminSektorViewSet(viewsets.ModelViewSet):
     """Admin CRUD for Sektor. Superadmin only."""
     permission_classes = [IsAuthenticated, IsAdminUser]
-    queryset = Sektor.objects.all()
     lookup_field = "key"
+
+    def get_queryset(self):
+        return Sektor.objects.annotate(
+            permit_count=Count("permit_types", filter=Q(permit_types__is_published=True))
+        )
 
     def get_serializer_class(self):
         if self.action == "retrieve":
