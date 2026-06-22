@@ -14,6 +14,8 @@ const LoginPage = lazy(() => import("./features/auth/LoginPage"));
 const RegisterPage = lazy(() => import("./features/auth/RegisterPage"));
 const OTPPage = lazy(() => import("./features/auth/OTPPage"));
 const ForgotPasswordPage = lazy(() => import("./features/auth/ForgotPasswordPage"));
+const StaffLoginPage = lazy(() => import("./features/auth/StaffLoginPage"));
+const OidcCallbackPage = lazy(() => import("./features/auth/OidcCallbackPage"));
 
 // Applicant portal
 const PortalLayout = lazy(() => import("./features/applicant/PortalLayout"));
@@ -58,11 +60,16 @@ export default function App() {
         <Route path="/validate" element={<PermitValidatePage />} />
         <Route path="/validate/:uuid" element={<PermitValidatePage />} />
 
-        {/* ── Auth ── */}
+        {/* ── Auth (public / warga) ── */}
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<RegisterPage />} />
         <Route path="/auth/verify-otp" element={<OTPPage />} />
         <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+
+        {/* ── Auth (OIKN staff SSO) ── */}
+        <Route path="/staff/login" element={<StaffLoginPage />} />
+        {/* Must be public — no ProtectedRoute wrapper */}
+        <Route path="/auth/callback" element={<OidcCallbackPage />} />
 
         {/* ── Applicant portal ── */}
         <Route
@@ -83,7 +90,7 @@ export default function App() {
         <Route
           path="/verifier"
           element={
-            <ProtectedRoute requireRoles={["superadmin", "staff"]}>
+            <ProtectedRoute requireRoles={["superadmin", "admin", "verifier"]}>
               <VerifierLayout />
             </ProtectedRoute>
           }
@@ -96,7 +103,7 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute requireRoles={["superadmin"]}>
+            <ProtectedRoute requireRoles={["superadmin", "admin"]}>
               <AdminLayout />
             </ProtectedRoute>
           }

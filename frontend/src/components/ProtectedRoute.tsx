@@ -15,9 +15,7 @@ export default function ProtectedRoute({ children, requireRoles }: Props) {
   }
 
   if (requireRoles && user) {
-    const hasRole = requireRoles.some(
-      (r) => user.roles.includes(r) || (r === "staff" && user.is_staff)
-    );
+    const hasRole = requireRoles.some((r) => user.roles.includes(r));
     if (!hasRole) return <Navigate to="/portal" replace />;
   }
 
