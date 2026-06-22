@@ -19,6 +19,9 @@ python manage.py load_kbli --skip-if-exists || true
 echo "Loading fixtures..."
 python manage.py load_fixtures --skip-if-exists || true
 
+echo "Loading org structure (Kedeputian & Direktorat)..."
+python manage.py loaddata apps/reference/fixtures/kedeputian_direktorat.json || true
+
 echo "Bootstrapping superadmin..."
 python manage.py bootstrap_superadmin || true
 

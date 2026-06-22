@@ -32,6 +32,7 @@ RUN pip install \
     "django-environ>=0.11" \
     "psycopg[binary]>=3.1" \
     "djangorestframework-simplejwt>=5.3" \
+    "mozilla-django-oidc>=4.0.0" \
     "pyotp>=2.9" \
     "celery[redis]>=5.3" \
     "django-celery-beat>=2.6" \
