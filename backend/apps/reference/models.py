@@ -109,3 +109,42 @@ class TenantCard(TimestampedModel):
 
     def __str__(self):
         return self.name
+
+
+class Kedeputian(TimestampedModel):
+    """Eselon I unit of OIKN (Kedeputian or equivalent)."""
+
+    key = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=300)
+    short_name = models.CharField(max_length=100, blank=True)
+    order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "name"]
+        verbose_name = "Kedeputian"
+        verbose_name_plural = "Kedeputian"
+
+    def __str__(self):
+        return self.short_name or self.name
+
+
+class Direktorat(TimestampedModel):
+    """Eselon II unit of OIKN, under a Kedeputian."""
+
+    kedeputian = models.ForeignKey(
+        Kedeputian, on_delete=models.PROTECT, related_name="direktorat_list"
+    )
+    key = models.SlugField(max_length=120, unique=True)
+    name = models.CharField(max_length=300)
+    short_name = models.CharField(max_length=100, blank=True)
+    order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["kedeputian__order", "order", "name"]
+        verbose_name = "Direktorat"
+        verbose_name_plural = "Direktorat"
+
+    def __str__(self):
+        return self.short_name or self.name

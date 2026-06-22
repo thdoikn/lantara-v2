@@ -1,0 +1,497 @@
+[
+  {
+    "model": "reference.kedeputian",
+    "pk": "11111111-0000-0000-0000-000000000001",
+    "fields": {
+      "key": "sekretariat",
+      "name": "Sekretariat",
+      "short_name": "Sekretariat",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.kedeputian",
+    "pk": "11111111-0000-0000-0000-000000000002",
+    "fields": {
+      "key": "unit-hukum-kepatuhan",
+      "name": "Unit Kerja Hukum dan Kepatuhan",
+      "short_name": "Hukum & Kepatuhan",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.kedeputian",
+    "pk": "11111111-0000-0000-0000-000000000003",
+    "fields": {
+      "key": "kedeputian-perencanaan-pertanahan",
+      "name": "Kedeputian Perencanaan dan Pertahanan",
+      "short_name": "Kedeputian Perencanaan",
+      "order": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.kedeputian",
+    "pk": "11111111-0000-0000-0000-000000000004",
+    "fields": {
+      "key": "kedeputian-pengendalian-pembangunan",
+      "name": "Kedeputian Pengendalian Pembangunan",
+      "short_name": "Kedeputian PP",
+      "order": 4,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.kedeputian",
+    "pk": "11111111-0000-0000-0000-000000000005",
+    "fields": {
+      "key": "kedeputian-sosial-budaya",
+      "name": "Kedeputian Bidang Sosial, Budaya dan Pemberdayaan Masyarakat",
+      "short_name": "Kedeputian Sosial Budaya",
+      "order": 5,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.kedeputian",
+    "pk": "11111111-0000-0000-0000-000000000006",
+    "fields": {
+      "key": "kedeputian-transformasi-hijau-digital",
+      "name": "Kedeputian Transformasi Hijau dan Digital",
+      "short_name": "Kedeputian THD",
+      "order": 6,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.kedeputian",
+    "pk": "11111111-0000-0000-0000-000000000007",
+    "fields": {
+      "key": "kedeputian-lingkungan-hidup-sda",
+      "name": "Kedeputian Lingkungan Hidup dan Sumber Daya Alam",
+      "short_name": "Kedeputian LH-SDA",
+      "order": 7,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.kedeputian",
+    "pk": "11111111-0000-0000-0000-000000000008",
+    "fields": {
+      "key": "kedeputian-pendanaan-investasi",
+      "name": "Kedeputian Pendanaan dan Investasi",
+      "short_name": "Kedeputian Investasi",
+      "order": 8,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.kedeputian",
+    "pk": "11111111-0000-0000-0000-000000000009",
+    "fields": {
+      "key": "kedeputian-sarana-prasarana",
+      "name": "Kedeputian Sarana dan Prasarana",
+      "short_name": "Kedeputian Sarpras",
+      "order": 9,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000001",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000001",
+      "key": "biro-perencanaan-organisasi",
+      "name": "Biro Perencanaan, Organisasi, dan Kerja Sama",
+      "short_name": "Biro Perencanaan",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000002",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000001",
+      "key": "biro-sdm-humas",
+      "name": "Biro Sumber Daya Manusia dan Hubungan Masyarakat",
+      "short_name": "Biro SDM & Humas",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000003",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000001",
+      "key": "biro-umum-pengadaan",
+      "name": "Biro Umum dan Pengadaan Barang/Jasa",
+      "short_name": "Biro Umum",
+      "order": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000004",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000001",
+      "key": "biro-keuangan-bmn",
+      "name": "Biro Keuangan, Barang Milik Negara, dan Aset Dalam Penguasan",
+      "short_name": "Biro Keuangan",
+      "order": 4,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000005",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000002",
+      "key": "direktorat-hukum",
+      "name": "Direktorat Hukum",
+      "short_name": "Dit. Hukum",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000006",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000002",
+      "key": "direktorat-kepatuhan",
+      "name": "Direktorat Kepatuhan",
+      "short_name": "Dit. Kepatuhan",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000007",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000002",
+      "key": "direktorat-pengawasan-audit",
+      "name": "Direktorat Pengawasan dan Audit Internal",
+      "short_name": "Dit. Pengawasan",
+      "order": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000008",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000003",
+      "key": "direktorat-perencanaan-makro",
+      "name": "Direktorat Perencanaan Makro",
+      "short_name": "Dit. Perencanaan Makro",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000009",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000003",
+      "key": "direktorat-pertanahan",
+      "name": "Direktorat Pertanahan",
+      "short_name": "Dit. Pertanahan",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000010",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000004",
+      "key": "direktorat-pengendalian-perizinan",
+      "name": "Direktorat Pengendalian Penyelenggaraan Pemerintahaan dan Perizinan Pembangunan",
+      "short_name": "Dit. Pengendalian Perizinan",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000011",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000004",
+      "key": "direktorat-pengawasan-pemantauan",
+      "name": "Direktorat Pengawasan, Pemantauan, dan Evaluasi",
+      "short_name": "Dit. Pengawasan & Pemantauan",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000012",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000004",
+      "key": "direktorat-trantib",
+      "name": "Direktorat Ketentraman dan Ketertiban Umum",
+      "short_name": "Dit. Trantib",
+      "order": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000013",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000005",
+      "key": "direktorat-pelayanan-dasar",
+      "name": "Direktorat Pelayanan Dasar",
+      "short_name": "Dit. Pelayanan Dasar",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000014",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000005",
+      "key": "direktorat-pemberdayaan-masyarakat",
+      "name": "Direktorat Pemberdayaan Masyarakat",
+      "short_name": "Dit. Pemberdayaan",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000015",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000005",
+      "key": "direktorat-kebudayaan-pariwisata",
+      "name": "Direktorat Kebudayaan, Pariwisata, dan Ekonomi Kreatif",
+      "short_name": "Dit. Kebudayaan",
+      "order": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000016",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000006",
+      "key": "direktorat-ekosistem-digital",
+      "name": "Direktorat Pengembangan Ekosistem Digital",
+      "short_name": "Dit. Ekosistem Digital",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000017",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000006",
+      "key": "direktorat-transformasi-hijau",
+      "name": "Direktorat Transformasi Hijau",
+      "short_name": "Dit. Transformasi Hijau",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000018",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000006",
+      "key": "direktorat-data-ai",
+      "name": "Direktorat Data dan Kecerdasan Buatan",
+      "short_name": "Dit. Data & AI",
+      "order": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000019",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000007",
+      "key": "direktorat-lingkungan-bencana",
+      "name": "Direktorat Lingkungan Hidup dan Penanggulangan Bencana",
+      "short_name": "Dit. Lingkungan Hidup",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000020",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000007",
+      "key": "direktorat-kehutanan-sda",
+      "name": "Direktorat Pengembangan Pemanfaatan Kehutanan dan Sumber Daya Air",
+      "short_name": "Dit. Kehutanan & SDA",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000021",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000007",
+      "key": "direktorat-ketahanan-pangan",
+      "name": "Direktorat Ketahanan Pangan",
+      "short_name": "Dit. Ketahanan Pangan",
+      "order": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000022",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000008",
+      "key": "direktorat-investasi-kemudahan-berusaha",
+      "name": "Direktorat Investasi dan Kemudahan Berusaha",
+      "short_name": "Dit. Investasi",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000023",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000008",
+      "key": "direktorat-pendanaan",
+      "name": "Direktorat Pendanaan",
+      "short_name": "Dit. Pendanaan",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000024",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000008",
+      "key": "direktorat-pembiayaan",
+      "name": "Direktorat Pembiayaan",
+      "short_name": "Dit. Pembiayaan",
+      "order": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000025",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000009",
+      "key": "direktorat-sarpras-dasar",
+      "name": "Direktorat Sarana Prasarana Dasar",
+      "short_name": "Dit. Sarpras Dasar",
+      "order": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000026",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000009",
+      "key": "direktorat-sarpras-sosial",
+      "name": "Direktorat Sarana dan Prasarana Sosial",
+      "short_name": "Dit. Sarpras Sosial",
+      "order": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "reference.direktorat",
+    "pk": "22222222-0000-0000-0000-000000000027",
+    "fields": {
+      "kedeputian": "11111111-0000-0000-0000-000000000009",
+      "key": "direktorat-pengelolaan-gedung",
+      "name": "Direktorat Pengelolaan Gedung, Kawasan dan Perkotaan",
+      "short_name": "Dit. Pengelolaan Gedung",
+      "order": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  }
+]
