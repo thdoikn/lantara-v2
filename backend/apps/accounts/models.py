@@ -1,5 +1,6 @@
 """
-Accounts — custom User, OTP, dynamic RBAC (Role/RolePermission/UserRole).
+Accounts — custom User, OTP, dynamic RBAC (Role/RolePermission/UserRole),
+and verifier-to-perizinan assignments.
 
 RBAC permissions are {stage_key}:{izin_key} strings derived from engine
 config at request time, NOT a static Django permission enum.
@@ -39,6 +40,15 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
     whatsapp_number = models.CharField(max_length=20, blank=True)
     whatsapp_verified = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
+
+    # OIKN organizational placement — null for public (warga) users
+    direktorat = models.ForeignKey(
+        "reference.Direktorat",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="staff_members",
+    )
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -193,3 +203,32 @@ class UserRole(TimestampedModel):
 
     def __str__(self):
         return f"{self.user.email} → {self.role.key}"
+
+
+class VerifierPermitAssignment(TimestampedModel):
+    """
+    Assigns a verifier (or admin) to a specific PermitType.
+    Drives what submissions appear in the verifier's queue.
+    A user with the 'verifier' role only sees permit types they are assigned to.
+    Admins and superadmins see all regardless of assignments.
+    """
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="permit_assignments"
+    )
+    permit_type = models.ForeignKey(
+        "engine.PermitType", on_delete=models.CASCADE, related_name="verifier_assignments"
+    )
+    assigned_by = models.ForeignKey(
+        User, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="assignments_given",
+    )
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = [("user", "permit_type")]
+        indexes = [models.Index(fields=["user", "is_active"])]
+
+    def __str__(self):
+        return f"{self.user.email} → {self.permit_type.key}"

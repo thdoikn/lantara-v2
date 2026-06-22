@@ -22,6 +22,14 @@ class Sektor(TimestampedModel):
         help_text="True for the 'Lainnya' escape-hatch sektor",
     )
     pengampu = models.CharField(max_length=200, blank=True)
+    pengampu_direktorat = models.ForeignKey(
+        "reference.Direktorat",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="pengampu_sektor",
+        help_text="Direktorat OIKN yang bertanggung jawab atas sektor ini",
+    )
 
     class Meta:
         ordering = ["order", "name"]
