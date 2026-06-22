@@ -36,8 +36,18 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             "permit_type__sektor", "applicant"
         ).prefetch_related("audit_entries", "revision_fields", "site_visits")
 
-        # Applicants see only their own submissions
-        if not user.is_staff and not user.is_sektor_admin and not user.has_any_role("superadmin"):
+        if user.has_any_role("superadmin", "admin") or user.is_sektor_admin:
+            # Superadmin and admin see all submissions
+            pass
+        elif user.has_any_role("verifier"):
+            # Verifiers only see submissions for their assigned permit types
+            from apps.accounts.models import VerifierPermitAssignment
+            assigned_keys = VerifierPermitAssignment.objects.filter(
+                user=user, is_active=True
+            ).values_list("permit_type__key", flat=True)
+            qs = qs.filter(permit_type__key__in=assigned_keys)
+        else:
+            # Public users see only their own submissions
             qs = qs.filter(applicant=user)
 
         # Support comma-separated status filter: ?status=in_review,submitted
@@ -113,10 +123,19 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        # Check stage permission
-        perm = f"{sub.current_stage_key}:{sub.permit_type.key}"
-        if not request.user.is_staff and not request.user.has_stage_permission(perm):
-            return Response({"detail": "Tidak memiliki izin untuk tahap ini."}, status=403)
+        # Check act permission: superadmin/admin can always act;
+        # verifiers must have an active VerifierPermitAssignment for this permit type
+        if not request.user.has_any_role("superadmin", "admin") and not request.user.is_sektor_admin:
+            from apps.accounts.models import VerifierPermitAssignment
+            has_assignment = VerifierPermitAssignment.objects.filter(
+                user=request.user,
+                permit_type=sub.permit_type,
+                is_active=True,
+            ).exists()
+            if not has_assignment:
+                return Response(
+                    {"detail": "Tidak memiliki penugasan untuk perizinan ini."}, status=403
+                )
 
         act = data["action"]
         notes = data.get("notes", "")
