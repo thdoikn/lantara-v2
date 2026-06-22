@@ -2,7 +2,7 @@ from django.contrib.auth import password_validation
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import ApplicantProfile, OTPCode, Role, User
+from .models import ApplicantProfile, OTPCode, Role, User, VerifierPermitAssignment
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -72,13 +72,14 @@ class ApplicantProfileSerializer(serializers.ModelSerializer):
 class UserMeSerializer(serializers.ModelSerializer):
     profile = ApplicantProfileSerializer(read_only=True)
     roles = serializers.SerializerMethodField()
+    direktorat_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             "id", "email", "full_name", "nik", "phone", "whatsapp_number",
             "avatar", "is_email_verified", "is_staff", "last_seen",
-            "created_at", "profile", "roles",
+            "created_at", "profile", "roles", "direktorat_name",
         ]
         read_only_fields = ["id", "email", "is_email_verified", "is_staff", "last_seen", "created_at"]
 
@@ -87,18 +88,32 @@ class UserMeSerializer(serializers.ModelSerializer):
             obj.user_roles.filter(is_active=True).values_list("role__key", flat=True)
         )
 
+    def get_direktorat_name(self, obj):
+        if obj.direktorat_id:
+            return obj.direktorat.name
+        return None
+
 
 class UserListSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
+    direktorat_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "nik", "is_active", "is_email_verified", "created_at", "roles"]
+        fields = [
+            "id", "email", "full_name", "nik", "is_active", "is_staff",
+            "is_email_verified", "created_at", "roles", "direktorat_name",
+        ]
 
     def get_roles(self, obj):
         return list(
             obj.user_roles.filter(is_active=True).values_list("role__key", flat=True)
         )
+
+    def get_direktorat_name(self, obj):
+        if obj.direktorat_id:
+            return obj.direktorat.name
+        return None
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -110,3 +125,23 @@ class RoleSerializer(serializers.ModelSerializer):
 
     def get_permissions(self, obj):
         return list(obj.permissions.values_list("permission_key", flat=True))
+
+
+class VerifierPermitAssignmentSerializer(serializers.ModelSerializer):
+    permit_type_key = serializers.CharField(source="permit_type.key", read_only=True)
+    permit_type_name = serializers.CharField(source="permit_type.name", read_only=True)
+    sektor_name = serializers.CharField(source="permit_type.sektor.name", read_only=True)
+    assigned_by_name = serializers.CharField(source="assigned_by.full_name", read_only=True, default=None)
+    permit_type_id = serializers.PrimaryKeyRelatedField(
+        source="permit_type",
+        write_only=True,
+        queryset=__import__("apps.engine.models", fromlist=["PermitType"]).PermitType.objects.all(),
+    )
+
+    class Meta:
+        model = VerifierPermitAssignment
+        fields = [
+            "id", "permit_type_id", "permit_type_key", "permit_type_name",
+            "sektor_name", "is_active", "notes", "assigned_by_name", "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]

@@ -6,6 +6,7 @@ from .views import (
     ChangePasswordView,
     CustomTokenObtainView,
     MeView,
+    OIDCCallbackView,
     OTPVerifyView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
@@ -21,10 +22,12 @@ router.register("roles", RoleViewSet, basename="role")
 router.register("users", UserViewSet, basename="user")
 
 urlpatterns = [
-    # JWT
+    # JWT (public / warga)
     path("token/", CustomTokenObtainView.as_view(), name="token-obtain"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
-    # Registration + OTP
+    # SSO (OIKN staff)
+    path("oidc/callback/", OIDCCallbackView.as_view(), name="oidc-callback"),
+    # Registration + OTP (public)
     path("register/", RegisterView.as_view(), name="register"),
     path("otp/verify/", OTPVerifyView.as_view(), name="otp-verify"),
     path("otp/resend/", ResendOTPView.as_view(), name="otp-resend"),

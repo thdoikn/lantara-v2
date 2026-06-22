@@ -1,14 +1,16 @@
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.common.permissions import AuthRateThrottle, IsSuperAdmin
+from apps.common.permissions import AuthRateThrottle, IsAdminOrSuperAdmin, IsSuperAdmin
 
-from .models import ApplicantProfile, OTPCode, Role, User, UserRole
+from .models import ApplicantProfile, OTPCode, Role, User, UserRole, VerifierPermitAssignment
 from .serializers import (
     ApplicantProfileSerializer,
     ChangePasswordSerializer,
@@ -20,6 +22,7 @@ from .serializers import (
     RoleSerializer,
     UserListSerializer,
     UserMeSerializer,
+    VerifierPermitAssignmentSerializer,
 )
 
 
@@ -190,6 +193,70 @@ class ChangePasswordView(APIView):
         return Response({"detail": "Password berhasil diubah."})
 
 
+class OIDCCallbackView(APIView):
+    """
+    POST /auth/oidc/callback/
+    Body: { code, redirect_uri }
+
+    Exchanges the Keycloak authorization code for tokens server-to-server,
+    finds or creates the OIKN staff User from JWT claims, and returns
+    our own SimpleJWT tokens in the same shape as normal login.
+    """
+    permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
+
+    def post(self, request):
+        code = request.data.get("code")
+        redirect_uri = request.data.get("redirect_uri")
+
+        if not code:
+            return Response({"detail": "code is required."}, status=400)
+        if not redirect_uri:
+            return Response({"detail": "redirect_uri is required."}, status=400)
+
+        if not getattr(settings, "OIDC_RP_CLIENT_ID", ""):
+            return Response({"detail": "SSO is not configured on this server."}, status=503)
+
+        from .oidc import JDIHOIDCBackend
+        backend = JDIHOIDCBackend()
+
+        try:
+            token_info = backend.get_token({
+                "client_id": settings.OIDC_RP_CLIENT_ID,
+                "client_secret": settings.OIDC_RP_CLIENT_SECRET,
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": redirect_uri,
+            })
+            id_token = token_info.get("id_token")
+            access_token = token_info.get("access_token")
+
+            if not id_token:
+                return Response({"detail": "id_token not received from SSO."}, status=400)
+
+            payload = backend.verify_token(id_token, nonce=None)
+            user = backend.get_or_create_user(access_token, id_token, payload)
+        except Exception as exc:
+            return Response({"detail": f"SSO login gagal: {exc}"}, status=400)
+
+        if user is None:
+            return Response({"detail": "Pengguna tidak ditemukan."}, status=403)
+        if not user.is_active:
+            return Response({"detail": "Akun tidak aktif."}, status=403)
+
+        refresh = RefreshToken.for_user(user)
+        # Embed same claims as CustomTokenObtainPairSerializer
+        refresh["email"] = user.email
+        refresh["full_name"] = user.full_name
+        refresh["is_staff"] = user.is_staff
+
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": UserMeSerializer(user).data,
+        })
+
+
 class RoleViewSet(viewsets.ReadOnlyModelViewSet):
     """Superadmin only — list/retrieve roles."""
 
@@ -200,18 +267,21 @@ class RoleViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    """Superadmin only — user management."""
+    """Admin and superadmin — user management and verifier assignments."""
 
-    permission_classes = [IsSuperAdmin]
-    queryset = User.objects.filter(is_deleted=False).order_by("-created_at")
+    permission_classes = [IsAdminOrSuperAdmin]
+    queryset = User.objects.filter(is_deleted=False).select_related("direktorat").order_by("-created_at")
     serializer_class = UserListSerializer
     filterset_fields = ["is_active", "is_staff", "is_email_verified"]
     search_fields = ["email", "full_name", "nik"]
 
     @action(detail=True, methods=["post"])
     def assign_role(self, request, pk=None):
-        user = self.get_object()
+        # Only superadmin can assign the superadmin role
         role_key = request.data.get("role_key", "")
+        if role_key == "superadmin" and not request.user.has_any_role("superadmin"):
+            return Response({"detail": "Hanya superadmin yang dapat memberikan role superadmin."}, status=403)
+        user = self.get_object()
         try:
             role = Role.objects.get(key=role_key)
         except Role.DoesNotExist:
@@ -224,10 +294,50 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["post"])
     def revoke_role(self, request, pk=None):
-        user = self.get_object()
         role_key = request.data.get("role_key", "")
+        if role_key == "superadmin" and not request.user.has_any_role("superadmin"):
+            return Response({"detail": "Hanya superadmin yang dapat mencabut role superadmin."}, status=403)
+        user = self.get_object()
         UserRole.objects.filter(user=user, role__key=role_key).update(is_active=False)
         return Response({"detail": "Role dicabut."})
+
+    @action(detail=True, methods=["get", "post"], url_path="assignments")
+    def assignments(self, request, pk=None):
+        """List or create permit assignments for a user."""
+        user = self.get_object()
+        if request.method == "GET":
+            qs = VerifierPermitAssignment.objects.filter(
+                user=user
+            ).select_related("permit_type__sektor", "assigned_by")
+            return Response(VerifierPermitAssignmentSerializer(qs, many=True).data)
+
+        serializer = VerifierPermitAssignmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        permit_type = serializer.validated_data["permit_type"]
+        assignment, created = VerifierPermitAssignment.objects.update_or_create(
+            user=user,
+            permit_type=permit_type,
+            defaults={
+                "is_active": True,
+                "notes": serializer.validated_data.get("notes", ""),
+                "assigned_by": request.user,
+            },
+        )
+        return Response(
+            VerifierPermitAssignmentSerializer(assignment).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["delete"], url_path=r"assignments/(?P<permit_type_key>[^/.]+)")
+    def revoke_assignment(self, request, pk=None, permit_type_key=None):
+        """Deactivate a permit assignment for a user."""
+        user = self.get_object()
+        updated = VerifierPermitAssignment.objects.filter(
+            user=user, permit_type__key=permit_type_key
+        ).update(is_active=False)
+        if not updated:
+            return Response({"detail": "Penugasan tidak ditemukan."}, status=404)
+        return Response({"detail": "Penugasan dicabut."})
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
