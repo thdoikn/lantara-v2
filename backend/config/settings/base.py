@@ -31,6 +31,7 @@ THIRD_PARTY_APPS = [
     "channels",
     "django_celery_beat",
     "storages",
+    "mozilla_django_oidc",
 ]
 
 LOCAL_APPS = [
@@ -58,9 +59,16 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # OIDC session refresh — MUST come after AuthenticationMiddleware
+    "mozilla_django_oidc.middleware.SessionRefresh",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.common.middleware.SecurityHeadersMiddleware",
+]
+
+AUTHENTICATION_BACKENDS = [
+    "apps.accounts.oidc.JDIHOIDCBackend",  # SSO — checked first
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -187,7 +195,29 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:5173"])
 CORS_ALLOW_CREDENTIALS = True
 
-# MinIO / S3
+# ── SSO / OpenID Connect (Keycloak) ──────────────────────────────────────────
+OIDC_RP_CLIENT_ID = env("OIDC_RP_CLIENT_ID", default="")
+OIDC_RP_CLIENT_SECRET = env("OIDC_RP_CLIENT_SECRET", default="")
+
+OIDC_OP_AUTHORIZATION_ENDPOINT = env("OIDC_OP_AUTHORIZATION_ENDPOINT", default="")
+OIDC_OP_TOKEN_ENDPOINT = env("OIDC_OP_TOKEN_ENDPOINT", default="")
+OIDC_OP_USER_ENDPOINT = env("OIDC_OP_USER_ENDPOINT", default="")
+OIDC_OP_JWKS_ENDPOINT = env("OIDC_OP_JWKS_ENDPOINT", default="")
+
+OIDC_RP_SIGN_ALGO = env("OIDC_RP_SIGN_ALGO", default="RS256")
+OIDC_USE_PKCE = False  # confidential client uses client_secret; no PKCE needed
+OIDC_STORE_ACCESS_TOKEN = True
+OIDC_USERNAME_ALGO = "apps.accounts.oidc.generate_username"
+OIDC_AUTHENTICATION_CALLBACK_URL = "oidc-callback"
+
+# Required when running behind an SSL-terminating reverse proxy (nginx)
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Frontend base URL (used for building permit validation URLs etc.)
+FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", default="http://localhost:5173")
+
+# ── MinIO / S3
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
