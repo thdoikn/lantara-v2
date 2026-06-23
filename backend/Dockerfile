@@ -23,7 +23,7 @@ RUN pip install --upgrade pip setuptools wheel
 
 # Install Python dependencies from pyproject.toml without installing the project itself.
 # Copy only the dependency manifest first for better layer caching.
-COPY pyproject.toml .
+COPY backend/pyproject.toml .
 RUN pip install \
     "django>=5.0,<6.0" \
     "djangorestframework>=3.15" \
@@ -55,11 +55,14 @@ RUN pip install \
     "ruff>=0.4" \
     "black>=24.4"
 
-COPY . .
+COPY backend/ .
+
+# Seed fixture files — available at /fixtures/ inside the container
+COPY fixtures/ /fixtures/
 
 EXPOSE 8000
 
-COPY entrypoint.sh /entrypoint.sh
+COPY backend/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
