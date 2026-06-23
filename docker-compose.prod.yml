@@ -1,0 +1,143 @@
+version: "3.9"
+
+# ── Production compose — uses pre-built GHCR images, no source code needed ──
+#
+# Usage on VM:
+#   docker login ghcr.io -u <github-username> -p <personal-access-token>
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Copy .env.example → .env and fill in all values before first run.
+
+x-backend-env: &backend-env
+  env_file: .env
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+    DATABASE_URL: postgres://${POSTGRES_USER:-lantara}:${POSTGRES_PASSWORD:-lantara}@db:5432/${POSTGRES_DB:-lantara}
+    REDIS_URL: redis://redis:6379/0
+    MINIO_ENDPOINT: http://minio:9000
+
+services:
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lantara}
+      POSTGRES_USER: ${POSTGRES_USER:-lantara}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lantara}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lantara} -d ${POSTGRES_DB:-lantara}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - lantara
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - lantara
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - lantara
+
+  # ── Backend ─────────────────────────────────────────────────────────────────
+  backend:
+    image: ghcr.io/thdoikn/lantara-backend:latest
+    restart: always
+    <<: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - lantara
+    expose:
+      - "8000"
+
+  worker:
+    image: ghcr.io/thdoikn/lantara-backend:latest
+    restart: always
+    command: celery -A config.celery worker -l info -c 4
+    <<: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lantara
+
+  beat:
+    image: ghcr.io/thdoikn/lantara-backend:latest
+    restart: always
+    command: celery -A config.celery beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    <<: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lantara
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  frontend:
+    image: ghcr.io/thdoikn/lantara-frontend:latest
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - lantara
+
+  # ── Nginx ────────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    restart: always
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - lantara
+
+networks:
+  lantara:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
