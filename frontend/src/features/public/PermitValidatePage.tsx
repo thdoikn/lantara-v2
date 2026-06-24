@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
@@ -9,15 +9,17 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "@/lib/api";
+import { cn } from "@/lib/cn";
 import PublicNav from "@/components/PublicNav";
+import BatangBanyu from "@/components/BatangBanyu";
 
-interface ValidateResult {
+interface ValidateResultData {
   is_valid: boolean;
   permit_number: string;
   holder_name: string;
   permit_type_name: string;
   sektor_name: string;
-  issued_date: string;
+  issued_date: string | null;
   valid_until: string | null;
   issued_by: string;
   validation_message: string;
@@ -25,7 +27,7 @@ interface ValidateResult {
 
 const DETAIL_FIELDS: {
   label: string;
-  key: keyof ValidateResult;
+  key: keyof ValidateResultData;
   icon: React.ElementType;
   format?: (v: string | null) => string;
 }[] = [
@@ -36,20 +38,18 @@ const DETAIL_FIELDS: {
     label: "Tanggal Terbit",
     key: "issued_date",
     icon: CalendarDays,
-    format: (v) =>
-      v ? format(parseISO(v), "d MMMM yyyy", { locale: localeId }) : "—",
+    format: (v) => (v ? format(parseISO(v), "d MMMM yyyy", { locale: localeId }) : "—"),
   },
   {
     label: "Berlaku Hingga",
     key: "valid_until",
     icon: CalendarDays,
-    format: (v) =>
-      v ? format(parseISO(v), "d MMMM yyyy", { locale: localeId }) : "Tidak ada batas",
+    format: (v) => (v ? format(parseISO(v), "d MMMM yyyy", { locale: localeId }) : "Tidak ada batas"),
   },
   { label: "Diterbitkan Oleh", key: "issued_by", icon: Building2 },
 ];
 
-// ── Input hub (no UUID) ─────────────────────────────────────────────────────
+// ── Input hub ─────────────────────────────────────────────────────────────────
 
 function ValidateHub() {
   const navigate = useNavigate();
@@ -58,7 +58,9 @@ function ValidateHub() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = input.trim();
-    if (trimmed) navigate(`/validate/${trimmed}`);
+    // Reference numbers contain "/", so carry the value as a query param rather
+    // than a path segment (which would break route matching).
+    if (trimmed) navigate(`/validate?code=${encodeURIComponent(trimmed)}`);
   }
 
   return (
@@ -67,9 +69,7 @@ function ValidateHub() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
-      {/* Main validation card */}
-      <div className="bg-white rounded-3xl border border-[#EDE8D5] shadow-xl p-8">
-        {/* Icon */}
+      <div className="bg-white rounded-3xl border border-pertiwi-muted shadow-xl p-8">
         <div className="w-16 h-16 rounded-2xl bg-khatulistiwa-800 flex items-center justify-center mx-auto mb-6">
           <ShieldCheck className="w-8 h-8 text-terakota-400" aria-hidden="true" />
         </div>
@@ -77,18 +77,19 @@ function ValidateHub() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
-              htmlFor="uuid-input"
+              htmlFor="code-input"
               className="block text-khatulistiwa-900 font-display font-bold text-sm mb-2 tracking-wide uppercase"
             >
-              Nomor Izin / UUID Dokumen
+              Nomor Izin atau Kode QR
             </label>
             <input
-              id="uuid-input"
+              id="code-input"
               type="text"
+              autoFocus
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Contoh: 550e8400-e29b-41d4-a716-446655440000"
-              className="w-full border border-[#EDE8D5] bg-[#F5F0E8] rounded-xl px-4 py-3.5 text-khatulistiwa-900
+              placeholder="LANTARA/SOSIAL/… atau UUID dari QR"
+              className="w-full border border-pertiwi-muted bg-pertiwi-warm rounded-xl px-4 py-3.5 text-khatulistiwa-900
                          placeholder-khatulistiwa-400/40 text-sm outline-none
                          focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/20
                          transition-all font-mono"
@@ -107,7 +108,6 @@ function ValidateHub() {
           </button>
         </form>
 
-        {/* Trust signal */}
         <div className="flex items-center justify-center gap-2 mt-4">
           <Shield className="w-3.5 h-3.5 text-khatulistiwa-400/50" aria-hidden="true" />
           <p className="text-khatulistiwa-400/50 text-xs text-center">
@@ -116,17 +116,16 @@ function ValidateHub() {
         </div>
       </div>
 
-      {/* Helper info below card */}
       <div className="mt-6 grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-[#EDE8D5] p-4 text-center shadow-sm">
+        <div className="bg-white rounded-2xl border border-pertiwi-muted p-4 text-center shadow-sm">
           <QrCode className="w-6 h-6 text-khatulistiwa-500 mx-auto mb-2" aria-hidden="true" />
           <p className="text-khatulistiwa-900 font-semibold text-xs">Scan QR Code</p>
-          <p className="text-khatulistiwa-400/60 text-xs mt-1">Pindai QR pada dokumen izin fisik atau digital</p>
+          <p className="text-khatulistiwa-400/60 text-xs mt-1">Pindai QR pada dokumen izin untuk membuka halaman ini otomatis</p>
         </div>
-        <div className="bg-white rounded-2xl border border-[#EDE8D5] p-4 text-center shadow-sm">
+        <div className="bg-white rounded-2xl border border-pertiwi-muted p-4 text-center shadow-sm">
           <FileText className="w-6 h-6 text-khatulistiwa-500 mx-auto mb-2" aria-hidden="true" />
           <p className="text-khatulistiwa-900 font-semibold text-xs">Nomor Referensi</p>
-          <p className="text-khatulistiwa-400/60 text-xs mt-1">Gunakan nomor LANTARA/... dari surat izin Anda</p>
+          <p className="text-khatulistiwa-400/60 text-xs mt-1">Masukkan nomor LANTARA/… dari surat izin Anda</p>
         </div>
       </div>
     </motion.div>
@@ -135,23 +134,25 @@ function ValidateHub() {
 
 // ── Validate result ─────────────────────────────────────────────────────────
 
-function ValidateResult({ uuid }: { uuid: string }) {
+function ValidateResult({ code }: { code: string }) {
   const navigate = useNavigate();
-  const { data, isLoading, isError } = useQuery<ValidateResult>({
-    queryKey: ["validate", uuid],
-    queryFn: () => api.get(`/permits/validate/${uuid}/`).then((r) => r.data),
+  const { data, isLoading, isError } = useQuery<ValidateResultData>({
+    queryKey: ["validate", code],
+    queryFn: () =>
+      api.get(`/permits/validate/?code=${encodeURIComponent(code)}`).then((r) => r.data),
     retry: false,
   });
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-lg mx-auto rounded-3xl bg-white border border-[#EDE8D5] shadow-xl p-12 text-center space-y-4">
+      <div className="w-full max-w-lg mx-auto rounded-3xl bg-white border border-pertiwi-muted shadow-xl p-12 text-center space-y-4">
         <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-khatulistiwa-500 border-t-transparent mx-auto" />
         <p className="text-khatulistiwa-500/60 text-sm">Memvalidasi dokumen…</p>
       </div>
     );
   }
 
+  // Network/server error (the API returns 200 + is_valid:false for "not found").
   if (isError || !data) {
     return (
       <motion.div
@@ -163,15 +164,15 @@ function ValidateResult({ uuid }: { uuid: string }) {
           <XCircle className="h-8 w-8 text-red-400" aria-hidden="true" />
         </div>
         <div>
-          <h1 className="font-display text-xl font-bold text-khatulistiwa-900">Dokumen Tidak Valid</h1>
-          <p className="text-sm text-khatulistiwa-500/60 mt-1.5">Kode QR tidak ditemukan atau dokumen telah dicabut.</p>
+          <h1 className="font-display text-xl font-bold text-khatulistiwa-900">Gagal Memvalidasi</h1>
+          <p className="text-sm text-khatulistiwa-500/60 mt-1.5">Terjadi gangguan koneksi. Silakan coba lagi.</p>
         </div>
         <button
           onClick={() => navigate("/validate")}
           className="inline-flex items-center gap-1.5 text-xs text-khatulistiwa-400/60 hover:text-khatulistiwa-700 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Coba UUID lain
+          Coba lagi
         </button>
       </motion.div>
     );
@@ -182,33 +183,34 @@ function ValidateResult({ uuid }: { uuid: string }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="w-full max-w-lg mx-auto rounded-3xl overflow-hidden bg-white shadow-xl"
-      style={{ borderWidth: 1, borderStyle: "solid", borderColor: data.is_valid ? "rgba(5,150,105,0.2)" : "rgba(220,38,38,0.2)" }}
+      className={cn(
+        "w-full max-w-lg mx-auto rounded-3xl overflow-hidden bg-white shadow-xl border",
+        data.is_valid ? "border-emerald-500/20" : "border-red-500/20",
+      )}
     >
       {/* Status top bar */}
       <div
-        className="h-1.5 w-full"
-        style={{
-          background: data.is_valid
-            ? "linear-gradient(90deg, #059669, rgba(5,150,105,0.4))"
-            : "#DC2626",
-        }}
+        className={cn(
+          "h-1.5 w-full",
+          data.is_valid ? "bg-gradient-to-r from-emerald-500 to-emerald-500/40" : "bg-red-600",
+        )}
+        aria-hidden="true"
       />
 
       <div className="p-8 space-y-6">
         {/* Status header */}
         <div className="flex items-center gap-4">
           <div
-            className="h-14 w-14 rounded-2xl flex items-center justify-center ring-1 shrink-0"
-            style={{
-              backgroundColor: data.is_valid ? "rgba(5,150,105,0.1)" : "rgba(220,38,38,0.1)",
-              borderColor: data.is_valid ? "rgba(5,150,105,0.2)" : "rgba(220,38,38,0.2)",
-            }}
+            className={cn(
+              "h-14 w-14 rounded-2xl flex items-center justify-center ring-1 shrink-0",
+              data.is_valid ? "bg-emerald-50 ring-emerald-200" : "bg-red-50 ring-red-200",
+            )}
           >
-            {data.is_valid
-              ? <CheckCircle2 className="h-7 w-7 text-emerald-500" aria-hidden="true" />
-              : <XCircle className="h-7 w-7 text-red-400" aria-hidden="true" />
-            }
+            {data.is_valid ? (
+              <CheckCircle2 className="h-7 w-7 text-emerald-500" aria-hidden="true" />
+            ) : (
+              <XCircle className="h-7 w-7 text-red-400" aria-hidden="true" />
+            )}
           </div>
           <div>
             <h1 className="font-display text-xl font-bold text-khatulistiwa-900">
@@ -220,7 +222,7 @@ function ValidateResult({ uuid }: { uuid: string }) {
 
         {/* Detail fields */}
         {data.is_valid && (
-          <div className="rounded-2xl bg-[#F8FAFF] border border-[#EDE8D5] overflow-hidden divide-y divide-[#EDE8D5]">
+          <dl className="rounded-2xl bg-surface border border-pertiwi-muted overflow-hidden divide-y divide-pertiwi-muted">
             {DETAIL_FIELDS.map(({ label, key, icon: Icon, format: fmt }) => {
               const raw = data[key];
               const val = fmt ? fmt(raw as string | null) : (raw as string) || "—";
@@ -232,21 +234,21 @@ function ValidateResult({ uuid }: { uuid: string }) {
                 </div>
               );
             })}
-          </div>
+          </dl>
         )}
 
         {/* Trust + back link */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1.5 text-xs text-khatulistiwa-400/50">
-            <Shield className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Divalidasi terhadap database resmi Otorita IKN</span>
+        <div className="flex items-center justify-between pt-1 gap-3">
+          <div className="flex items-center gap-1.5 text-xs text-khatulistiwa-400/50 min-w-0">
+            <Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">Divalidasi terhadap database resmi Otorita IKN</span>
           </div>
           <button
             onClick={() => navigate("/validate")}
-            className="inline-flex items-center gap-1 text-xs text-khatulistiwa-400/60 hover:text-khatulistiwa-700 transition-colors"
+            className="inline-flex items-center gap-1 text-xs text-khatulistiwa-400/60 hover:text-khatulistiwa-700 transition-colors shrink-0"
           >
             <ArrowLeft className="h-3 w-3" />
-            Kembali
+            {data.is_valid ? "Validasi lain" : "Coba lagi"}
           </button>
         </div>
       </div>
@@ -254,54 +256,52 @@ function ValidateResult({ uuid }: { uuid: string }) {
   );
 }
 
-// ── Page — dark header + cream body ─────────────────────────────────────────
+// ── Page ────────────────────────────────────────────────────────────────────
 
 export default function PermitValidatePage() {
   const { uuid } = useParams<{ uuid?: string }>();
+  const [searchParams] = useSearchParams();
+  // QR deep link arrives as /validate/:uuid; the hub form uses /validate?code=…
+  const code = uuid ?? searchParams.get("code") ?? "";
 
   return (
-    <div className="min-h-screen" style={{ background: "#04182A" }}>
+    <div className="min-h-screen bg-khatulistiwa-950">
       <PublicNav />
 
-      {/* Dark header section */}
-      <div
-        className="relative pt-20 pb-24 px-8 text-center"
-        style={{ background: "linear-gradient(160deg, #04182A 0%, #0A2540 100%)" }}
-      >
-        {/* Breadcrumb */}
-        <nav className="flex items-center justify-center gap-2 text-xs text-khatulistiwa-300/40 mb-8" aria-label="Breadcrumb">
-          <Link to="/" className="hover:text-terakota-400 transition-colors">Lantara</Link>
-          <span aria-hidden="true">/</span>
-          <span className="text-white/50">Validasi Dokumen</span>
-        </nav>
+      {/* Dark header */}
+      <div className="relative pt-20 pb-24 px-8 text-center overflow-hidden bg-gradient-hero">
+        <BatangBanyu variant="fill" opacity={0.05} className="text-terakota-400" />
 
-        <p className="text-terakota-400 text-xs font-bold tracking-[0.2em] uppercase mb-4">
-          VERIFIKASI KEASLIAN
-        </p>
-        <h1 className="text-white font-display font-black text-4xl md:text-5xl mb-3">
-          Validasi Dokumen Izin
-        </h1>
-        <p className="text-khatulistiwa-200/50 text-base max-w-md mx-auto">
-          Masukkan nomor izin atau UUID dari QR code untuk memverifikasi keaslian dokumen secara real-time.
-        </p>
+        <div className="relative z-10">
+          <nav className="flex items-center justify-center gap-2 text-xs text-khatulistiwa-300/40 mb-8" aria-label="Breadcrumb">
+            <Link to="/" className="hover:text-terakota-400 transition-colors">Lantara</Link>
+            <span aria-hidden="true">/</span>
+            <span className="text-white/50">Validasi Dokumen</span>
+          </nav>
 
-        {/* Curved wave to cream — same pattern as katalog and izin detail */}
-        <div className="absolute bottom-0 left-0 right-0" aria-hidden="true">
-          <svg
-            viewBox="0 0 1440 40"
-            className="w-full block"
-            preserveAspectRatio="none"
-            style={{ height: "40px" }}
-          >
-            <path d="M0,40 L0,0 Q720,40 1440,0 L1440,40 Z" fill="#F5F0E8" />
+          <p className="text-terakota-400 text-xs font-bold tracking-[0.2em] uppercase mb-4">
+            VERIFIKASI KEASLIAN
+          </p>
+          <h1 className="text-white font-display font-black text-4xl md:text-5xl mb-3">
+            Validasi Dokumen Izin
+          </h1>
+          <p className="text-khatulistiwa-200/50 text-base max-w-md mx-auto">
+            Masukkan nomor izin atau pindai QR code untuk memverifikasi keaslian dokumen secara real-time.
+          </p>
+        </div>
+
+        {/* Curved wave to cream — tokenized via currentColor */}
+        <div className="absolute bottom-0 left-0 right-0 text-pertiwi-warm" aria-hidden="true">
+          <svg viewBox="0 0 1440 40" className="w-full block" preserveAspectRatio="none" style={{ height: "40px" }}>
+            <path d="M0,40 L0,0 Q720,40 1440,0 L1440,40 Z" fill="currentColor" />
           </svg>
         </div>
       </div>
 
       {/* Cream body */}
-      <div className="bg-[#F5F0E8] px-8 py-16">
+      <div className="bg-pertiwi-warm px-8 py-16 min-h-[40vh]">
         <div className="max-w-lg mx-auto">
-          {uuid ? <ValidateResult uuid={uuid} /> : <ValidateHub />}
+          {code ? <ValidateResult code={code} /> : <ValidateHub />}
         </div>
       </div>
     </div>
