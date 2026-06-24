@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useRef, useEffect, useId } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Clock, Shield, Smartphone, CheckCircle2,
@@ -12,31 +12,8 @@ import { useAuthStore } from "@/lib/auth";
 import { getPortals, staffPortals, isStaffWithoutRole } from "@/lib/access";
 import { getSektorVisual } from "@/lib/sektorVisuals";
 import PublicNav from "@/components/PublicNav";
+import BatangBanyu from "@/components/BatangBanyu";
 import type { Sektor } from "@/types";
-
-// ── Batik interlocked-chain ornament (IKN motif) ───────────────────────────────
-
-function BatikBorder({ flip = false, opacity = 1 }: { flip?: boolean; opacity?: number }) {
-  const id = useId().replace(/:/g, "");
-  return (
-    <div style={{ width: "100%", height: "56px", transform: flip ? "scaleY(-1)" : "none", flexShrink: 0, lineHeight: 0 }} aria-hidden="true">
-      <svg width="100%" height="56" viewBox="0 0 1440 56" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
-        <defs>
-          <pattern id={`batik-${id}`} x="0" y="0" width="96" height="56" patternUnits="userSpaceOnUse">
-            <ellipse cx="48" cy="28" rx="44" ry="22" fill="none" stroke="#DBAF6C" strokeWidth="1.5" opacity="0.7" />
-            <ellipse cx="48" cy="28" rx="32" ry="14" fill="none" stroke="#DBAF6C" strokeWidth="1" opacity="0.5" />
-            <ellipse cx="48" cy="28" rx="10" ry="6" fill="none" stroke="#DBAF6C" strokeWidth="1" opacity="0.6" />
-            <ellipse cx="4" cy="28" rx="8" ry="5" fill="#04182A" stroke="#DBAF6C" strokeWidth="1.5" opacity="0.7" />
-            <ellipse cx="92" cy="28" rx="8" ry="5" fill="#04182A" stroke="#DBAF6C" strokeWidth="1.5" opacity="0.7" />
-            <circle cx="48" cy="6" r="2" fill="#DBAF6C" opacity="0.5" />
-            <circle cx="48" cy="50" r="2" fill="#DBAF6C" opacity="0.5" />
-          </pattern>
-        </defs>
-        <rect width="1440" height="56" fill={`url(#batik-${id})`} />
-      </svg>
-    </div>
-  );
-}
 
 // ── Section wave transitions ───────────────────────────────────────────────────
 
@@ -96,6 +73,8 @@ function Hero() {
       aria-label="Hero Lantara"
     >
       <div className="absolute inset-0 dot-grid opacity-[0.04] text-white pointer-events-none" aria-hidden="true" />
+      {/* Batang banyu river-weave texture — the IKN identity, woven into the front door */}
+      <BatangBanyu variant="fill" opacity={0.05} className="text-terakota-400" />
 
       <motion.div
         initial={{ opacity: 0, y: 28 }}
@@ -172,9 +151,9 @@ function Hero() {
         </div>
       </motion.div>
 
-      {/* Batik border at bottom */}
-      <div className="absolute bottom-0 inset-x-0">
-        <BatikBorder opacity={0.6} />
+      {/* Batang banyu seam at bottom */}
+      <div className="absolute bottom-0 inset-x-0 text-terakota-500">
+        <BatangBanyu opacity={0.6} />
       </div>
     </section>
   );
@@ -222,7 +201,7 @@ function AccessPanel() {
   const visible = keys.filter((k) => portals[k]);
 
   return (
-    <section className="bg-[#04182A] px-6 pt-10 pb-14" aria-label="Portal yang dapat Anda akses">
+    <section className="bg-khatulistiwa-950 px-6 pt-10 pb-14" aria-label="Portal yang dapat Anda akses">
       <div className="max-w-5xl mx-auto">
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 md:p-9 backdrop-blur-sm">
           <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
@@ -326,7 +305,7 @@ function StatsStrip() {
           >
             <span className="font-display font-black text-4xl md:text-5xl text-khatulistiwa-900 leading-none">{stat.number}</span>
             <span className="font-display font-bold text-khatulistiwa-800 text-base mt-2">{stat.label}</span>
-            <span className="text-khatulistiwa-700/70 text-xs mt-1">{stat.sub}</span>
+            <span className="text-khatulistiwa-800/80 text-xs mt-1">{stat.sub}</span>
           </motion.div>
         ))}
       </div>
@@ -474,7 +453,7 @@ const STEPS = [
 
 function HowItWorks() {
   return (
-    <section className="bg-[#F5F0E8] pt-16 pb-0">
+    <section className="bg-pertiwi-warm pt-16 pb-20">
       <div className="max-w-5xl mx-auto px-8">
         <div className="text-center mb-14">
           <p className="text-terakota-600 text-xs font-bold tracking-[0.2em] uppercase mb-3">CARA KERJA</p>
@@ -515,16 +494,6 @@ function HowItWorks() {
           ))}
         </div>
       </div>
-      {/* EXIT transition: cream → dark */}
-      <svg
-        viewBox="0 0 1440 48"
-        className="w-full block mt-12"
-        preserveAspectRatio="none"
-        style={{ height: "48px", display: "block", marginBottom: "-1px" }}
-        aria-hidden="true"
-      >
-        <path d="M0,48 L0,0 Q720,48 1440,0 L1440,48 Z" fill="#04182A" />
-      </svg>
     </section>
   );
 }
@@ -540,7 +509,7 @@ const FEATURES = [
 
 function Features() {
   return (
-    <section className="bg-[#04182A] pt-12 pb-0">
+    <section className="bg-khatulistiwa-950 pt-16 pb-20">
       <div className="max-w-5xl mx-auto px-8">
         <div className="text-center mb-14">
           <p className="text-terakota-500 text-xs font-bold tracking-[0.2em] uppercase mb-3">Keunggulan</p>
@@ -572,17 +541,6 @@ function Features() {
           ))}
         </div>
       </div>
-
-      {/* EXIT transition: dark → cream (no second SVG at top — HowItWorks owns the entry) */}
-      <svg
-        viewBox="0 0 1440 48"
-        className="w-full block mt-12"
-        preserveAspectRatio="none"
-        style={{ height: "48px", display: "block", marginBottom: "-1px" }}
-        aria-hidden="true"
-      >
-        <path d="M0,48 L0,0 Q720,48 1440,0 L1440,48 Z" fill="#F5F0E8" />
-      </svg>
     </section>
   );
 }
@@ -644,7 +602,7 @@ function FAQ() {
         <div className="space-y-3">
           {FAQS.map((f, i) => (
             <FAQItem
-              key={i}
+              key={f.q}
               q={f.q}
               a={f.a}
               isOpen={open === i}
@@ -707,8 +665,8 @@ function CTA() {
 
 function Footer() {
   return (
-    <footer className="bg-khatulistiwa-950">
-      <BatikBorder flip opacity={0.5} />
+    <footer className="bg-khatulistiwa-950 text-terakota-500">
+      <BatangBanyu flip opacity={0.5} />
 
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="flex flex-col md:flex-row items-start justify-between gap-10">
@@ -753,7 +711,7 @@ function Footer() {
         </div>
       </div>
 
-      <BatikBorder opacity={0.5} />
+      <BatangBanyu opacity={0.5} />
     </footer>
   );
 }
@@ -780,7 +738,11 @@ export default function LandingPage() {
         {/* Sektor cards + Cara Kerja — both cream, no transition needed */}
         <SektorCards sektors={sektors ?? []} />
         <HowItWorks />
+        {/* cream → dark */}
+        <WaveTransition from="#F5F0E8" to="#04182A" />
         <Features />
+        {/* dark → cream */}
+        <WaveTransition from="#04182A" to="#F5F0E8" />
         <FAQ />
         {/* cream → brand blue */}
         <WaveTransition from="#F5F0E8" to="#0D3060" />
