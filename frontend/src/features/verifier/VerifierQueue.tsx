@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, parseISO, differenceInHours } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Clock, AlertTriangle, CheckCircle2, RefreshCw, Flame, Inbox, BadgeCheck } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle2, RefreshCw, Flame, Inbox, BadgeCheck, Search, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
+import Kbd from "@/components/ui/Kbd";
 import type { PaginatedResponse, Submission, SubmissionStatus } from "@/types";
 
 const STATUS_LABEL: Record<SubmissionStatus, string> = {
@@ -50,6 +51,11 @@ const SLA_STYLES: Record<SLALevel, { bar: string; bg: string; text: string; Icon
 
 export default function VerifierQueue() {
   const [activeTab, setActiveTab] = useState(0);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState(0);
+  const navigate = useNavigate();
+  const searchRef = useRef<HTMLInputElement>(null);
+  const rowRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const { statuses } = FILTER_TABS[activeTab];
 
   const { data, isLoading, refetch, isFetching } = useQuery<PaginatedResponse<Submission>>({
@@ -59,9 +65,50 @@ export default function VerifierQueue() {
     refetchInterval: 60_000,
   });
 
-  const submissions = data?.results ?? [];
+  const submissions = useMemo(() => data?.results ?? [], [data]);
   const breachedCount = submissions.filter((s) => s.is_sla_breached).length;
   const atRiskCount = submissions.filter((s) => !s.is_sla_breached && s.is_sla_at_risk).length;
+
+  // Client-side search across the loaded queue (ref #, applicant, permit).
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return submissions;
+    return submissions.filter(
+      (s) =>
+        s.permit_type_name?.toLowerCase().includes(q) ||
+        s.applicant_name?.toLowerCase().includes(q) ||
+        s.reference_number?.toLowerCase().includes(q),
+    );
+  }, [submissions, query]);
+
+  useEffect(() => setSelected(0), [activeTab, query]);
+
+  // Keyboard triage: j/k or arrows to move, Enter to open, f to find.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (document.activeElement as HTMLElement)?.tagName;
+      const typing = tag === "INPUT" || tag === "TEXTAREA";
+      if (typing) {
+        if (e.key === "Escape") (document.activeElement as HTMLElement)?.blur();
+        return;
+      }
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault(); setSelected((s) => Math.min(s + 1, filtered.length - 1));
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault(); setSelected((s) => Math.max(s - 1, 0));
+      } else if (e.key === "Enter" && filtered[selected]) {
+        e.preventDefault(); navigate(`/verifier/submissions/${filtered[selected].id}`);
+      } else if (e.key === "f") {
+        e.preventDefault(); searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [filtered, selected, navigate]);
+
+  useEffect(() => {
+    rowRefs.current[selected]?.scrollIntoView({ block: "nearest" });
+  }, [selected]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -127,30 +174,57 @@ export default function VerifierQueue() {
         ))}
       </div>
 
+      {/* ── Search + keyboard hint ── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-1 min-w-[220px] bg-white border border-khatulistiwa-100 rounded-xl px-3.5 py-2.5 focus-within:border-khatulistiwa-300 transition-colors">
+          <Search className="w-4 h-4 text-khatulistiwa-400 shrink-0" aria-hidden="true" />
+          <input
+            ref={searchRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari nomor, pemohon, atau jenis izin…"
+            className="flex-1 bg-transparent text-sm text-khatulistiwa-900 placeholder-khatulistiwa-400/60 outline-none"
+            aria-label="Cari dalam antrean"
+          />
+          {query && (
+            <button onClick={() => setQuery("")} className="text-khatulistiwa-400 hover:text-khatulistiwa-700" aria-label="Hapus pencarian">
+              <X className="w-4 h-4" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        <div className="hidden sm:flex items-center gap-2 text-[11px] text-khatulistiwa-400">
+          <span className="flex items-center gap-1"><Kbd>j</Kbd><Kbd>k</Kbd> pilih</span>
+          <span className="flex items-center gap-1"><Kbd>↵</Kbd> buka</span>
+          <span className="flex items-center gap-1"><Kbd>f</Kbd> cari</span>
+        </div>
+      </div>
+
       {/* ── Cards ── */}
       {isLoading && (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-[88px] rounded-2xl bg-white animate-pulse border border-khatulistiwa-100" />
+            <div key={i} className="h-[72px] rounded-2xl bg-white animate-pulse border border-khatulistiwa-100" />
           ))}
         </div>
       )}
 
-      {!isLoading && submissions.length === 0 && (
+      {!isLoading && filtered.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="bg-white border border-khatulistiwa-100 rounded-2xl p-12 text-center space-y-3"
         >
           <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" aria-hidden="true" />
-          <p className="font-semibold text-khatulistiwa-900">Antrean kosong</p>
-          <p className="text-sm text-khatulistiwa-600/70">Tidak ada permohonan dalam kategori ini.</p>
+          <p className="font-semibold text-khatulistiwa-900">{query ? "Tidak ada hasil" : "Antrean kosong"}</p>
+          <p className="text-sm text-khatulistiwa-600/70">
+            {query ? "Coba kata kunci lain." : "Tidak ada permohonan dalam kategori ini."}
+          </p>
         </motion.div>
       )}
 
       <AnimatePresence mode="popLayout">
         <div className="space-y-2">
-          {submissions.map((sub, i) => {
+          {filtered.map((sub, i) => {
             const level = getSLALevel(sub.sla_due_at, sub.is_sla_breached);
             const sla = SLA_STYLES[level];
             const hoursLeft = sub.sla_due_at
@@ -167,18 +241,22 @@ export default function VerifierQueue() {
                 transition={{ delay: i * 0.03, duration: 0.25 }}
               >
                 <Link
+                  ref={(el) => { rowRefs.current[i] = el; }}
                   to={`/verifier/submissions/${sub.id}`}
+                  onMouseEnter={() => setSelected(i)}
                   className={cn(
                     "group flex gap-0 rounded-2xl overflow-hidden border transition-all duration-150",
-                    "bg-white hover:shadow-md hover:-translate-y-0.5",
-                    level !== "ok" ? cn("border-khatulistiwa-100", sla.bg) : "border-khatulistiwa-100"
+                    "bg-white hover:shadow-md",
+                    i === selected
+                      ? "ring-2 ring-khatulistiwa-500 ring-offset-1 ring-offset-pertiwi-warm border-transparent shadow-md"
+                      : level !== "ok" ? cn("border-khatulistiwa-100", sla.bg) : "border-khatulistiwa-100"
                   )}
                 >
                   {/* SLA color bar */}
                   <div className={cn("w-1 shrink-0", sla.bar)} />
 
                   {/* Content */}
-                  <div className="flex-1 p-4">
+                  <div className="flex-1 p-3.5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">

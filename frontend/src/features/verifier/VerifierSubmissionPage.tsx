@@ -7,8 +7,16 @@ import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft, AlertTriangle, C
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { toast } from "@/lib/toast";
 import type { Submission, AuditEntry, DocumentRequirement } from "@/types";
 import DocumentUploadSection from "../applicant/DocumentUploadSection";
+
+const ACTION_TOAST: Record<string, string> = {
+  approve: "Permohonan disetujui & dilanjutkan.",
+  request_revision: "Permintaan revisi dikirim ke pemohon.",
+  schedule_site_visit: "Kunjungan lapangan dijadwalkan.",
+  reject: "Permohonan ditolak.",
+};
 
 // ── Action panel ─────────────────────────────────────────────────────────────
 
@@ -256,10 +264,12 @@ export default function VerifierSubmissionPage() {
   const actMutation = useMutation({
     mutationFn: ({ action, notes }: { action: string; notes?: string }) =>
       api.post(`/submissions/${id}/act/`, { action, notes }),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["submission", id] });
       qc.invalidateQueries({ queryKey: ["verifier-queue"] });
+      toast.success(ACTION_TOAST[variables.action] ?? "Tindakan berhasil disimpan.");
     },
+    onError: () => toast.error("Gagal menyimpan tindakan. Silakan coba lagi."),
   });
 
   const handleAction = useCallback(
