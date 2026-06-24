@@ -1,32 +1,79 @@
+import uuid as uuid_lib
+
 from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import IssuedPermit
-from .serializers import IssuedPermitDetailSerializer, IssuedPermitPublicSerializer
+from .serializers import IssuedPermitDetailSerializer
+
+
+def _validation_payload(permit: IssuedPermit) -> dict:
+    """Public, self-describing validation result consumed by the frontend."""
+    sub = permit.submission
+    return {
+        "is_valid": True,
+        "validation_message": "Dokumen ini sah dan terdaftar resmi di Otorita Ibu Kota Nusantara.",
+        "permit_number": sub.reference_number,
+        "holder_name": sub.applicant.full_name,
+        "permit_type_name": sub.permit_type.name,
+        "sektor_name": sub.permit_type.sektor.name,
+        "issued_date": permit.published_at.isoformat() if permit.published_at else None,
+        "valid_until": None,
+        "issued_by": permit.signatory_name or "Otorita Ibu Kota Nusantara",
+    }
+
+
+_INVALID_PAYLOAD = {
+    "is_valid": False,
+    "validation_message": "Dokumen tidak ditemukan, belum diterbitkan, atau telah dicabut.",
+    "permit_number": "",
+    "holder_name": "",
+    "permit_type_name": "",
+    "sektor_name": "",
+    "issued_date": None,
+    "valid_until": None,
+    "issued_by": "",
+}
 
 
 class PublicValidateView(APIView):
     """
-    GET /api/v1/permits/validate/{uuid}/
-    Public permit validation by QR UUID — no login required.
+    Public permit validation — no login required. Two entry points:
+      GET /api/v1/permits/validate/{uuid}/   ← QR code deep links
+      GET /api/v1/permits/validate/?code=... ← UUID *or* reference number
+                                               (e.g. LANTARA/SOSIAL/.../2026/0001)
+
+    Always returns HTTP 200 with an ``is_valid`` flag so the client can render a
+    proper valid / invalid result card; only malformed requests return non-200.
     """
 
     permission_classes = [AllowAny]
 
-    def get(self, request, uuid):
-        try:
-            permit = IssuedPermit.objects.select_related(
-                "submission__permit_type__sektor",
-                "submission__applicant",
-            ).get(
-                validation_uuid=uuid,
-                generation_status=IssuedPermit.GenerationStatus.PUBLISHED,
+    def get(self, request, uuid=None):
+        code = str(uuid) if uuid is not None else (request.query_params.get("code") or "").strip()
+        if not code:
+            return Response(
+                {"detail": "Sertakan UUID atau nomor izin pada parameter 'code'."},
+                status=400,
             )
-        except IssuedPermit.DoesNotExist:
-            return Response({"detail": "Izin tidak ditemukan atau belum diterbitkan."}, status=404)
-        return Response(IssuedPermitPublicSerializer(permit).data)
+
+        base = IssuedPermit.objects.select_related(
+            "submission__permit_type__sektor",
+            "submission__applicant",
+        ).filter(generation_status=IssuedPermit.GenerationStatus.PUBLISHED)
+
+        # A UUID matches the QR validation id; anything else is a reference number.
+        try:
+            lookup = {"validation_uuid": uuid_lib.UUID(code)}
+        except (ValueError, AttributeError, TypeError):
+            lookup = {"submission__reference_number__iexact": code}
+
+        permit = base.filter(**lookup).first()
+        if permit is None:
+            return Response(_INVALID_PAYLOAD)
+        return Response(_validation_payload(permit))
 
 
 class GenerateDraftView(APIView):
