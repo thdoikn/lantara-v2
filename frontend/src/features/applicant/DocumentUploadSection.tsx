@@ -4,6 +4,7 @@ import { Upload, CheckCircle2, XCircle, Clock, Trash2, File as FileIcon, Externa
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
+import DocumentViewerModal, { type ViewerDoc } from "@/components/DocumentViewerModal";
 import type { DocumentRequirement, UploadedDocument } from "@/types";
 
 interface Props {
@@ -24,6 +25,7 @@ export default function DocumentUploadSection({ submissionId, requirements, read
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<ViewerDoc | null>(null);
 
   const { data: docs } = useQuery<UploadedDocument[]>({
     queryKey: ["submissions", submissionId, "documents"],
@@ -122,16 +124,29 @@ export default function DocumentUploadSection({ submissionId, requirements, read
             {uploaded ? (
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 bg-khatulistiwa-50 border border-khatulistiwa-200 rounded-lg px-3 py-2 flex-1 min-w-0">
-                  <FileIcon className="w-3.5 h-3.5 text-khatulistiwa-500 flex-shrink-0" aria-hidden="true" />
-                  <span className="text-khatulistiwa-700 text-xs font-medium truncate">
-                    {uploaded.original_filename ?? uploaded.file_url.split("/").pop()}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setViewing({
+                        url: uploaded.file_url,
+                        name: uploaded.original_filename ?? uploaded.file_url.split("/").pop() ?? "Dokumen",
+                        mimeType: uploaded.mime_type,
+                      })
+                    }
+                    className="flex items-center gap-2 min-w-0 flex-1 text-left group/file"
+                    aria-label={`Pratinjau ${uploaded.original_filename ?? "dokumen"}`}
+                  >
+                    <FileIcon className="w-3.5 h-3.5 text-khatulistiwa-500 flex-shrink-0" aria-hidden="true" />
+                    <span className="text-khatulistiwa-700 text-xs font-medium truncate group-hover/file:text-khatulistiwa-900 group-hover/file:underline">
+                      {uploaded.original_filename ?? uploaded.file_url.split("/").pop()}
+                    </span>
+                  </button>
                   <a
                     href={uploaded.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="ml-auto text-khatulistiwa-400 hover:text-khatulistiwa-600 flex-shrink-0 transition-colors"
-                    aria-label="Buka dokumen"
+                    aria-label="Buka dokumen di tab baru"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
@@ -205,6 +220,7 @@ export default function DocumentUploadSection({ submissionId, requirements, read
           </div>
         );
       })}
+      <DocumentViewerModal doc={viewing} onClose={() => setViewing(null)} />
     </div>
   );
 }
