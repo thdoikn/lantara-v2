@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ChevronRight, Plus, Eye, EyeOff, Edit3, X } from "lucide-react";
+import { ChevronRight, Plus, Eye, EyeOff, Edit3, X, Loader2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
@@ -257,8 +257,9 @@ function IzinModal({
           <button
             type="submit"
             disabled={save.isPending}
-            className="px-4 py-2 text-sm rounded-lg bg-royal-700 text-white font-medium hover:bg-royal-800 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-royal-700 text-white font-medium hover:bg-royal-800 disabled:opacity-60 transition-colors"
           >
+            {save.isPending && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
             {save.isPending ? "Menyimpan…" : isEdit ? "Simpan Perubahan" : "Tambah Izin"}
           </button>
         </div>
