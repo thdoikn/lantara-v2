@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { Toaster } from "./components/Toaster";
 
 // Public
 const LandingPage = lazy(() => import("./features/public/LandingPage"));
@@ -52,6 +53,7 @@ function LoadingSpinner() {
 export default function App() {
   return (
     <Suspense fallback={<LoadingSpinner />}>
+      <Toaster />
       <Routes>
         {/* ── Public ── */}
         <Route path="/" element={<LandingPage />} />
