@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Clock, Shield, Smartphone, CheckCircle2,
   ChevronDown, Search, MessageCircle, Building2,
+  LayoutDashboard, ShieldCheck, Settings, Info,
 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
+import { getPortals, staffPortals, isStaffWithoutRole } from "@/lib/access";
 import { getSektorVisual } from "@/lib/sektorVisuals";
 import PublicNav from "@/components/PublicNav";
 import type { Sektor } from "@/types";
@@ -173,6 +175,128 @@ function Hero() {
       {/* Batik border at bottom */}
       <div className="absolute bottom-0 inset-x-0">
         <BatikBorder opacity={0.6} />
+      </div>
+    </section>
+  );
+}
+
+// ── Portal access panel (authenticated only) ────────────────────────────────────
+// Surfaces exactly the portals the signed-in user may enter. Access is derived
+// from RBAC roles (lib/access), so an OIKN employee signed in via SSO without a
+// staff role sees only the pemohon portal — never a confusing empty admin view.
+
+const PORTAL_META = {
+  pemohon: {
+    to: "/portal",
+    icon: LayoutDashboard,
+    title: "Portal Pemohon",
+    desc: "Ajukan & pantau permohonan izin Anda",
+  },
+  verifier: {
+    to: "/verifier",
+    icon: ShieldCheck,
+    title: "Workspace Verifikator",
+    desc: "Verifikasi permohonan sesuai penugasan Anda",
+  },
+  admin: {
+    to: "/admin",
+    icon: Settings,
+    title: "Panel Admin",
+    desc: "Kelola engine perizinan, pengguna & analitik",
+  },
+} as const;
+
+function AccessPanel() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  if (!isAuthenticated || !user) return null;
+
+  const portals = getPortals(user);
+  const staff = staffPortals(user);
+  // One-click handoff: if the user has exactly one staff portal, spotlight it.
+  const primary = staff.length === 1 ? staff[0] : null;
+  const firstName = user.full_name?.split(" ")[0] ?? "";
+
+  const keys: Array<keyof typeof PORTAL_META> = ["pemohon", "verifier", "admin"];
+  const visible = keys.filter((k) => portals[k]);
+
+  return (
+    <section className="bg-[#04182A] px-6 pt-10 pb-14" aria-label="Portal yang dapat Anda akses">
+      <div className="max-w-5xl mx-auto">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 md:p-9 backdrop-blur-sm">
+          <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+            <div>
+              <p className="text-terakota-400 text-xs font-bold tracking-[0.18em] uppercase mb-2">
+                Akses Anda
+              </p>
+              <h2 className="text-white font-display font-bold text-2xl md:text-3xl">
+                Selamat datang{firstName ? `, ${firstName}` : ""}
+              </h2>
+              <p className="text-white/45 text-sm mt-1.5">
+                Portal yang dapat Anda akses dengan akun ini:
+              </p>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {visible.map((key) => {
+              const m = PORTAL_META[key];
+              const Icon = m.icon;
+              const isPrimary = key === primary;
+              return (
+                <Link
+                  key={key}
+                  to={m.to}
+                  className={`group flex flex-col gap-3 rounded-2xl border p-5 transition-all ${
+                    isPrimary
+                      ? "bg-khatulistiwa-600 border-khatulistiwa-400 shadow-[0_12px_40px_rgba(24,80,136,0.45)] hover:-translate-y-1"
+                      : "bg-white/[0.05] border-white/10 hover:bg-white/[0.09] hover:border-white/25"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center ${
+                        isPrimary ? "bg-white/20" : "bg-white/[0.06]"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 text-white" aria-hidden="true" />
+                    </div>
+                    {isPrimary && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/80 bg-white/15 px-2 py-1 rounded-full">
+                        Lanjutkan
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-white font-display font-bold text-base">{m.title}</h3>
+                    <p className={`text-sm mt-1 leading-relaxed ${isPrimary ? "text-white/75" : "text-white/45"}`}>
+                      {m.desc}
+                    </p>
+                  </div>
+                  <span
+                    className={`mt-auto pt-2 inline-flex items-center gap-1.5 text-sm font-semibold group-hover:gap-2.5 transition-all ${
+                      isPrimary ? "text-white" : "text-khatulistiwa-300"
+                    }`}
+                  >
+                    Masuk <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {isStaffWithoutRole(user) && (
+            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-gold-500/25 bg-gold-500/[0.08] px-4 py-3.5">
+              <Info className="w-4 h-4 text-gold-500 shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="text-white/65 text-sm leading-relaxed">
+                Anda masuk sebagai pegawai OIKN. Belum ada peran verifikator atau admin
+                yang ditugaskan, sehingga Anda dapat menggunakan Portal Pemohon seperti biasa.
+                Hubungi administrator bila memerlukan akses tambahan.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -647,6 +771,8 @@ export default function LandingPage() {
       <PublicNav />
       <Hero />
       <main id="main-content">
+        {/* Authenticated users see their portal access first (dark, continues hero) */}
+        <AccessPanel />
         {/* Hero (dark #04182A) → StatsStrip (gold) — BatikBorder inside Hero handles this visually */}
         <StatsStrip />
         {/* gold → cream */}

@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, LayoutDashboard, ShieldCheck, Settings } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
+import { getPortals, getRoleLabel } from "@/lib/access";
+import type { User } from "@/types";
 
 const NAV_LINKS = [
   { to: "/layanan", label: "Katalog Izin" },
@@ -15,36 +17,26 @@ const LINK_CLS =
   "after:absolute after:left-3.5 after:right-3.5 after:-bottom-0.5 after:h-0.5 after:rounded-full " +
   "after:bg-gold-500 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:origin-left";
 
-function PortalLinks({ roles }: { roles: string[] }) {
-  const isSuperadmin = roles.includes("superadmin");
-  const isVerifier = roles.some((r) => r.includes(":"));
+function PortalLinks({ user }: { user: User | null }) {
+  const portals = getPortals(user);
+  const linkCls =
+    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/85 " +
+    "hover:text-white hover:bg-white/10 border border-white/15 hover:border-white/30 transition-all";
 
   return (
     <div className="flex items-center gap-1.5">
-      <Link
-        to="/portal"
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/85
-                   hover:text-white hover:bg-white/10 border border-white/15 hover:border-white/30 transition-all"
-      >
+      <Link to="/portal" className={linkCls}>
         <LayoutDashboard className="h-3.5 w-3.5" aria-hidden="true" />
         Portal Pemohon
       </Link>
-      {(isSuperadmin || isVerifier) && (
-        <Link
-          to="/verifier"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/85
-                     hover:text-white hover:bg-white/10 border border-white/15 hover:border-white/30 transition-all"
-        >
+      {portals.verifier && (
+        <Link to="/verifier" className={linkCls}>
           <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
           Verifikator
         </Link>
       )}
-      {isSuperadmin && (
-        <Link
-          to="/admin"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/85
-                     hover:text-white hover:bg-white/10 border border-white/15 hover:border-white/30 transition-all"
-        >
+      {portals.admin && (
+        <Link to="/admin" className={linkCls}>
           <Settings className="h-3.5 w-3.5" aria-hidden="true" />
           Admin
         </Link>
@@ -57,7 +49,7 @@ export default function PublicNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAuthenticated, user } = useAuthStore();
-  const roles = user?.roles ?? [];
+  const portals = getPortals(user);
 
   const initials =
     user?.full_name
@@ -67,11 +59,7 @@ export default function PublicNav() {
       .join("")
       .toUpperCase() ?? "?";
 
-  const roleLabel = roles.includes("superadmin")
-    ? "Superadmin"
-    : roles.some((r) => r.includes(":"))
-    ? "Verifikator"
-    : "Pemohon";
+  const roleLabel = getRoleLabel(user);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -109,7 +97,7 @@ export default function PublicNav() {
         <div className="hidden md:flex items-center gap-2 justify-end">
           {isAuthenticated ? (
             <>
-              <PortalLinks roles={roles} />
+              <PortalLinks user={user} />
               <div className="flex items-center gap-2 pl-2 ml-0.5 border-l border-white/[0.15]">
                 <div className="h-7 w-7 rounded-full bg-royal-600 flex items-center justify-center text-white text-[11px] font-bold shrink-0">
                   {initials}
@@ -176,9 +164,9 @@ export default function PublicNav() {
                       to: "/verifier",
                       label: "Workspace Verifikator",
                       icon: ShieldCheck,
-                      show: roles.includes("superadmin") || roles.some((r) => r.includes(":")),
+                      show: portals.verifier,
                     },
-                    { to: "/admin", label: "Admin Panel", icon: Settings, show: roles.includes("superadmin") },
+                    { to: "/admin", label: "Admin Panel", icon: Settings, show: portals.admin },
                   ]
                     .filter((l) => l.show)
                     .map(({ to, label, icon: Icon }) => (
