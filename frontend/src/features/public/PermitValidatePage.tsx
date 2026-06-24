@@ -12,6 +12,7 @@ import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import PublicNav from "@/components/PublicNav";
 import BatangBanyu from "@/components/BatangBanyu";
+import QrScannerModal from "@/components/QrScannerModal";
 
 interface ValidateResultData {
   is_valid: boolean;
@@ -54,6 +55,7 @@ const DETAIL_FIELDS: {
 function ValidateHub() {
   const navigate = useNavigate();
   const [input, setInput] = useState("");
+  const [scanning, setScanning] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,6 +63,11 @@ function ValidateHub() {
     // Reference numbers contain "/", so carry the value as a query param rather
     // than a path segment (which would break route matching).
     if (trimmed) navigate(`/validate?code=${encodeURIComponent(trimmed)}`);
+  }
+
+  function handleScan(code: string) {
+    setScanning(false);
+    if (code) navigate(`/validate?code=${encodeURIComponent(code)}`);
   }
 
   return (
@@ -117,17 +124,25 @@ function ValidateHub() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-pertiwi-muted p-4 text-center shadow-sm">
+        <button
+          type="button"
+          onClick={() => setScanning(true)}
+          className="bg-white rounded-2xl border border-pertiwi-muted p-4 text-center shadow-sm
+                     hover:border-khatulistiwa-300 hover:shadow-md transition-all
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-khatulistiwa-500"
+        >
           <QrCode className="w-6 h-6 text-khatulistiwa-500 mx-auto mb-2" aria-hidden="true" />
-          <p className="text-khatulistiwa-900 font-semibold text-xs">Scan QR Code</p>
-          <p className="text-khatulistiwa-400/60 text-xs mt-1">Pindai QR pada dokumen izin untuk membuka halaman ini otomatis</p>
-        </div>
+          <p className="text-khatulistiwa-900 font-semibold text-xs">Pindai QR Code</p>
+          <p className="text-khatulistiwa-400/60 text-xs mt-1">Buka kamera untuk memindai QR pada dokumen izin</p>
+        </button>
         <div className="bg-white rounded-2xl border border-pertiwi-muted p-4 text-center shadow-sm">
           <FileText className="w-6 h-6 text-khatulistiwa-500 mx-auto mb-2" aria-hidden="true" />
           <p className="text-khatulistiwa-900 font-semibold text-xs">Nomor Referensi</p>
           <p className="text-khatulistiwa-400/60 text-xs mt-1">Masukkan nomor LANTARA/… dari surat izin Anda</p>
         </div>
       </div>
+
+      {scanning && <QrScannerModal onResult={handleScan} onClose={() => setScanning(false)} />}
     </motion.div>
   );
 }
