@@ -90,7 +90,7 @@ export default function App() {
         <Route
           path="/verifier"
           element={
-            <ProtectedRoute requireRoles={["superadmin", "admin", "verifier"]}>
+            <ProtectedRoute requirePortal="verifier">
               <VerifierLayout />
             </ProtectedRoute>
           }
@@ -103,7 +103,7 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute requireRoles={["superadmin", "admin"]}>
+            <ProtectedRoute requirePortal="admin">
               <AdminLayout />
             </ProtectedRoute>
           }
