@@ -1,10 +1,10 @@
 from django.contrib import admin
 
 from .models import (
+    FAQ,
     Bidang,
     DirectPermit,
     Direktorat,
-    FAQ,
     Holiday,
     KbliCode,
     Kedeputian,
