@@ -4,10 +4,11 @@ import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, Building2 } from "lucide-react";
 import { useState } from "react";
 import api from "@/lib/api";
 import { setTokens, useAuthStore } from "@/lib/auth";
+import { buildAuthorizationUrl, isSsoEnabled } from "@/lib/oidc";
 import { cn } from "@/lib/cn";
 
 const schema = z.object({
@@ -36,10 +37,10 @@ export default function LoginPage() {
     onSuccess: (res) => {
       setTokens(res.data.access, res.data.refresh);
       setUser(res.data.user);
-      const roles: string[] = res.data.user.roles ?? [];
-      if (roles.includes("superadmin") || res.data.user.is_staff) navigate("/admin");
-      else if (roles.some((r: string) => r.includes(":"))) navigate("/verifier");
-      else navigate("/portal");
+      // Land on the landing page — it surfaces the portals this user may enter
+      // (see lib/access). Role-based access is resolved there, not by the auth
+      // method, so no one is forced into the wrong portal.
+      navigate("/");
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -128,6 +129,28 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
+
+          {/* OIKN staff: encourage SSO over creating a duplicate account. */}
+          {isSsoEnabled() && (
+            <div className="space-y-5">
+              <button
+                type="button"
+                onClick={() => { window.location.href = buildAuthorizationUrl(); }}
+                className="w-full flex items-center justify-center gap-2.5 rounded-xl
+                           bg-jagawana px-4 py-3 text-sm font-semibold text-white
+                           hover:bg-jagawana-light transition-colors
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jagawana focus-visible:ring-offset-2"
+              >
+                <Building2 className="h-4 w-4" aria-hidden="true" />
+                Pegawai OIKN? Masuk dengan SSO
+              </button>
+              <div className="flex items-center gap-3" aria-hidden="true">
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-xs text-buana">atau masuk dengan email</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-5">
             <div className="field-group">

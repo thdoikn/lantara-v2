@@ -30,8 +30,11 @@ export default function OidcCallbackPage() {
         sessionStorage.removeItem("oidc_state");
         setTokens(data.access, data.refresh);
         setUser(data.user);
+        // Land on the landing page — it surfaces the portals this user may enter.
+        // Access is role-driven (see lib/access), so SSO staff with no assigned
+        // role correctly arrive as a pemohon rather than being forced into /admin.
         // window.location.replace avoids React Router race conditions after .then()
-        window.location.replace("/admin");
+        window.location.replace("/");
       })
       .catch((err) => {
         const msg =
@@ -45,7 +48,7 @@ export default function OidcCallbackPage() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
         <p className="text-status-danger font-medium">{error}</p>
         <a
-          href="/staff/login"
+          href="/auth/login"
           className="text-royal-600 underline hover:text-royal-700"
         >
           Kembali ke halaman login
