@@ -10,6 +10,7 @@ Direktorat matching: Keycloak sends job-title strings like
 We normalise these and fuzzy-match (Jaccard on significant words) against
 Direktorat.name in the DB — so the match works even without exact casing.
 """
+
 import re
 import unicodedata
 
@@ -24,6 +25,7 @@ def generate_username(email: str) -> str:
 # ---------------------------------------------------------------------------
 # Name normalisation
 # ---------------------------------------------------------------------------
+
 
 def _title_case(s: str) -> str:
     """Convert ALL-CAPS strings to Title Case; leave already-mixed strings alone."""
@@ -68,16 +70,16 @@ def _extract_full_name(claims: dict) -> str:
 
 # Keycloak job-title prefixes → corresponding org-unit prefix
 _TITLE_SUBS = [
-    (r"^DIREKTUR\b",              "DIREKTORAT"),
-    (r"^KEPALA\s+DIREKTORAT\b",   "DIREKTORAT"),
-    (r"^KEPALA\s+BIRO\b",         "BIRO"),
-    (r"^KEPALA\s+BAGIAN\b",       "BAGIAN"),
-    (r"^KEPALA\s+PUSAT\b",        "PUSAT"),
+    (r"^DIREKTUR\b", "DIREKTORAT"),
+    (r"^KEPALA\s+DIREKTORAT\b", "DIREKTORAT"),
+    (r"^KEPALA\s+BIRO\b", "BIRO"),
+    (r"^KEPALA\s+BAGIAN\b", "BAGIAN"),
+    (r"^KEPALA\s+PUSAT\b", "PUSAT"),
     # "SEKRETARIS OTORITA …" → "SEKRETARIAT"
     (r"^SEKRETARIS\s+OTORITA\b.*", "SEKRETARIAT"),
-    (r"^SEKRETARIS\b",            "SEKRETARIAT"),
+    (r"^SEKRETARIS\b", "SEKRETARIAT"),
     # Generic "KEPALA …" — drop the personal prefix
-    (r"^KEPALA\s+",               ""),
+    (r"^KEPALA\s+", ""),
 ]
 
 
@@ -89,7 +91,7 @@ def _normalize(s: str) -> str:
 
 def _significant_words(s: str) -> set:
     """Return words ≥4 chars (filters out noise like DAN, DI, KE)."""
-    return {w for w in re.findall(r"[A-Z]{4,}", s)}
+    return set(re.findall(r"[A-Z]{4,}", s))
 
 
 def _preprocess_sso(raw: str) -> str:
@@ -119,7 +121,7 @@ def _match_direktorat(raw_value: str):
     if not raw_value:
         return None
 
-    from apps.reference.models import Direktorat  # noqa: PLC0415 — lazy import
+    from apps.reference.models import Direktorat
 
     all_direktorat = cache.get("oidc:direktorat_list")
     if all_direktorat is None:
@@ -145,6 +147,7 @@ def _match_direktorat(raw_value: str):
 # ---------------------------------------------------------------------------
 # OIDC backend
 # ---------------------------------------------------------------------------
+
 
 class JDIHOIDCBackend(OIDCAuthenticationBackend):
     """
@@ -179,7 +182,7 @@ class JDIHOIDCBackend(OIDCAuthenticationBackend):
         1. Fuzzy-match unit_kerja / direktorat claim (job-title string).
         2. Fall back to exact key-match against groups claim paths.
         """
-        from apps.reference.models import Direktorat  # noqa: PLC0415
+        from apps.reference.models import Direktorat
 
         # Stage 1 — fuzzy match on title string
         raw = claims.get("unit_kerja", "") or claims.get("direktorat", "")

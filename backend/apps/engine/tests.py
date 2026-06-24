@@ -4,7 +4,9 @@ FormField/DocumentRequirement behavior, schema_version immutability.
 
 Run with:  pytest apps/engine/tests.py -v
 """
+
 import pytest
+from django.db import IntegrityError
 
 from apps.engine.models import (
     DocumentRequirement,
@@ -140,11 +142,12 @@ def doc_requirements(permit_type):
 # 1. Sektor & PermitType basics
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestPermitTypeBasics:
     def test_unique_key_constraint(self, sektor):
         PermitType.objects.create(sektor=sektor, key="izin-a", name="Izin A", sla_days=5)
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             PermitType.objects.create(sektor=sektor, key="izin-a", name="Izin A Dup", sla_days=5)
 
     def test_sektor_str(self, sektor):
@@ -168,6 +171,7 @@ class TestPermitTypeBasics:
 # 2. WorkflowStage ordering
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestWorkflowStageOrdering:
     def test_stages_ordered_by_order_field(self, stages, permit_type):
@@ -178,12 +182,18 @@ class TestWorkflowStageOrdering:
 
     def test_unique_order_per_permit_type(self, permit_type):
         WorkflowStage.objects.create(
-            permit_type=permit_type, key="s-a", order=10, name="A",
+            permit_type=permit_type,
+            key="s-a",
+            order=10,
+            name="A",
             stage_type=WorkflowStage.StageType.VERIFICATION,
         )
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             WorkflowStage.objects.create(
-                permit_type=permit_type, key="s-b", order=10, name="B",
+                permit_type=permit_type,
+                key="s-b",
+                order=10,
+                name="B",
                 stage_type=WorkflowStage.StageType.VERIFICATION,
             )
 
@@ -207,11 +217,17 @@ class TestWorkflowStageOrdering:
         pt2 = PermitType.objects.create(sektor=sektor, key="izin-b", name="Izin B", sla_days=5)
         pt3 = PermitType.objects.create(sektor=sektor, key="izin-c", name="Izin C", sla_days=5)
         WorkflowStage.objects.create(
-            permit_type=pt2, key="verif", order=1, name="V",
+            permit_type=pt2,
+            key="verif",
+            order=1,
+            name="V",
             stage_type=WorkflowStage.StageType.VERIFICATION,
         )
         WorkflowStage.objects.create(
-            permit_type=pt3, key="verif", order=1, name="V",
+            permit_type=pt3,
+            key="verif",
+            order=1,
+            name="V",
             stage_type=WorkflowStage.StageType.VERIFICATION,
         )
         assert WorkflowStage.objects.filter(order=1).count() >= 2
@@ -231,12 +247,11 @@ class TestWorkflowStageOrdering:
 # 3. FormField schema
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestFormFieldSchema:
     def test_form_fields_ordered_by_order(self, form_fields, permit_type):
-        keys = list(
-            FormField.objects.filter(permit_type=permit_type).values_list("key", flat=True)
-        )
+        keys = list(FormField.objects.filter(permit_type=permit_type).values_list("key", flat=True))
         assert keys == ["nama_kegiatan", "jumlah_peserta", "lokasi", "kontak_pic"]
 
     def test_required_vs_optional(self, form_fields):
@@ -261,7 +276,7 @@ class TestFormFieldSchema:
         }
 
     def test_unique_key_per_permit_type(self, permit_type, form_fields):
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             FormField.objects.create(
                 permit_type=permit_type,
                 key="nama_kegiatan",  # duplicate
@@ -272,8 +287,9 @@ class TestFormFieldSchema:
 
     def test_required_fields_are_identifiable(self, form_fields, permit_type):
         required_keys = set(
-            FormField.objects.filter(permit_type=permit_type, required=True)
-            .values_list("key", flat=True)
+            FormField.objects.filter(permit_type=permit_type, required=True).values_list(
+                "key", flat=True
+            )
         )
         assert "nama_kegiatan" in required_keys
         assert "jumlah_peserta" in required_keys
@@ -283,6 +299,7 @@ class TestFormFieldSchema:
 # ──────────────────────────────────────────────────────────────────────────────
 # 4. DocumentRequirement
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 class TestDocumentRequirement:
@@ -311,7 +328,7 @@ class TestDocumentRequirement:
         assert required == 3
 
     def test_unique_key_per_permit_type(self, permit_type, doc_requirements):
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             DocumentRequirement.objects.create(
                 permit_type=permit_type,
                 key="ktp-pemohon",  # duplicate
@@ -323,6 +340,7 @@ class TestDocumentRequirement:
 # ──────────────────────────────────────────────────────────────────────────────
 # 5. Schema version snapshot immutability
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 class TestSchemaVersionSnapshot:
@@ -339,7 +357,9 @@ class TestSchemaVersionSnapshot:
             ],
             "doc_requirements": [
                 {"key": d.key, "required": d.required}
-                for d in DocumentRequirement.objects.filter(permit_type=permit_type).order_by("order")
+                for d in DocumentRequirement.objects.filter(permit_type=permit_type).order_by(
+                    "order"
+                )
             ],
         }
         pv = PermitTypeVersion.objects.create(
@@ -358,7 +378,12 @@ class TestSchemaVersionSnapshot:
         permit_type.schema_version = 2
         permit_type.save(update_fields=["schema_version"])
 
-        v2_snap = {"fields": [{"key": "new_field"}], "stages": [], "doc_requirements": [], "version": 2}
+        v2_snap = {
+            "fields": [{"key": "new_field"}],
+            "stages": [],
+            "doc_requirements": [],
+            "version": 2,
+        }
         PermitTypeVersion.objects.create(permit_type=permit_type, version=2, snapshot=v2_snap)
 
         versions = list(
@@ -389,22 +414,19 @@ class TestSchemaVersionSnapshot:
     def test_unique_version_per_permit_type(self, permit_type):
         snap = {"fields": [], "stages": [], "doc_requirements": [], "version": 1}
         PermitTypeVersion.objects.create(permit_type=permit_type, version=1, snapshot=snap)
-        with pytest.raises(Exception):
-            PermitTypeVersion.objects.create(
-                permit_type=permit_type, version=1, snapshot=snap
-            )
+        with pytest.raises(IntegrityError):
+            PermitTypeVersion.objects.create(permit_type=permit_type, version=1, snapshot=snap)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 6. Dynamic engine invariant: no per-type branching needed
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestDynamicEngine:
     def test_all_stages_derived_from_db(self, stages, permit_type):
-        db_stages = list(
-            WorkflowStage.objects.filter(permit_type=permit_type).order_by("order")
-        )
+        db_stages = list(WorkflowStage.objects.filter(permit_type=permit_type).order_by("order"))
         assert len(db_stages) == 3
         assert db_stages[0].order == 1
 
@@ -415,8 +437,9 @@ class TestDynamicEngine:
 
     def test_required_form_fields_schema(self, form_fields, permit_type):
         required_keys = set(
-            FormField.objects.filter(permit_type=permit_type, required=True)
-            .values_list("key", flat=True)
+            FormField.objects.filter(permit_type=permit_type, required=True).values_list(
+                "key", flat=True
+            )
         )
         mock_form_data = {
             "nama_kegiatan": "Festival Budaya",
@@ -428,8 +451,9 @@ class TestDynamicEngine:
 
     def test_missing_required_field_detected(self, form_fields, permit_type):
         required_keys = set(
-            FormField.objects.filter(permit_type=permit_type, required=True)
-            .values_list("key", flat=True)
+            FormField.objects.filter(permit_type=permit_type, required=True).values_list(
+                "key", flat=True
+            )
         )
         mock_form_data = {"nama_kegiatan": "Festival"}  # missing jumlah_peserta and lokasi
         missing = required_keys - set(mock_form_data.keys())
@@ -441,15 +465,24 @@ class TestDynamicEngine:
         pt_b = PermitType.objects.create(sektor=sektor, key="izin-y", name="Izin Y", sla_days=8)
 
         WorkflowStage.objects.create(
-            permit_type=pt_a, key="verif", order=1, name="Verif",
+            permit_type=pt_a,
+            key="verif",
+            order=1,
+            name="Verif",
             stage_type=WorkflowStage.StageType.VERIFICATION,
         )
         WorkflowStage.objects.create(
-            permit_type=pt_b, key="verif", order=1, name="Verif",
+            permit_type=pt_b,
+            key="verif",
+            order=1,
+            name="Verif",
             stage_type=WorkflowStage.StageType.VERIFICATION,
         )
         WorkflowStage.objects.create(
-            permit_type=pt_b, key="publish", order=2, name="Publish",
+            permit_type=pt_b,
+            key="publish",
+            order=2,
+            name="Publish",
             stage_type=WorkflowStage.StageType.PUBLISH,
         )
 

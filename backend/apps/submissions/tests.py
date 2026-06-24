@@ -3,9 +3,10 @@ Submissions tests — stage transitions, SLA computation, RBAC resolution.
 
 Run with:  pytest apps/submissions/tests.py -v
 """
-import pytest
+
 from datetime import date, timedelta
 
+import pytest
 from django.utils import timezone
 
 from apps.accounts.models import Role, RolePermission, User, UserRole
@@ -18,10 +19,10 @@ from apps.engine.models import (
 from apps.submissions.models import AuditEntry, Submission
 from apps.submissions.sla import add_working_days, add_working_hours, compute_submission_sla
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Fixtures
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def sektor(db):
@@ -38,20 +39,32 @@ def permit_type(sektor):
     )
     # Stages: verif → penerbitan
     WorkflowStage.objects.create(
-        permit_type=pt, key="verifikasi", order=1, name="Verifikasi",
+        permit_type=pt,
+        key="verifikasi",
+        order=1,
+        name="Verifikasi",
         stage_type=WorkflowStage.StageType.VERIFICATION,
-        sla_hours=40, allowed_actions=["approve", "revise", "reject"],
+        sla_hours=40,
+        allowed_actions=["approve", "revise", "reject"],
     )
     WorkflowStage.objects.create(
-        permit_type=pt, key="penerbitan", order=2, name="Penerbitan",
+        permit_type=pt,
+        key="penerbitan",
+        order=2,
+        name="Penerbitan",
         stage_type=WorkflowStage.StageType.PUBLISH,
-        sla_hours=8, allowed_actions=["generate", "sign", "publish"],
+        sla_hours=8,
+        allowed_actions=["generate", "sign", "publish"],
         is_terminal=True,
     )
     # A required form field
     FormField.objects.create(
-        permit_type=pt, key="nama_kegiatan", label="Nama Kegiatan",
-        field_type=FormField.FieldType.TEXT, order=1, required=True,
+        permit_type=pt,
+        key="nama_kegiatan",
+        label="Nama Kegiatan",
+        field_type=FormField.FieldType.TEXT,
+        order=1,
+        required=True,
     )
     return pt
 
@@ -94,6 +107,7 @@ def submission(applicant, permit_type):
 # 1. SLA math
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestSLAMath:
     def test_add_working_days_skips_weekend(self):
@@ -110,6 +124,7 @@ class TestSLAMath:
 
     def test_add_working_days_skips_holiday(self):
         from apps.reference.models import Holiday
+
         Holiday.objects.create(date=date(2026, 6, 15), name="Hari Libur Test")
         # Monday + 1 working day, where Monday is a holiday = Tuesday
         monday = timezone.datetime(2026, 6, 12, 9, 0, tzinfo=timezone.get_current_timezone())
@@ -159,7 +174,6 @@ class TestSLAMath:
         assert submission.sla_due_at is None
 
     def test_per_stage_sla_computed(self, submission, permit_type):
-        stage = WorkflowStage.objects.get(permit_type=permit_type, key="verifikasi")
         submission.submitted_at = timezone.datetime(
             2026, 6, 8, 9, 0, tzinfo=timezone.get_current_timezone()
         )
@@ -175,6 +189,7 @@ class TestSLAMath:
 # ──────────────────────────────────────────────────────────────────────────────
 # 2. Stage transitions
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 class TestStageTransitions:
@@ -247,12 +262,18 @@ class TestStageTransitions:
 
     def test_audit_entries_ordered_by_created_at(self, submission, applicant, verifier):
         AuditEntry.objects.create(
-            submission=submission, action=AuditEntry.ActionType.SUBMIT, actor=applicant,
+            submission=submission,
+            action=AuditEntry.ActionType.SUBMIT,
+            actor=applicant,
         )
         AuditEntry.objects.create(
-            submission=submission, action=AuditEntry.ActionType.ADVANCE, actor=verifier,
+            submission=submission,
+            action=AuditEntry.ActionType.ADVANCE,
+            actor=verifier,
         )
-        entries = list(AuditEntry.objects.filter(submission=submission).values_list("action", flat=True))
+        entries = list(
+            AuditEntry.objects.filter(submission=submission).values_list("action", flat=True)
+        )
         assert entries[0] == AuditEntry.ActionType.SUBMIT
         assert entries[1] == AuditEntry.ActionType.ADVANCE
 
@@ -275,6 +296,7 @@ class TestStageTransitions:
 # ──────────────────────────────────────────────────────────────────────────────
 # 3. RBAC resolution
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 class TestRBACResolution:
@@ -352,11 +374,19 @@ class TestRBACResolution:
 # 4. Schema snapshot on submission
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestSubmissionSchemaSnapshot:
     def test_schema_version_snapshot_stored(self, applicant, permit_type):
-        first_stage = WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
-        snapshot = {"version": 1, "stages": [{"key": first_stage.key}], "fields": [], "doc_requirements": []}
+        first_stage = (
+            WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
+        )
+        snapshot = {
+            "version": 1,
+            "stages": [{"key": first_stage.key}],
+            "fields": [],
+            "doc_requirements": [],
+        }
         sub = Submission.objects.create(
             applicant=applicant,
             permit_type=permit_type,
@@ -372,9 +402,17 @@ class TestSubmissionSchemaSnapshot:
         assert sub.schema_snapshot["version"] == 1
 
     def test_snapshot_immutable_after_permit_type_edit(self, applicant, permit_type):
-        first_stage = WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
+        first_stage = (
+            WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
+        )
         original_sla_days = permit_type.sla_days
-        snapshot = {"version": 1, "sla_days": original_sla_days, "stages": [], "fields": [], "doc_requirements": []}
+        snapshot = {
+            "version": 1,
+            "sla_days": original_sla_days,
+            "stages": [],
+            "fields": [],
+            "doc_requirements": [],
+        }
         sub = Submission.objects.create(
             applicant=applicant,
             permit_type=permit_type,
@@ -398,7 +436,9 @@ class TestSubmissionSchemaSnapshot:
         assert sub.schema_version_snapshot == 1
 
     def test_form_data_stored_as_json(self, applicant, permit_type):
-        first_stage = WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
+        first_stage = (
+            WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
+        )
         form_data = {"nama_kegiatan": "Festival IKN", "extra": {"nested": True}}
         sub = Submission.objects.create(
             applicant=applicant,

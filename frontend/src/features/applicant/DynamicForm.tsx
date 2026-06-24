@@ -128,7 +128,10 @@ export default function DynamicForm({
   isSubmitting,
   submitLabel,
 }: Props) {
-  const fields = fieldsProp ?? permitType?.form_fields ?? [];
+  const fields = useMemo(
+    () => fieldsProp ?? permitType?.form_fields ?? [],
+    [fieldsProp, permitType],
+  );
 
   const zodSchema = useMemo(() => buildZodSchema(fields), [fields]);
 
