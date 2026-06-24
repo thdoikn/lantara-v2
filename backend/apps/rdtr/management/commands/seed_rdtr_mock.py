@@ -8,6 +8,7 @@ area where IKN is being built.
 These are MOCK zones — not real spatial data. Replace bbox/geojson with
 real OneMap/BIG data when available.
 """
+
 from django.core.management.base import BaseCommand
 
 # IKN approximate center: lat=-0.85, lng=116.72
@@ -104,13 +105,15 @@ class Command(BaseCommand):
             min_lng, min_lat, max_lng, max_lat = z["bbox"]
             geojson = {
                 "type": "Polygon",
-                "coordinates": [[
-                    [min_lng, min_lat],
-                    [max_lng, min_lat],
-                    [max_lng, max_lat],
-                    [min_lng, max_lat],
-                    [min_lng, min_lat],
-                ]],
+                "coordinates": [
+                    [
+                        [min_lng, min_lat],
+                        [max_lng, min_lat],
+                        [max_lng, max_lat],
+                        [min_lng, max_lat],
+                        [min_lng, min_lat],
+                    ]
+                ],
             }
             _, was_created = RDTRZone.objects.update_or_create(
                 zone_code=z["zone_code"],

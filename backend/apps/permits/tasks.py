@@ -1,10 +1,12 @@
 """Celery tasks for async PDF generation."""
+
 from celery import shared_task
 
 
 @shared_task(bind=True, max_retries=2)
 def generate_permit_pdf(self, permit_id: str):
     from .models import IssuedPermit
+
     try:
         permit = IssuedPermit.objects.select_related(
             "submission__permit_type", "submission__applicant"
@@ -25,6 +27,7 @@ def generate_permit_pdf(self, permit_id: str):
         pdf_bytes = HTML(string=html_content).write_pdf()
 
         from django.core.files.base import ContentFile
+
         permit.draft_pdf_file.save(
             f"draft_{sub.reference_number}.pdf",
             ContentFile(pdf_bytes),
@@ -39,6 +42,7 @@ def generate_permit_pdf(self, permit_id: str):
 def _render_permit_html(permit, sub, qr_img=None):
     import base64
     import io
+
     qr_b64 = ""
     if qr_img:
         buf = io.BytesIO()

@@ -2,6 +2,7 @@
 SLA working-days calculator.
 Skips weekends (Sat/Sun) and Indonesian public holidays from reference.Holiday.
 """
+
 from datetime import date, timedelta
 
 from django.utils import timezone
@@ -13,6 +14,7 @@ def _is_working_day(d: date, holidays: set) -> bool:
 
 def _get_holidays() -> set[date]:
     from apps.reference.models import Holiday
+
     return set(Holiday.objects.values_list("date", flat=True))
 
 
@@ -50,9 +52,8 @@ def compute_submission_sla(submission) -> None:
     if submission.current_stage_key:
         try:
             from apps.engine.models import WorkflowStage
-            stage = WorkflowStage.objects.get(
-                permit_type=pt, key=submission.current_stage_key
-            )
+
+            stage = WorkflowStage.objects.get(permit_type=pt, key=submission.current_stage_key)
             if stage.sla_hours and submission.stage_entered_at:
                 submission.stage_sla_due_at = add_working_hours(
                     submission.stage_entered_at, stage.sla_hours

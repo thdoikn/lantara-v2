@@ -1,4 +1,5 @@
 """WebSocket consumer — delivers real-time notifications to authenticated users."""
+
 import json
 
 from channels.db import database_sync_to_async
@@ -39,6 +40,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _unread_count(self, user):
         from apps.notifications.models import Notification
+
         return Notification.objects.filter(recipient=user, is_read=False).count()
 
     @database_sync_to_async
@@ -46,6 +48,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         from django.utils import timezone
 
         from apps.notifications.models import Notification
+
         qs = Notification.objects.filter(recipient=user, is_read=False)
         if ids:
             qs = qs.filter(id__in=ids)

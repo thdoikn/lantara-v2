@@ -1,4 +1,5 @@
 """Base settings shared across all environments."""
+
 from datetime import timedelta
 from pathlib import Path
 
@@ -176,7 +177,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "60/minute",
         "user": "300/minute",
-        "auth": "10/minute",   # login / register / OTP — tighter limit
+        "auth": "10/minute",  # login / register / OTP — tighter limit
     },
 }
 

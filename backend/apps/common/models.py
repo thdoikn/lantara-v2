@@ -1,4 +1,5 @@
 """Shared abstract base models."""
+
 import uuid
 
 from django.db import models

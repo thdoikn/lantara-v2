@@ -18,12 +18,16 @@ from apps.engine.models import PermitType
 
 def _ref_number(sektor_key: str, izin_key: str) -> str:
     from datetime import date
+
     year = date.today().year
-    seq = Submission.objects.filter(
-        permit_type__sektor__key=sektor_key,
-        permit_type__key=izin_key,
-        created_at__year=year,
-    ).count() + 1
+    seq = (
+        Submission.objects.filter(
+            permit_type__sektor__key=sektor_key,
+            permit_type__key=izin_key,
+            created_at__year=year,
+        ).count()
+        + 1
+    )
     return f"LANTARA/{sektor_key.upper()}/{izin_key.upper()}/{year}/{seq:04d}"
 
 
@@ -83,7 +87,8 @@ class Submission(TimestampedModel):
     # Who last acted (for queue filtering)
     last_actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
         related_name="last_acted_submissions",
     )
@@ -103,9 +108,7 @@ class Submission(TimestampedModel):
 
     def save(self, *args, **kwargs):
         if not self.reference_number and self.permit_type_id:
-            self.reference_number = _ref_number(
-                self.permit_type.sektor.key, self.permit_type.key
-            )
+            self.reference_number = _ref_number(self.permit_type.sektor.key, self.permit_type.key)
         super().save(*args, **kwargs)
 
 
@@ -128,9 +131,7 @@ class SubmissionRevisionField(UUIDModel):
 class SiteVisit(TimestampedModel):
     """Kunjungan lapangan — scheduled as part of verification stage."""
 
-    submission = models.ForeignKey(
-        Submission, on_delete=models.CASCADE, related_name="site_visits"
-    )
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="site_visits")
     stage_key = models.CharField(max_length=120)
     scheduled_date = models.DateField(null=True, blank=True)
     scheduled_time = models.TimeField(null=True, blank=True)
@@ -170,7 +171,8 @@ class AuditEntry(UUIDModel):
     action = models.CharField(max_length=30, choices=ActionType.choices)
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
         related_name="audit_entries",
     )
@@ -196,9 +198,7 @@ class SubmissionIndex(UUIDModel):
     Updated on every submission status change via signal.
     """
 
-    submission = models.OneToOneField(
-        Submission, on_delete=models.CASCADE, related_name="index"
-    )
+    submission = models.OneToOneField(Submission, on_delete=models.CASCADE, related_name="index")
     applicant_email = models.EmailField(db_index=True)
     applicant_name = models.CharField(max_length=200)
     sektor_key = models.CharField(max_length=80, db_index=True)

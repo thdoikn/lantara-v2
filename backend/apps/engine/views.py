@@ -71,8 +71,10 @@ class PermitTypeViewSet(viewsets.ReadOnlyModelViewSet):
 
 # ── Admin Engine Builder ViewSets (staff-only write) ──────────────────────────
 
+
 class AdminSektorViewSet(viewsets.ModelViewSet):
     """Admin CRUD for Sektor. Superadmin only."""
+
     permission_classes = [IsAuthenticated, IsAdminUser]
     lookup_field = "key"
 
@@ -92,6 +94,7 @@ class AdminPermitTypeViewSet(viewsets.ModelViewSet):
     Admin CRUD for PermitType (izin config).
     PUT/PATCH bump schema_version to protect in-flight submissions.
     """
+
     permission_classes = [IsAuthenticated, IsAdminUser]
     lookup_field = "key"
     filterset_fields = ["sektor__key", "is_published"]
@@ -128,14 +131,13 @@ class AdminPermitTypeViewSet(viewsets.ModelViewSet):
 
 class AdminStageViewSet(viewsets.ModelViewSet):
     """Admin CRUD for WorkflowStage within an izin."""
+
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = WorkflowStageSerializer
 
     def get_queryset(self):
         permit_key = self.kwargs.get("permit_key")
-        return WorkflowStage.objects.filter(
-            permit_type__key=permit_key
-        ).order_by("order")
+        return WorkflowStage.objects.filter(permit_type__key=permit_key).order_by("order")
 
     def perform_create(self, serializer):
         permit = PermitType.objects.get(key=self.kwargs["permit_key"])
@@ -162,14 +164,13 @@ class AdminStageViewSet(viewsets.ModelViewSet):
 
 class AdminFormFieldViewSet(viewsets.ModelViewSet):
     """Admin CRUD for FormField within an izin."""
+
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = FormFieldSerializer
 
     def get_queryset(self):
         permit_key = self.kwargs.get("permit_key")
-        return FormField.objects.filter(
-            permit_type__key=permit_key
-        ).order_by("order")
+        return FormField.objects.filter(permit_type__key=permit_key).order_by("order")
 
     def perform_create(self, serializer):
         permit = PermitType.objects.get(key=self.kwargs["permit_key"])
@@ -195,14 +196,13 @@ class AdminFormFieldViewSet(viewsets.ModelViewSet):
 
 class AdminDocRequirementViewSet(viewsets.ModelViewSet):
     """Admin CRUD for DocumentRequirement within an izin."""
+
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = DocumentRequirementSerializer
 
     def get_queryset(self):
         permit_key = self.kwargs.get("permit_key")
-        return DocumentRequirement.objects.filter(
-            permit_type__key=permit_key
-        ).order_by("order")
+        return DocumentRequirement.objects.filter(permit_type__key=permit_key).order_by("order")
 
     def perform_create(self, serializer):
         permit = PermitType.objects.get(key=self.kwargs["permit_key"])

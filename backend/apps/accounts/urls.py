@@ -33,7 +33,9 @@ urlpatterns = [
     path("otp/resend/", ResendOTPView.as_view(), name="otp-resend"),
     # Password reset
     path("password/reset/", PasswordResetRequestView.as_view(), name="password-reset"),
-    path("password/reset/confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
+    path(
+        "password/reset/confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"
+    ),
     path("password/change/", ChangePasswordView.as_view(), name="password-change"),
     # Profile
     path("me/", MeView.as_view(), name="me"),

@@ -13,7 +13,15 @@ from .models import (
 class WorkflowStageInline(admin.TabularInline):
     model = WorkflowStage
     extra = 0
-    fields = ("order", "key", "name", "stage_type", "sla_hours", "requires_site_visit", "allowed_actions")
+    fields = (
+        "order",
+        "key",
+        "name",
+        "stage_type",
+        "sla_hours",
+        "requires_site_visit",
+        "allowed_actions",
+    )
 
 
 class FormFieldInline(admin.TabularInline):

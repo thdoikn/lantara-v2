@@ -5,6 +5,7 @@ BSSN/BSrE integration is dependency-gated (CLAUDE.md §9).
 When FEATURE_TTE_ENABLED=true, the adapter tries the configured BSrE endpoint.
 When false (default), a mock stamp is applied to the PDF.
 """
+
 from django.db import models
 
 from apps.common.models import TimestampedModel

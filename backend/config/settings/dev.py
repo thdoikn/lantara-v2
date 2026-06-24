@@ -1,4 +1,5 @@
 """Development settings."""
+
 from .base import *
 
 DEBUG = True
@@ -17,8 +18,6 @@ _env = environ.Env()
 if not _env.bool("USE_S3", default=True):
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
-        },
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     }
     MEDIA_ROOT = BASE_DIR / "media"  # type: ignore[name-defined]  # noqa: F405

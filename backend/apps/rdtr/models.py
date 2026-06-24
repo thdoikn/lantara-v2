@@ -4,6 +4,7 @@ RDTR (Rencana Detail Tata Ruang) models — Phase 3.
 Uses mock spatial data (no live OneMap integration yet, dependency-gated per CLAUDE.md §9).
 Real spatial queries would be replaced by a PostGIS / OneMap call at the same API surface.
 """
+
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 

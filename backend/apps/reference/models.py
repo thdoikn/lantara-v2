@@ -2,6 +2,7 @@
 Reference data — KBLI master mapping and Indonesian public holiday calendar.
 Loaded once via management commands; rarely updated.
 """
+
 from django.db import models
 
 from apps.common.models import TimestampedModel, UUIDModel

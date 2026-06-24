@@ -1,10 +1,12 @@
 """Celery tasks for async document validation."""
+
 from celery import shared_task
 
 
 @shared_task(bind=True, max_retries=3)
 def validate_document(self, doc_id: str):
     from .models import UploadedDocument
+
     try:
         doc = UploadedDocument.objects.get(id=doc_id)
     except UploadedDocument.DoesNotExist:
@@ -13,6 +15,7 @@ def validate_document(self, doc_id: str):
     try:
         # MIME type detection via python-magic
         import magic
+
         doc.file.open("rb")
         mime = magic.from_buffer(doc.file.read(2048), mime=True)
         doc.file.close()

@@ -83,6 +83,7 @@ class GenerateDraftView(APIView):
 
     def post(self, request, submission_id):
         from apps.submissions.models import Submission
+
         try:
             sub = Submission.objects.get(id=submission_id)
         except Submission.DoesNotExist:
@@ -96,6 +97,7 @@ class GenerateDraftView(APIView):
         permit, _ = IssuedPermit.objects.get_or_create(submission=sub)
         # Trigger async PDF generation
         from .tasks import generate_permit_pdf
+
         task = generate_permit_pdf.delay(str(permit.id))
         permit.generation_task_id = task.id
         permit.generation_status = IssuedPermit.GenerationStatus.PENDING
@@ -118,6 +120,7 @@ class PublishPermitView(APIView):
 
     def post(self, request, submission_id):
         from apps.submissions.models import Submission
+
         try:
             sub = Submission.objects.get(id=submission_id)
         except Submission.DoesNotExist:
@@ -147,6 +150,7 @@ class PublishPermitView(APIView):
 
         # Update submission status to collected (fully issued + ready for pickup)
         from apps.submissions.models import Submission as Sub
+
         sub.status = Sub.Status.COLLECTED
         sub.save(update_fields=["status"])
 

@@ -1,4 +1,5 @@
 """API v1 URL registry."""
+
 from django.urls import include, path
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -33,32 +34,70 @@ admin_router = DefaultRouter()
 admin_router.register("sektors", AdminSektorViewSet, basename="admin-sektor")
 admin_router.register("permit-types", AdminPermitTypeViewSet, basename="admin-permit-type")
 
+
 # Nested: /admin/engine/permit-types/{key}/stages/, /fields/, /doc-requirements/
 def permit_nested_router():
     from django.urls import path as dpath
+
     return [
         dpath(
             "permit-types/<str:permit_key>/stages/",
-            include([
-                path("", AdminStageViewSet.as_view({"get": "list", "post": "create"})),
-                path("<uuid:pk>/", AdminStageViewSet.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"})),
-                path("reorder/", AdminStageViewSet.as_view({"post": "reorder"})),
-            ]),
+            include(
+                [
+                    path("", AdminStageViewSet.as_view({"get": "list", "post": "create"})),
+                    path(
+                        "<uuid:pk>/",
+                        AdminStageViewSet.as_view(
+                            {
+                                "get": "retrieve",
+                                "put": "update",
+                                "patch": "partial_update",
+                                "delete": "destroy",
+                            }
+                        ),
+                    ),
+                    path("reorder/", AdminStageViewSet.as_view({"post": "reorder"})),
+                ]
+            ),
         ),
         dpath(
             "permit-types/<str:permit_key>/fields/",
-            include([
-                path("", AdminFormFieldViewSet.as_view({"get": "list", "post": "create"})),
-                path("<uuid:pk>/", AdminFormFieldViewSet.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"})),
-                path("reorder/", AdminFormFieldViewSet.as_view({"post": "reorder"})),
-            ]),
+            include(
+                [
+                    path("", AdminFormFieldViewSet.as_view({"get": "list", "post": "create"})),
+                    path(
+                        "<uuid:pk>/",
+                        AdminFormFieldViewSet.as_view(
+                            {
+                                "get": "retrieve",
+                                "put": "update",
+                                "patch": "partial_update",
+                                "delete": "destroy",
+                            }
+                        ),
+                    ),
+                    path("reorder/", AdminFormFieldViewSet.as_view({"post": "reorder"})),
+                ]
+            ),
         ),
         dpath(
             "permit-types/<str:permit_key>/doc-requirements/",
-            include([
-                path("", AdminDocRequirementViewSet.as_view({"get": "list", "post": "create"})),
-                path("<uuid:pk>/", AdminDocRequirementViewSet.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"})),
-            ]),
+            include(
+                [
+                    path("", AdminDocRequirementViewSet.as_view({"get": "list", "post": "create"})),
+                    path(
+                        "<uuid:pk>/",
+                        AdminDocRequirementViewSet.as_view(
+                            {
+                                "get": "retrieve",
+                                "put": "update",
+                                "patch": "partial_update",
+                                "delete": "destroy",
+                            }
+                        ),
+                    ),
+                ]
+            ),
         ),
     ]
 

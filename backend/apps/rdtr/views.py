@@ -7,6 +7,7 @@ Endpoints:
   GET /api/v1/rdtr/lookup/?lat=&lng=       — point-in-zone lookup (mock bbox check)
   GET /api/v1/rdtr/kbli-check/?kbli=&zone= — KBLI compatibility for a zone
 """
+
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -16,12 +17,19 @@ from .models import KBLICompatibility, RDTRZone
 
 # ── Serializers ───────────────────────────────────────────────────────────────
 
+
 class RDTRZoneListSerializer(serializers.ModelSerializer):
     class Meta:
         model = RDTRZone
         fields = [
-            "id", "zone_code", "name", "zone_type", "bbox",
-            "allowed_sektors", "description", "source",
+            "id",
+            "zone_code",
+            "name",
+            "zone_type",
+            "bbox",
+            "allowed_sektors",
+            "description",
+            "source",
         ]
 
 
@@ -37,16 +45,26 @@ class RDTRZoneDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = RDTRZone
         fields = [
-            "id", "zone_code", "name", "zone_type", "bbox", "geojson",
-            "allowed_sektors", "allowed_kbli_codes", "description", "source",
+            "id",
+            "zone_code",
+            "name",
+            "zone_type",
+            "bbox",
+            "geojson",
+            "allowed_sektors",
+            "allowed_kbli_codes",
+            "description",
+            "source",
             "kbli_compat",
         ]
 
 
 # ── Views ─────────────────────────────────────────────────────────────────────
 
+
 class ZoneListView(APIView):
     """Return all zones as a GeoJSON FeatureCollection for MapLibre."""
+
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -86,6 +104,7 @@ class PointLookupView(APIView):
     Mock point-in-zone: checks which zone bbox contains (lat, lng).
     Real implementation: PostGIS ST_Contains or OneMap spatial API.
     """
+
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -115,6 +134,7 @@ class PointLookupView(APIView):
 
 class KBLICheckView(APIView):
     """Check if a KBLI code is compatible with a zone."""
+
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -148,6 +168,7 @@ class KBLICheckView(APIView):
 
         # Fallback: check allowed_sektors and allowed_kbli_codes on zone
         from apps.reference.models import KbliCode
+
         kbli_ref = KbliCode.objects.select_related("bidang").filter(code=kbli).first()
 
         if not kbli_ref:
@@ -178,6 +199,7 @@ class KBLICheckView(APIView):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _bbox_to_polygon(bbox: list) -> dict:
     """Convert [min_lng, min_lat, max_lng, max_lat] to GeoJSON Polygon."""
     if not bbox or len(bbox) != 4:
@@ -185,11 +207,13 @@ def _bbox_to_polygon(bbox: list) -> dict:
     min_lng, min_lat, max_lng, max_lat = bbox
     return {
         "type": "Polygon",
-        "coordinates": [[
-            [min_lng, min_lat],
-            [max_lng, min_lat],
-            [max_lng, max_lat],
-            [min_lng, max_lat],
-            [min_lng, min_lat],
-        ]],
+        "coordinates": [
+            [
+                [min_lng, min_lat],
+                [max_lng, min_lat],
+                [max_lng, max_lat],
+                [min_lng, max_lat],
+                [min_lng, min_lat],
+            ]
+        ],
     }

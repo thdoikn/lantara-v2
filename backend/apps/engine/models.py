@@ -4,6 +4,7 @@ Permit engine — core configuration entities.
 The golden rule: adding a new izin = inserting rows here, never a migration.
 No per-permit-type tables, no if/elif on permit type anywhere.
 """
+
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
@@ -80,9 +81,7 @@ class PermitTypeVersion(TimestampedModel):
     to live config edits.
     """
 
-    permit_type = models.ForeignKey(
-        PermitType, on_delete=models.CASCADE, related_name="versions"
-    )
+    permit_type = models.ForeignKey(PermitType, on_delete=models.CASCADE, related_name="versions")
     version = models.PositiveIntegerField()
     snapshot = models.JSONField()
 
@@ -107,9 +106,7 @@ class WorkflowStage(TimestampedModel):
         PUBLISH = "publish", "Penerbitan"
         COLLECTION = "collection", "Pengambilan"
 
-    permit_type = models.ForeignKey(
-        PermitType, on_delete=models.CASCADE, related_name="stages"
-    )
+    permit_type = models.ForeignKey(PermitType, on_delete=models.CASCADE, related_name="stages")
     key = models.SlugField(max_length=120)
     order = models.PositiveSmallIntegerField()
     name = models.CharField(max_length=200)

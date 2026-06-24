@@ -7,6 +7,7 @@ CSV layout (CLAUDE.md §3.8):
   - Sektor section headers like 'A. PENDIDIKAN' appear in BIDANG column
   - BIDANG / SEKTOR / KBLI forward-filled within groups
 """
+
 import csv
 import re
 from pathlib import Path
@@ -136,7 +137,7 @@ class Command(BaseCommand):
             self.stderr.write("Could not find header row — using default row 7.")
             header_idx = HEADER_ROW
 
-        data_rows = all_rows[header_idx + 1:]
+        data_rows = all_rows[header_idx + 1 :]
 
         current_bidang = ""
         current_sektor = ""

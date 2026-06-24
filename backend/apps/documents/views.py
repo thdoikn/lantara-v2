@@ -96,6 +96,7 @@ class DocumentViewSet(viewsets.ViewSet):
 def _schedule_validation(doc_id):
     try:
         from .tasks import validate_document
+
         validate_document.delay(str(doc_id))
     except Exception:
         pass

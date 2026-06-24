@@ -3,6 +3,7 @@ WhatsApp adapter — Mekari/WABA vendor behind an interface.
 Vendor-swappable: swap the implementation, keep the call signature.
 Only active when FEATURE_WHATSAPP_ENABLED=true.
 """
+
 import logging
 
 from django.conf import settings
@@ -24,6 +25,7 @@ def send_whatsapp_message(phone_number: str, message: str) -> bool:
 
     try:
         import requests
+
         resp = requests.post(
             f"{api_url}/messages",
             headers={"Authorization": f"Bearer {api_token}"},

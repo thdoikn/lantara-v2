@@ -1,6 +1,7 @@
 """
 Permits — issued permit documents with QR validation UUID.
 """
+
 import uuid
 
 from django.db import models
@@ -54,5 +55,6 @@ class IssuedPermit(TimestampedModel):
     @property
     def validation_url(self):
         from django.conf import settings as _s
+
         base = getattr(_s, "FRONTEND_BASE_URL", "http://localhost")
         return f"{base}/validate/{self.validation_uuid}"

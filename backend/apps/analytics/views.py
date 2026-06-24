@@ -8,6 +8,7 @@ Endpoints (all require is_staff):
   GET /api/v1/analytics/trend/?days=30   — daily submission counts (last N days)
   GET /api/v1/analytics/export/excel/    — Excel workbook download
 """
+
 import io
 from datetime import date, timedelta
 
@@ -79,9 +80,15 @@ class BySektorView(APIView):
                         output_field=IntegerField(),
                     )
                 ),
-                approved=Count(Case(When(status="approved", then=Value(1)), output_field=IntegerField())),
-                rejected=Count(Case(When(status="rejected", then=Value(1)), output_field=IntegerField())),
-                breached=Count(Case(When(is_sla_breached=True, then=Value(1)), output_field=IntegerField())),
+                approved=Count(
+                    Case(When(status="approved", then=Value(1)), output_field=IntegerField())
+                ),
+                rejected=Count(
+                    Case(When(status="rejected", then=Value(1)), output_field=IntegerField())
+                ),
+                breached=Count(
+                    Case(When(is_sla_breached=True, then=Value(1)), output_field=IntegerField())
+                ),
             )
             .order_by("sektor")
         )
@@ -172,19 +179,22 @@ class ExportExcelView(APIView):
             cell.font = header_font
             cell.alignment = Alignment(horizontal="center")
 
-        qs = (
-            Submission.objects.select_related("permit_type__sektor")
-            .order_by("-created_at")
-        )
+        qs = Submission.objects.select_related("permit_type__sektor").order_by("-created_at")
         for row_idx, sub in enumerate(qs, 2):
             ws.cell(row=row_idx, column=1, value=sub.reference_number)
             ws.cell(row=row_idx, column=2, value=sub.permit_type.name if sub.permit_type else "")
             ws.cell(
                 row=row_idx,
                 column=3,
-                value=sub.permit_type.sektor.name if sub.permit_type and sub.permit_type.sektor else "",
+                value=(
+                    sub.permit_type.sektor.name
+                    if sub.permit_type and sub.permit_type.sektor
+                    else ""
+                ),
             )
-            ws.cell(row=row_idx, column=4, value=sub.applicant.get_full_name() if sub.applicant else "")
+            ws.cell(
+                row=row_idx, column=4, value=sub.applicant.get_full_name() if sub.applicant else ""
+            )
             ws.cell(row=row_idx, column=5, value=sub.applicant.email if sub.applicant else "")
             ws.cell(row=row_idx, column=6, value=sub.get_status_display())
             ws.cell(
@@ -222,15 +232,27 @@ class ExportExcelView(APIView):
                 active=Count(
                     Case(
                         When(
-                            status__in=["submitted", "in_review", "revision", "publishing", "collection"],
+                            status__in=[
+                                "submitted",
+                                "in_review",
+                                "revision",
+                                "publishing",
+                                "collection",
+                            ],
                             then=Value(1),
                         ),
                         output_field=IntegerField(),
                     )
                 ),
-                approved=Count(Case(When(status="approved", then=Value(1)), output_field=IntegerField())),
-                rejected=Count(Case(When(status="rejected", then=Value(1)), output_field=IntegerField())),
-                breached=Count(Case(When(is_sla_breached=True, then=Value(1)), output_field=IntegerField())),
+                approved=Count(
+                    Case(When(status="approved", then=Value(1)), output_field=IntegerField())
+                ),
+                rejected=Count(
+                    Case(When(status="rejected", then=Value(1)), output_field=IntegerField())
+                ),
+                breached=Count(
+                    Case(When(is_sla_breached=True, then=Value(1)), output_field=IntegerField())
+                ),
             )
             .order_by("sektor")
         )

@@ -5,6 +5,7 @@ Creates the superadmin user from SUPERADMIN_EMAIL / SUPERADMIN_PASSWORD env vars
 and seeds the three system roles (superadmin, admin, verifier).
 Called automatically in entrypoint.sh on first boot. Idempotent.
 """
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
@@ -64,5 +65,7 @@ class Command(BaseCommand):
 
         # Ensure superadmin role is assigned
         superadmin_role = Role.objects.get(key="superadmin")
-        UserRole.objects.get_or_create(user=user, role=superadmin_role, defaults={"is_active": True})
+        UserRole.objects.get_or_create(
+            user=user, role=superadmin_role, defaults={"is_active": True}
+        )
         self.stdout.write(self.style.SUCCESS("Superadmin role assigned."))

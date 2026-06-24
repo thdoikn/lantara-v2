@@ -1,4 +1,5 @@
 """Celery beat tasks — SLA sweep runs every 30 minutes."""
+
 from celery import shared_task
 
 
@@ -17,9 +18,9 @@ def sweep_sla():
         Submission.Status.REVISION,
         Submission.Status.PUBLISHING,
     ]
-    submissions = Submission.objects.filter(
-        status__in=active_statuses
-    ).select_related("permit_type__sektor", "applicant")
+    submissions = Submission.objects.filter(status__in=active_statuses).select_related(
+        "permit_type__sektor", "applicant"
+    )
 
     at_risk_count = 0
     breached_count = 0
@@ -28,7 +29,9 @@ def sweep_sla():
         was_breached = sub.is_sla_breached
         was_at_risk = sub.is_sla_at_risk
         compute_submission_sla(sub)
-        sub.save(update_fields=["sla_due_at", "stage_sla_due_at", "is_sla_breached", "is_sla_at_risk"])
+        sub.save(
+            update_fields=["sla_due_at", "stage_sla_due_at", "is_sla_breached", "is_sla_at_risk"]
+        )
 
         if sub.is_sla_breached and not was_breached:
             breached_count += 1
@@ -43,6 +46,7 @@ def sweep_sla():
 def _notify_sla_breached(sub):
     from apps.notifications.models import Notification
     from apps.notifications.utils import send_notification
+
     # Notify assigned verifiers + the applicant
     send_notification(
         recipient=sub.applicant,
@@ -57,6 +61,7 @@ def _notify_sla_breached(sub):
 def _notify_sla_at_risk(sub):
     from apps.notifications.models import Notification
     from apps.notifications.utils import send_notification
+
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.SLA_AT_RISK,

@@ -11,9 +11,16 @@ class AuditEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = AuditEntry
         fields = [
-            "id", "action", "actor_name", "is_applicant_action",
-            "from_stage_key", "to_stage_key", "from_status", "to_status",
-            "notes", "created_at",
+            "id",
+            "action",
+            "actor_name",
+            "is_applicant_action",
+            "from_stage_key",
+            "to_stage_key",
+            "from_status",
+            "to_status",
+            "notes",
+            "created_at",
         ]
 
     def get_actor_name(self, obj):
@@ -32,8 +39,14 @@ class SiteVisitSerializer(serializers.ModelSerializer):
     class Meta:
         model = SiteVisit
         fields = [
-            "id", "stage_key", "scheduled_date", "scheduled_time",
-            "officers", "findings", "is_completed", "completed_at",
+            "id",
+            "stage_key",
+            "scheduled_date",
+            "scheduled_time",
+            "officers",
+            "findings",
+            "is_completed",
+            "completed_at",
         ]
 
 
@@ -46,11 +59,19 @@ class SubmissionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = [
-            "id", "reference_number", "status",
-            "permit_type_name", "sektor_name", "sektor_key",
-            "applicant_name", "current_stage_key",
-            "sla_due_at", "is_sla_breached", "is_sla_at_risk",
-            "submitted_at", "created_at",
+            "id",
+            "reference_number",
+            "status",
+            "permit_type_name",
+            "sektor_name",
+            "sektor_key",
+            "applicant_name",
+            "current_stage_key",
+            "sla_due_at",
+            "is_sla_breached",
+            "is_sla_at_risk",
+            "submitted_at",
+            "created_at",
         ]
 
 
@@ -67,17 +88,30 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = [
-            "id", "reference_number", "status",
-            "permit_type", "applicant_name", "applicant_email",
+            "id",
+            "reference_number",
+            "status",
+            "permit_type",
+            "applicant_name",
+            "applicant_email",
             "form_data",
-            "schema_version_snapshot", "schema_snapshot",
-            "current_stage_key", "current_stage_order",
-            "sla_due_at", "is_sla_breached", "is_sla_at_risk",
+            "schema_version_snapshot",
+            "schema_snapshot",
+            "current_stage_key",
+            "current_stage_order",
+            "sla_due_at",
+            "is_sla_breached",
+            "is_sla_at_risk",
             "stage_sla_due_at",
-            "submitted_at", "rejection_reason",
-            "issued_permit_id", "issued_permit_validation_uuid",
-            "created_at", "updated_at",
-            "audit_entries", "revision_fields", "site_visits",
+            "submitted_at",
+            "rejection_reason",
+            "issued_permit_id",
+            "issued_permit_validation_uuid",
+            "created_at",
+            "updated_at",
+            "audit_entries",
+            "revision_fields",
+            "site_visits",
         ]
 
     def get_issued_permit_id(self, obj):
@@ -99,12 +133,15 @@ class SubmissionCreateSerializer(serializers.Serializer):
 
     def validate(self, data):
         from apps.engine.models import PermitType
+
         try:
             pt = PermitType.objects.prefetch_related("form_fields").get(
                 key=data["permit_type_key"], is_published=True
             )
         except PermitType.DoesNotExist:
-            raise serializers.ValidationError({"permit_type_key": "Izin tidak ditemukan atau belum diterbitkan."})
+            raise serializers.ValidationError(
+                {"permit_type_key": "Izin tidak ditemukan atau belum diterbitkan."}
+            )
 
         # Validate required form fields
         form_data = data["form_data"]
@@ -127,7 +164,14 @@ class SubmissionActionSerializer(serializers.Serializer):
         pass
 
     action = serializers.ChoiceField(
-        choices=["approve", "revise", "request_revision", "reject", "advance", "schedule_site_visit"]
+        choices=[
+            "approve",
+            "revise",
+            "request_revision",
+            "reject",
+            "advance",
+            "schedule_site_visit",
+        ]
     )
     notes = serializers.CharField(required=False, allow_blank=True)
     revision_fields = serializers.ListField(

@@ -77,16 +77,32 @@ class UserMeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id", "email", "full_name", "nik", "phone", "whatsapp_number",
-            "avatar", "is_email_verified", "is_staff", "last_seen",
-            "created_at", "profile", "roles", "direktorat_name",
+            "id",
+            "email",
+            "full_name",
+            "nik",
+            "phone",
+            "whatsapp_number",
+            "avatar",
+            "is_email_verified",
+            "is_staff",
+            "last_seen",
+            "created_at",
+            "profile",
+            "roles",
+            "direktorat_name",
         ]
-        read_only_fields = ["id", "email", "is_email_verified", "is_staff", "last_seen", "created_at"]
+        read_only_fields = [
+            "id",
+            "email",
+            "is_email_verified",
+            "is_staff",
+            "last_seen",
+            "created_at",
+        ]
 
     def get_roles(self, obj):
-        return list(
-            obj.user_roles.filter(is_active=True).values_list("role__key", flat=True)
-        )
+        return list(obj.user_roles.filter(is_active=True).values_list("role__key", flat=True))
 
     def get_direktorat_name(self, obj):
         if obj.direktorat_id:
@@ -101,14 +117,20 @@ class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id", "email", "full_name", "nik", "is_active", "is_staff",
-            "is_email_verified", "created_at", "roles", "direktorat_name",
+            "id",
+            "email",
+            "full_name",
+            "nik",
+            "is_active",
+            "is_staff",
+            "is_email_verified",
+            "created_at",
+            "roles",
+            "direktorat_name",
         ]
 
     def get_roles(self, obj):
-        return list(
-            obj.user_roles.filter(is_active=True).values_list("role__key", flat=True)
-        )
+        return list(obj.user_roles.filter(is_active=True).values_list("role__key", flat=True))
 
     def get_direktorat_name(self, obj):
         if obj.direktorat_id:
@@ -131,7 +153,9 @@ class VerifierPermitAssignmentSerializer(serializers.ModelSerializer):
     permit_type_key = serializers.CharField(source="permit_type.key", read_only=True)
     permit_type_name = serializers.CharField(source="permit_type.name", read_only=True)
     sektor_name = serializers.CharField(source="permit_type.sektor.name", read_only=True)
-    assigned_by_name = serializers.CharField(source="assigned_by.full_name", read_only=True, default=None)
+    assigned_by_name = serializers.CharField(
+        source="assigned_by.full_name", read_only=True, default=None
+    )
     permit_type_id = serializers.PrimaryKeyRelatedField(
         source="permit_type",
         write_only=True,
@@ -141,7 +165,14 @@ class VerifierPermitAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = VerifierPermitAssignment
         fields = [
-            "id", "permit_type_id", "permit_type_key", "permit_type_name",
-            "sektor_name", "is_active", "notes", "assigned_by_name", "created_at",
+            "id",
+            "permit_type_id",
+            "permit_type_key",
+            "permit_type_name",
+            "sektor_name",
+            "is_active",
+            "notes",
+            "assigned_by_name",
+            "created_at",
         ]
         read_only_fields = ["id", "created_at"]

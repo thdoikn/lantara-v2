@@ -2,6 +2,7 @@
 WhatsApp visit ticket service.
 Called by submissions action view when a verifier schedules a site visit.
 """
+
 import logging
 from datetime import datetime
 

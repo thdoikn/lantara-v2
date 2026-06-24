@@ -2,6 +2,7 @@
 Notification dispatch — creates in-app notification, sends via email and
 optionally WhatsApp if enabled. Also pushes real-time via channel layer.
 """
+
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
@@ -37,6 +38,7 @@ def send_notification(
 
     if send_whatsapp:
         from django.conf import settings
+
         if getattr(settings, "FEATURE_WHATSAPP_ENABLED", False):
             _send_whatsapp(recipient, notif)
             notif.whatsapp_sent = True
@@ -71,6 +73,7 @@ def _push_ws(user_id, notif):
 
 def _send_email(recipient, notif):
     from django.core.mail import send_mail
+
     send_mail(
         subject=notif.title,
         message=notif.body,
@@ -82,6 +85,7 @@ def _send_email(recipient, notif):
 
 def _send_whatsapp(recipient, notif):
     from apps.whatsapp.adapter import send_whatsapp_message
+
     number = recipient.whatsapp_number or recipient.phone
     if number:
         send_whatsapp_message(number, f"{notif.title}\n\n{notif.body}")

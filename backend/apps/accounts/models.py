@@ -5,6 +5,7 @@ and verifier-to-perizinan assignments.
 RBAC permissions are {stage_key}:{izin_key} strings derived from engine
 config at request time, NOT a static Django permission enum.
 """
+
 from datetime import timedelta
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -143,6 +144,7 @@ class OTPCode(UUIDModel):
     @classmethod
     def create_for(cls, user, purpose, ttl_minutes=10):
         import random
+
         code = f"{random.randint(0, 999999):06d}"
         return cls.objects.create(
             user=user,
@@ -194,8 +196,11 @@ class UserRole(TimestampedModel):
     role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name="user_roles")
     is_active = models.BooleanField(default=True)
     assigned_by = models.ForeignKey(
-        User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="assigned_roles",
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="assigned_roles",
     )
 
     class Meta:
@@ -213,15 +218,16 @@ class VerifierPermitAssignment(TimestampedModel):
     Admins and superadmins see all regardless of assignments.
     """
 
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="permit_assignments"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="permit_assignments")
     permit_type = models.ForeignKey(
         "engine.PermitType", on_delete=models.CASCADE, related_name="verifier_assignments"
     )
     assigned_by = models.ForeignKey(
-        User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="assignments_given",
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="assignments_given",
     )
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)

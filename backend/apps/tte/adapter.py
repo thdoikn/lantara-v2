@@ -10,6 +10,7 @@ Real adapter stub:
     body: { document_b64: <base64 PDF>, nik_signatory: <NIK>, passphrase: <enc> }
   Response: { transaction_id, signed_document_b64 }
 """
+
 import base64
 import logging
 from io import BytesIO
@@ -37,6 +38,7 @@ def sign_permit(permit) -> tuple[bytes, bool]:
 def _fetch_permit_pdf(permit) -> bytes | None:
     try:
         import boto3
+
         s3 = boto3.client(
             "s3",
             endpoint_url=settings.AWS_S3_ENDPOINT_URL,

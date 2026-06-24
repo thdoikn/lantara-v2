@@ -1,10 +1,12 @@
 """Dynamic RBAC permission classes resolved from engine config."""
+
 from rest_framework.permissions import BasePermission
 from rest_framework.throttling import AnonRateThrottle
 
 
 class AuthRateThrottle(AnonRateThrottle):
     """Tighter throttle for auth endpoints (login, register, OTP)."""
+
     scope = "auth"
 
 
@@ -14,10 +16,7 @@ class IsEngineAdmin(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        return (
-            request.user.has_any_role("superadmin", "admin")
-            or request.user.is_sektor_admin
-        )
+        return request.user.has_any_role("superadmin", "admin") or request.user.is_sektor_admin
 
 
 class IsSuperAdmin(BasePermission):

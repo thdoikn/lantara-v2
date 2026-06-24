@@ -130,8 +130,10 @@ class PasswordResetConfirmView(APIView):
 
         otp = (
             OTPCode.objects.filter(
-                user=user, purpose=OTPCode.Purpose.PASSWORD_RESET,
-                code=data["code"], is_used=False,
+                user=user,
+                purpose=OTPCode.Purpose.PASSWORD_RESET,
+                code=data["code"],
+                is_used=False,
             )
             .order_by("-created_at")
             .first()
@@ -154,9 +156,7 @@ class MeView(APIView):
         return Response(UserMeSerializer(request.user).data)
 
     def patch(self, request):
-        serializer = UserMeSerializer(
-            request.user, data=request.data, partial=True
-        )
+        serializer = UserMeSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -202,6 +202,7 @@ class OIDCCallbackView(APIView):
     finds or creates the OIKN staff User from JWT claims, and returns
     our own SimpleJWT tokens in the same shape as normal login.
     """
+
     permission_classes = [AllowAny]
     throttle_classes = [AuthRateThrottle]
 
@@ -218,16 +219,19 @@ class OIDCCallbackView(APIView):
             return Response({"detail": "SSO is not configured on this server."}, status=503)
 
         from .oidc import JDIHOIDCBackend
+
         backend = JDIHOIDCBackend()
 
         try:
-            token_info = backend.get_token({
-                "client_id": settings.OIDC_RP_CLIENT_ID,
-                "client_secret": settings.OIDC_RP_CLIENT_SECRET,
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": redirect_uri,
-            })
+            token_info = backend.get_token(
+                {
+                    "client_id": settings.OIDC_RP_CLIENT_ID,
+                    "client_secret": settings.OIDC_RP_CLIENT_SECRET,
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": redirect_uri,
+                }
+            )
             id_token = token_info.get("id_token")
             access_token = token_info.get("access_token")
 
@@ -250,11 +254,13 @@ class OIDCCallbackView(APIView):
         refresh["full_name"] = user.full_name
         refresh["is_staff"] = user.is_staff
 
-        return Response({
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "user": UserMeSerializer(user).data,
-        })
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserMeSerializer(user).data,
+            }
+        )
 
 
 class RoleViewSet(viewsets.ReadOnlyModelViewSet):
@@ -270,7 +276,9 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """Admin and superadmin — user management and verifier assignments."""
 
     permission_classes = [IsAdminOrSuperAdmin]
-    queryset = User.objects.filter(is_deleted=False).select_related("direktorat").order_by("-created_at")
+    queryset = (
+        User.objects.filter(is_deleted=False).select_related("direktorat").order_by("-created_at")
+    )
     serializer_class = UserListSerializer
     filterset_fields = ["is_active", "is_staff", "is_email_verified"]
     search_fields = ["email", "full_name", "nik"]
@@ -280,14 +288,17 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         # Only superadmin can assign the superadmin role
         role_key = request.data.get("role_key", "")
         if role_key == "superadmin" and not request.user.has_any_role("superadmin"):
-            return Response({"detail": "Hanya superadmin yang dapat memberikan role superadmin."}, status=403)
+            return Response(
+                {"detail": "Hanya superadmin yang dapat memberikan role superadmin."}, status=403
+            )
         user = self.get_object()
         try:
             role = Role.objects.get(key=role_key)
         except Role.DoesNotExist:
             return Response({"detail": "Role tidak ditemukan."}, status=404)
         UserRole.objects.update_or_create(
-            user=user, role=role,
+            user=user,
+            role=role,
             defaults={"is_active": True, "assigned_by": request.user},
         )
         return Response({"detail": "Role ditetapkan."})
@@ -296,7 +307,9 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     def revoke_role(self, request, pk=None):
         role_key = request.data.get("role_key", "")
         if role_key == "superadmin" and not request.user.has_any_role("superadmin"):
-            return Response({"detail": "Hanya superadmin yang dapat mencabut role superadmin."}, status=403)
+            return Response(
+                {"detail": "Hanya superadmin yang dapat mencabut role superadmin."}, status=403
+            )
         user = self.get_object()
         UserRole.objects.filter(user=user, role__key=role_key).update(is_active=False)
         return Response({"detail": "Role dicabut."})
@@ -306,9 +319,9 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         """List or create permit assignments for a user."""
         user = self.get_object()
         if request.method == "GET":
-            qs = VerifierPermitAssignment.objects.filter(
-                user=user
-            ).select_related("permit_type__sektor", "assigned_by")
+            qs = VerifierPermitAssignment.objects.filter(user=user).select_related(
+                "permit_type__sektor", "assigned_by"
+            )
             return Response(VerifierPermitAssignmentSerializer(qs, many=True).data)
 
         serializer = VerifierPermitAssignmentSerializer(data=request.data)
@@ -342,8 +355,10 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
+
 def _send_otp_email(user, code, subject="Kode Verifikasi Lantara"):
     from django.core.mail import send_mail
+
     send_mail(
         subject=subject,
         message=f"Kode OTP Anda: {code}\nBerlaku 10 menit.",

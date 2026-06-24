@@ -2,6 +2,7 @@
 Documents — uploaded files per submission document requirement.
 Validation (type, size, virus scan) runs async via Celery.
 """
+
 from django.conf import settings
 from django.db import models
 

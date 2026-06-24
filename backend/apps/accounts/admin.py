@@ -21,7 +21,18 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Info", {"fields": ("full_name", "nik", "phone", "whatsapp_number", "avatar")}),
-        ("Status", {"fields": ("is_active", "is_staff", "is_superuser", "is_email_verified", "is_deleted")}),
+        (
+            "Status",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "is_email_verified",
+                    "is_deleted",
+                )
+            },
+        ),
     )
     add_fieldsets = (
         (None, {"classes": ("wide",), "fields": ("email", "full_name", "password1", "password2")}),

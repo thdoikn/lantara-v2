@@ -13,6 +13,7 @@ router.register("", SubmissionViewSet, basename="submission")
 
 class SubmissionDocumentView(APIView):
     """Nested: /submissions/{pk}/documents/"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk=None):

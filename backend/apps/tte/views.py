@@ -4,6 +4,7 @@ TTE API views — Phase 3.
 POST /api/v1/tte/<permit_id>/sign/  — trigger TTE signing (staff only)
 GET  /api/v1/tte/<permit_id>/status/ — poll TTE status
 """
+
 import logging
 
 from django.conf import settings
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class TTESignView(APIView):
     """Trigger TTE signing for an issued permit."""
+
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def post(self, request, permit_id):
@@ -65,7 +67,8 @@ class TTESignView(APIView):
                     "signed_at": tte_req.signed_at,
                     "tte_enabled": enabled,
                     "message": (
-                        "TTE diterapkan via BSrE." if not is_mock
+                        "TTE diterapkan via BSrE."
+                        if not is_mock
                         else "Mock TTE diterapkan — FEATURE_TTE_ENABLED=false."
                     ),
                 }
@@ -107,6 +110,7 @@ def _store_signed_pdf(permit, pdf_bytes: bytes) -> None:
     """Upload signed PDF to MinIO, updating permit.signed_pdf_key."""
     try:
         import boto3
+
         s3 = boto3.client(
             "s3",
             endpoint_url=settings.AWS_S3_ENDPOINT_URL,

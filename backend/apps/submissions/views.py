@@ -32,9 +32,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Submission.objects.select_related(
-            "permit_type__sektor", "applicant"
-        ).prefetch_related("audit_entries", "revision_fields", "site_visits")
+        qs = Submission.objects.select_related("permit_type__sektor", "applicant").prefetch_related(
+            "audit_entries", "revision_fields", "site_visits"
+        )
 
         if user.has_any_role("superadmin", "admin") or user.is_sektor_admin:
             # Superadmin and admin see all submissions
@@ -42,6 +42,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         elif user.has_any_role("verifier"):
             # Verifiers only see submissions for their assigned permit types
             from apps.accounts.models import VerifierPermitAssignment
+
             assigned_keys = VerifierPermitAssignment.objects.filter(
                 user=user, is_active=True
             ).values_list("permit_type__key", flat=True)
@@ -125,8 +126,12 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
         # Check act permission: superadmin/admin can always act;
         # verifiers must have an active VerifierPermitAssignment for this permit type
-        if not request.user.has_any_role("superadmin", "admin") and not request.user.is_sektor_admin:
+        if (
+            not request.user.has_any_role("superadmin", "admin")
+            and not request.user.is_sektor_admin
+        ):
             from apps.accounts.models import VerifierPermitAssignment
+
             has_assignment = VerifierPermitAssignment.objects.filter(
                 user=request.user,
                 permit_type=sub.permit_type,
@@ -185,9 +190,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         from_status = sub.status
 
         stages = list(sub.permit_type.stages.order_by("order"))
-        current_idx = next(
-            (i for i, s in enumerate(stages) if s.key == sub.current_stage_key), -1
-        )
+        current_idx = next((i for i, s in enumerate(stages) if s.key == sub.current_stage_key), -1)
         current_stage = stages[current_idx] if current_idx >= 0 else None
 
         # Skip any following applicant-role stages automatically
@@ -315,6 +318,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             from django.utils.dateparse import parse_datetime
 
             from apps.whatsapp.services import create_visit_ticket
+
             scheduled_at = parse_datetime(str(visit.scheduled_date))
             if scheduled_at:
                 create_visit_ticket(
@@ -329,6 +333,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
+
 
 def _upsert_index(sub: Submission) -> None:
     SubmissionIndex.objects.update_or_create(
@@ -355,6 +360,7 @@ def _upsert_index(sub: Submission) -> None:
 def _notify_submission(sub: Submission) -> None:
     from apps.notifications.models import Notification
     from apps.notifications.utils import send_notification
+
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.SUBMISSION_SUBMITTED,
@@ -369,6 +375,7 @@ def _notify_submission(sub: Submission) -> None:
 def _notify_stage_advance(sub: Submission, actor) -> None:
     from apps.notifications.models import Notification
     from apps.notifications.utils import send_notification
+
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.STAGE_ADVANCED,
@@ -383,6 +390,7 @@ def _notify_stage_advance(sub: Submission, actor) -> None:
 def _notify_revision(sub: Submission, actor) -> None:
     from apps.notifications.models import Notification
     from apps.notifications.utils import send_notification
+
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.REVISION_REQUESTED,
@@ -397,6 +405,7 @@ def _notify_revision(sub: Submission, actor) -> None:
 def _notify_rejection(sub: Submission, actor) -> None:
     from apps.notifications.models import Notification
     from apps.notifications.utils import send_notification
+
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.SUBMISSION_REJECTED,

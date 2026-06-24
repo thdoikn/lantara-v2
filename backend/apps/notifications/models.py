@@ -2,6 +2,7 @@
 Notifications — in-app bell + email + WhatsApp (adapter).
 Real-time delivery via Django Channels WebSocket.
 """
+
 from django.conf import settings
 from django.db import models
 

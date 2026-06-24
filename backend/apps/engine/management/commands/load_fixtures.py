@@ -5,6 +5,7 @@ Loads all JSON fixture files from /fixtures/sektor_*/  into engine tables.
 Fixture format mirrors the PermitType/WorkflowStage/FormField/DocumentRequirement schema.
 Idempotent — uses get_or_create keyed on PermitType.key.
 """
+
 import json
 import logging
 from pathlib import Path
@@ -66,9 +67,7 @@ class Command(BaseCommand):
                 elif result == "skipped":
                     skipped += 1
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Fixtures: {loaded} loaded, {skipped} skipped.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Fixtures: {loaded} loaded, {skipped} skipped."))
 
     def _load_file(self, path: Path, skip_if_exists: bool) -> str:
         from apps.engine.models import (
