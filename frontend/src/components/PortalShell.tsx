@@ -80,6 +80,7 @@ export default function PortalShell({
   }, [nav, quickActions, navigate]);
 
   const sidebarWidth = collapsed ? "lg:pl-16" : "lg:pl-64";
+  const accentBar = variant === "verifier" ? "bg-emerald-500" : variant === "admin" ? "bg-amber-500" : "bg-khatulistiwa-500";
 
   return (
     <div className="min-h-screen flex bg-pertiwi-warm">
@@ -96,7 +97,9 @@ export default function PortalShell({
 
       <div className={cn("flex-1 flex flex-col min-h-screen transition-all duration-300", sidebarWidth)}>
         {/* Top bar */}
-        <header className="sticky top-0 z-30 flex items-center gap-3 h-16 px-4 sm:px-6 lg:px-8
+        <div className="sticky top-0 z-30">
+        <div className={cn("h-0.5 w-full", accentBar)} aria-hidden="true" />
+        <header className="flex items-center gap-3 h-16 px-4 sm:px-6 lg:px-8
                            bg-pertiwi-warm/85 backdrop-blur-md border-b border-pertiwi-muted">
           {/* Mobile menu */}
           <button
@@ -161,6 +164,7 @@ export default function PortalShell({
             </Link>
           )}
         </header>
+        </div>
 
         <main id="main-content" className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
           <Outlet />

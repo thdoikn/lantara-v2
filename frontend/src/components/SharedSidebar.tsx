@@ -14,21 +14,42 @@ export interface NavItem {
 
 type PortalVariant = "pemohon" | "verifier" | "admin";
 
-const VARIANT_STYLES: Record<PortalVariant, { strip: string; logoRing: string; logoBg: string }> = {
+type VariantStyle = {
+  strip: string;
+  logoRing: string;
+  logoBg: string;
+  navActive: string;
+  accent: string;
+  dot: string;
+};
+
+// Each portal carries a distinct accent identity so the three never feel like
+// the same screen: pemohon = blue+gold concierge, verifier = emerald command
+// desk, admin = amber control room.
+const VARIANT_STYLES: Record<PortalVariant, VariantStyle> = {
   pemohon: {
     strip: "bg-khatulistiwa-500",
     logoBg: "bg-khatulistiwa-600",
     logoRing: "ring-khatulistiwa-500/30",
+    navActive: "bg-khatulistiwa-600/25 text-white border border-khatulistiwa-500/30",
+    accent: "text-terakota-400",
+    dot: "bg-terakota-400",
   },
   verifier: {
     strip: "bg-emerald-500",
     logoBg: "bg-emerald-600",
     logoRing: "ring-emerald-500/30",
+    navActive: "bg-emerald-600/25 text-white border border-emerald-500/30",
+    accent: "text-emerald-300",
+    dot: "bg-emerald-300",
   },
   admin: {
     strip: "bg-amber-500",
     logoBg: "bg-amber-600",
     logoRing: "ring-amber-500/30",
+    navActive: "bg-amber-600/20 text-white border border-amber-500/30",
+    accent: "text-amber-300",
+    dot: "bg-amber-300",
   },
 };
 
@@ -142,19 +163,19 @@ export default function SharedSidebar({
                   "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                   collapsed && "lg:justify-center lg:px-0",
                   active
-                    ? "bg-khatulistiwa-600/25 text-white border border-khatulistiwa-500/30"
+                    ? vStyle.navActive
                     : "text-khatulistiwa-300/60 hover:bg-white/[0.05] hover:text-khatulistiwa-200"
                 )}
               >
                 <Icon
-                  className={cn("w-5 h-5 shrink-0", active ? "text-terakota-400" : "")}
+                  className={cn("w-5 h-5 shrink-0", active ? vStyle.accent : "")}
                   aria-hidden="true"
                 />
                 <span className={cn("flex-1", collapsed && "lg:hidden")}>{label}</span>
                 {/* Active dot indicator (no badge) */}
                 {active && !badge && (
                   <span
-                    className={cn("h-1.5 w-1.5 rounded-full bg-terakota-400 shrink-0", collapsed && "lg:hidden")}
+                    className={cn("h-1.5 w-1.5 rounded-full shrink-0", vStyle.dot, collapsed && "lg:hidden")}
                     aria-hidden="true"
                   />
                 )}
