@@ -169,6 +169,9 @@ export default function PortalDashboard() {
   const submissions = data?.results ?? [];
   const catalogItems = catalogData?.results.slice(0, 4) ?? [];
 
+  // Concierge: surface the submissions that need the applicant's attention now.
+  const actionItems = submissions.filter((s) => s.status === "revision");
+
   const stats = {
     total: data?.count ?? 0,
     pending: submissions.filter((s) =>
@@ -217,6 +220,33 @@ export default function PortalDashboard() {
           </Link>
         </div>
       </motion.div>
+
+      {/* Concierge: needs-action banner */}
+      {!isLoading && actionItems.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-center gap-4"
+        >
+          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+            <PenLine className="w-5 h-5 text-amber-600" aria-hidden="true" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-amber-900 font-semibold text-sm">
+              {actionItems.length} permohonan perlu revisi
+            </p>
+            <p className="text-amber-800/70 text-xs mt-0.5">
+              Verifikator meminta perbaikan. Tinjau catatan lalu kirim ulang agar proses berlanjut.
+            </p>
+          </div>
+          <Link
+            to={`/portal/submissions/${actionItems[0].id}`}
+            className="shrink-0 inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            Perbaiki <ChevronRight className="w-4 h-4" aria-hidden="true" />
+          </Link>
+        </motion.div>
+      )}
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -371,7 +401,7 @@ export default function PortalDashboard() {
                 return (
                   <Link
                     key={pt.key}
-                    to={`/portal/ajukan/${pt.key}`}
+                    to={`/portal/new/${pt.key}`}
                     className="rounded-xl border border-khatulistiwa-100 hover:border-khatulistiwa-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group"
                   >
                     <div className={cn("h-1 w-full", sektor.accent)} />

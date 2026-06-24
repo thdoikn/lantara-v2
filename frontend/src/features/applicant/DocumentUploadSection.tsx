@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, CheckCircle2, XCircle, Clock, Trash2, File as FileIcon, ExternalLink } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { toast } from "@/lib/toast";
 import type { DocumentRequirement, UploadedDocument } from "@/types";
 
 interface Props {
@@ -21,6 +22,8 @@ const STATUS_ICON = {
 export default function DocumentUploadSection({ submissionId, requirements, readOnly }: Props) {
   const qc = useQueryClient();
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [progress, setProgress] = useState<Record<string, number>>({});
+  const [dragOver, setDragOver] = useState<string | null>(null);
 
   const { data: docs } = useQuery<UploadedDocument[]>({
     queryKey: ["submissions", submissionId, "documents"],
@@ -29,21 +32,46 @@ export default function DocumentUploadSection({ submissionId, requirements, read
 
   const deleteMutation = useMutation({
     mutationFn: (docId: string) => api.delete(`/documents/${docId}/`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["submissions", submissionId, "documents"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["submissions", submissionId, "documents"] });
+      toast.success("Dokumen dihapus.");
+    },
+    onError: () => toast.error("Gagal menghapus dokumen. Coba lagi."),
   });
 
-  async function handleUpload(requirementKey: string, file: File) {
-    setUploading((p) => ({ ...p, [requirementKey]: true }));
+  async function handleUpload(req: DocumentRequirement, file: File) {
+    // Client-side guards so the user gets instant, specific feedback.
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const allowed = (req.allowed_types ?? []).map((t) => t.toLowerCase());
+    if (allowed.length && !allowed.includes(ext)) {
+      toast.error(`Format .${ext} tidak diizinkan untuk "${req.title}".`);
+      return;
+    }
+    const maxBytes = req.max_bytes || 10_485_760;
+    if (file.size > maxBytes) {
+      toast.error(`File terlalu besar (maks ${(maxBytes / 1_048_576).toFixed(0)} MB).`);
+      return;
+    }
+
+    setUploading((p) => ({ ...p, [req.key]: true }));
+    setProgress((p) => ({ ...p, [req.key]: 0 }));
     try {
       const fd = new FormData();
-      fd.append("requirement_key", requirementKey);
+      fd.append("requirement_key", req.key);
       fd.append("file", file);
       await api.post(`/submissions/${submissionId}/documents/`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (e) => {
+          if (e.total) setProgress((p) => ({ ...p, [req.key]: Math.round((e.loaded / e.total!) * 100) }));
+        },
       });
       qc.invalidateQueries({ queryKey: ["submissions", submissionId, "documents"] });
+      toast.success(`"${req.title}" berhasil diunggah.`);
+    } catch {
+      toast.error(`Gagal mengunggah "${req.title}". Coba lagi.`);
     } finally {
-      setUploading((p) => ({ ...p, [requirementKey]: false }));
+      setUploading((p) => ({ ...p, [req.key]: false }));
+      setProgress((p) => { const n = { ...p }; delete n[req.key]; return n; });
     }
   }
 
@@ -120,25 +148,52 @@ export default function DocumentUploadSection({ submissionId, requirements, read
                 )}
               </div>
             ) : !readOnly ? (
-              <label className="block cursor-pointer">
+              <label
+                className="block cursor-pointer"
+                onDragOver={(e) => { e.preventDefault(); setDragOver(req.key); }}
+                onDragLeave={() => setDragOver((k) => (k === req.key ? null : k))}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(null);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleUpload(req, file);
+                }}
+              >
                 <input
                   type="file"
                   accept={(req.allowed_types ?? []).map((t) => `.${t}`).join(",")}
                   className="sr-only"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) handleUpload(req.key, file);
+                    if (file) handleUpload(req, file);
                     e.target.value = "";
                   }}
                 />
                 <div
                   className={cn(
-                    "flex flex-col items-center justify-center gap-2 bg-khatulistiwa-50/60 border-2 border-khatulistiwa-100 hover:border-khatulistiwa-300 hover:bg-khatulistiwa-50 rounded-xl px-4 py-4 text-sm text-khatulistiwa-400 transition-all",
-                    isUploading && "opacity-60 pointer-events-none"
+                    "flex flex-col items-center justify-center gap-2 border-2 rounded-xl px-4 py-4 text-sm transition-all",
+                    dragOver === req.key
+                      ? "border-khatulistiwa-400 border-dashed bg-khatulistiwa-50 text-khatulistiwa-600"
+                      : "border-khatulistiwa-100 bg-khatulistiwa-50/60 hover:border-khatulistiwa-300 hover:bg-khatulistiwa-50 text-khatulistiwa-400",
+                    isUploading && "pointer-events-none"
                   )}
                 >
-                  <Upload className="h-5 w-5 text-khatulistiwa-400" aria-hidden="true" />
-                  <span className="font-medium">{isUploading ? "Mengunggah…" : "Klik untuk pilih file"}</span>
+                  {isUploading ? (
+                    <>
+                      <span className="font-medium text-khatulistiwa-600">Mengunggah… {progress[req.key] ?? 0}%</span>
+                      <div className="w-full h-1.5 rounded-full bg-khatulistiwa-100 overflow-hidden">
+                        <div
+                          className="h-full bg-khatulistiwa-500 transition-[width] duration-200"
+                          style={{ width: `${progress[req.key] ?? 0}%` }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-5 w-5 text-khatulistiwa-400" aria-hidden="true" />
+                      <span className="font-medium">Klik atau seret file ke sini</span>
+                    </>
+                  )}
                 </div>
               </label>
             ) : (

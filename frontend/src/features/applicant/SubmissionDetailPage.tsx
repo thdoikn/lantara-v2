@@ -307,6 +307,51 @@ function TTEStatusBadge({ permitId }: { permitId: string }) {
   );
 }
 
+// ── What's-next concierge card ───────────────────────────────────────────────
+
+type NextTone = "info" | "warning" | "success" | "danger";
+const NEXT_STEP: Record<string, { tone: NextTone; icon: LucideIcon; title: string; body: string }> = {
+  submitted:  { tone: "info",    icon: Eye,         title: "Sedang diverifikasi", body: "Tim teknis memeriksa permohonan Anda. Tidak ada tindakan yang diperlukan — kami beri tahu bila ada perkembangan." },
+  in_review:  { tone: "info",    icon: Eye,         title: "Sedang diverifikasi", body: "Tim teknis memeriksa permohonan Anda. Tidak ada tindakan yang diperlukan — kami beri tahu bila ada perkembangan." },
+  revision:   { tone: "warning", icon: PenLine,     title: "Perbaikan diperlukan", body: "Perbaiki dokumen atau data sesuai catatan verifikator di bawah, lalu kirim ulang agar proses berlanjut." },
+  publishing: { tone: "info",    icon: Loader2,     title: "Izin sedang diterbitkan", body: "Permohonan disetujui. Dokumen izin Anda sedang dibuat dan ditandatangani secara digital." },
+  collection: { tone: "success", icon: Package,     title: "Izin siap diambil", body: "Izin Anda telah selesai. Ikuti instruksi penyerahan atau unduh dokumen digital Anda." },
+  collected:  { tone: "success", icon: BadgeCheck,  title: "Permohonan selesai", body: "Izin Anda telah terbit. Unduh atau validasi keasliannya kapan saja." },
+  issued:     { tone: "success", icon: BadgeCheck,  title: "Izin telah terbit", body: "Unduh dokumen izin Anda dan validasi keasliannya melalui QR kapan saja." },
+  approved:   { tone: "success", icon: CheckCircle2, title: "Disetujui", body: "Permohonan Anda disetujui dan sedang diproses untuk penerbitan." },
+  rejected:   { tone: "danger",  icon: XCircle,     title: "Permohonan ditolak", body: "Lihat alasan pada riwayat aktivitas di bawah. Anda dapat mengajukan permohonan baru." },
+};
+
+const NEXT_TONE: Record<NextTone, { wrap: string; iconWrap: string; icon: string; title: string; body: string }> = {
+  info:    { wrap: "border-khatulistiwa-200 bg-khatulistiwa-50", iconWrap: "bg-khatulistiwa-100", icon: "text-khatulistiwa-600", title: "text-khatulistiwa-900", body: "text-khatulistiwa-600/80" },
+  warning: { wrap: "border-amber-200 bg-amber-50", iconWrap: "bg-amber-100", icon: "text-amber-600", title: "text-amber-900", body: "text-amber-800/80" },
+  success: { wrap: "border-emerald-200 bg-emerald-50", iconWrap: "bg-emerald-100", icon: "text-emerald-600", title: "text-emerald-900", body: "text-emerald-800/80" },
+  danger:  { wrap: "border-red-200 bg-red-50", iconWrap: "bg-red-100", icon: "text-red-600", title: "text-red-900", body: "text-red-800/80" },
+};
+
+function NextStepCard({ status }: { status: string }) {
+  const step = NEXT_STEP[status];
+  if (!step) return null;
+  const t = NEXT_TONE[step.tone];
+  const Icon = step.icon;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn("rounded-2xl border p-5 flex items-start gap-4", t.wrap)}
+    >
+      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", t.iconWrap)}>
+        <Icon className={cn("w-5 h-5", t.icon, step.icon === Loader2 && "animate-spin")} aria-hidden="true" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-khatulistiwa-400 mb-1">Langkah Berikutnya</p>
+        <p className={cn("font-display font-bold text-sm", t.title)}>{step.title}</p>
+        <p className={cn("text-xs mt-1 leading-relaxed", t.body)}>{step.body}</p>
+      </div>
+    </motion.div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function SubmissionDetailPage() {
@@ -344,7 +389,6 @@ export default function SubmissionDetailPage() {
   }
 
   const stages: StageRow[] = submission.schema_snapshot?.stages ?? [];
-  const needsRevision = submission.status === "revision";
   const canUploadDocs = submission.status === "revision" || submission.status === "in_review";
   const isIssued = ["issued", "collected", "approved"].includes(submission.status);
 
@@ -434,20 +478,8 @@ export default function SubmissionDetailPage() {
 
         {/* Right: details + audit — 3 cols */}
         <div className="col-span-5 md:col-span-3 space-y-5">
-          {/* Revision notice */}
-          {needsRevision && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="rounded-xl border border-red-200 bg-red-50 p-4"
-            >
-              <p className="text-sm font-semibold text-red-700 mb-1">Revisi Diperlukan</p>
-              <p className="text-xs text-red-600/70">
-                Verifikator meminta perbaikan. Lihat catatan di bawah dan unggah ulang dokumen
-                atau perbaiki data yang diminta.
-              </p>
-            </motion.div>
-          )}
+          {/* What happens next */}
+          <NextStepCard status={submission.status} />
 
           {/* Document requirements */}
           {(submission.schema_snapshot?.doc_requirements?.length ?? 0) > 0 && (
