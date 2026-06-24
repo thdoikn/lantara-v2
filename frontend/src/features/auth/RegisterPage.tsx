@@ -4,9 +4,10 @@ import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, ArrowRight, Leaf } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Leaf, Building2 } from "lucide-react";
 import { useState } from "react";
 import api from "@/lib/api";
+import { buildAuthorizationUrl, isSsoEnabled } from "@/lib/oidc";
 import { cn } from "@/lib/cn";
 
 const schema = z
@@ -117,6 +118,26 @@ export default function RegisterPage() {
               </Link>
             </p>
           </div>
+
+          {/* OIKN staff don't need to register — point them to SSO instead. */}
+          {isSsoEnabled() && (
+            <div className="flex items-start gap-3 rounded-xl border border-jagawana/25 bg-jagawana/[0.06] px-4 py-3.5">
+              <Building2 className="h-4 w-4 text-jagawana shrink-0 mt-0.5" aria-hidden="true" />
+              <div className="text-sm">
+                <p className="font-semibold text-foreground">Pegawai Otorita IKN?</p>
+                <p className="text-buana mt-0.5">
+                  Tidak perlu mendaftar — gunakan akun SSO OIKN Anda.{" "}
+                  <button
+                    type="button"
+                    onClick={() => { window.location.href = buildAuthorizationUrl(); }}
+                    className="text-jagawana font-semibold hover:underline"
+                  >
+                    Masuk dengan SSO →
+                  </button>
+                </p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
             {[
