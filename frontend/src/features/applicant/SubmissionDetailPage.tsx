@@ -105,11 +105,13 @@ function StageTracker({
   currentKey,
   status,
   auditEntries,
+  stageSlaDueAt,
 }: {
   stages: StageRow[];
   currentKey: string;
   status: string;
   auditEntries: AuditEntry[];
+  stageSlaDueAt?: string | null;
 }) {
   const terminalDone = status === "issued" || status === "rejected";
   const currentOrder = stages.find((s) => s.key === currentKey)?.order ?? 0;
@@ -180,10 +182,17 @@ function StageTracker({
                   </p>
                 )}
                 {isActive && (
-                  <p className="text-khatulistiwa-600 text-xs font-semibold mt-2 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-khatulistiwa-500 animate-pulse" />
-                    Tahap saat ini
-                  </p>
+                  <>
+                    <p className="text-khatulistiwa-600 text-xs font-semibold mt-2 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-khatulistiwa-500 animate-pulse" />
+                      Tahap saat ini
+                    </p>
+                    {stageSlaDueAt && (
+                      <div className="mt-1.5">
+                        <SLACountdown dueAt={stageSlaDueAt} breached={false} />
+                      </div>
+                    )}
+                  </>
                 )}
                 {isPending && <p className="text-khatulistiwa-400/50 text-xs mt-1">Menunggu</p>}
               </div>
@@ -470,6 +479,7 @@ export default function SubmissionDetailPage() {
               currentKey={submission.current_stage_key}
               status={submission.status}
               auditEntries={auditEntries}
+              stageSlaDueAt={submission.stage_sla_due_at}
             />
           ) : (
             <p className="text-xs text-khatulistiwa-400/70">Data tahap tidak tersedia.</p>
