@@ -11,6 +11,8 @@ interface Props {
   submissionId: string;
   requirements: DocumentRequirement[];
   readOnly?: boolean;
+  /** Requirement keys the verifier flagged for revision — highlighted. */
+  flaggedKeys?: string[];
 }
 
 const STATUS_ICON = {
@@ -20,7 +22,8 @@ const STATUS_ICON = {
   infected: <XCircle className="h-4 w-4 text-red-500" />,
 };
 
-export default function DocumentUploadSection({ submissionId, requirements, readOnly }: Props) {
+export default function DocumentUploadSection({ submissionId, requirements, readOnly, flaggedKeys = [] }: Props) {
+  const flaggedSet = new Set(flaggedKeys);
   const qc = useQueryClient();
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
@@ -90,20 +93,28 @@ export default function DocumentUploadSection({ submissionId, requirements, read
       {requirements.map((req) => {
         const uploaded = getUploadedDoc(req.key);
         const isUploading = uploading[req.key];
+        const isFlagged = flaggedSet.has(req.key);
 
         return (
           <div
             key={req.key}
             className={cn(
               "rounded-xl border p-4 space-y-3 transition-colors",
-              uploaded ? "border-emerald-200 bg-emerald-50/50" : "border-khatulistiwa-100/60 bg-white"
+              isFlagged ? "border-amber-300 bg-amber-50"
+                : uploaded ? "border-emerald-200 bg-emerald-50/50"
+                : "border-khatulistiwa-100/60 bg-white"
             )}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-khatulistiwa-900 text-sm font-semibold">
+                <p className="text-khatulistiwa-900 text-sm font-semibold flex items-center gap-1.5 flex-wrap">
                   {req.title}
                   {req.required && <span className="text-red-500 ml-0.5">*</span>}
+                  {isFlagged && (
+                    <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                      Perlu revisi
+                    </span>
+                  )}
                 </p>
                 {req.description && (
                   <p className="text-xs text-khatulistiwa-400/60 mt-0.5">{req.description}</p>

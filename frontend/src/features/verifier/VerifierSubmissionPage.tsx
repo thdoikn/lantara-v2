@@ -22,6 +22,12 @@ const ACTION_TOAST: Record<string, string> = {
 
 type ActionType = "approve" | "reject" | "request_revision" | "schedule_site_visit";
 
+interface RevisionFieldInput {
+  field_key: string;
+  is_doc_requirement: boolean;
+  note: string;
+}
+
 interface ActionConfig {
   type: ActionType;
   label: string;
@@ -130,27 +136,49 @@ function ActionPanel({
 }: {
   submission: Submission;
   stageType: string;
-  onAction: (type: ActionType, note: string) => void;
+  onAction: (type: ActionType, note: string, revisionFields?: RevisionFieldInput[]) => void;
   isPending: boolean;
 }) {
   const [active, setActive] = useState<ActionType | null>(null);
   const [note, setNote] = useState("");
+  const [flagged, setFlagged] = useState<Set<string>>(new Set());
 
   const allowedTypes = ACTIONS_FOR_STAGE[stageType] ?? ACTIONS_FOR_STAGE.verification;
   const actions = ALL_ACTIONS.filter((a) => allowedTypes.includes(a.type)).map((a) =>
     a.type === "approve" ? { ...a, label: APPROVE_LABEL[stageType] ?? a.label } : a
   );
 
+  // Targets a verifier can flag for revision (form fields + document requirements).
+  const revisionTargets = [
+    ...(submission.schema_snapshot?.form_fields ?? []).map((f) => ({ id: `field:${f.key}`, key: f.key, label: f.label, isDoc: false })),
+    ...(submission.schema_snapshot?.doc_requirements ?? []).map((d) => ({ id: `doc:${d.key}`, key: d.key, label: d.title, isDoc: true })),
+  ];
+
   const isTerminal =
     submission.status === "approved" ||
     submission.status === "collected" ||
     submission.status === "rejected";
 
+  function toggleFlag(id: string) {
+    setFlagged((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
   function handleConfirm() {
     if (!active) return;
-    onAction(active, note);
+    const revisionFields =
+      active === "request_revision"
+        ? revisionTargets
+            .filter((t) => flagged.has(t.id))
+            .map((t) => ({ field_key: t.key, is_doc_requirement: t.isDoc, note: "" }))
+        : undefined;
+    onAction(active, note, revisionFields);
     setActive(null);
     setNote("");
+    setFlagged(new Set());
   }
 
   if (isTerminal) {
@@ -174,6 +202,37 @@ function ActionPanel({
             {actions.find((a) => a.type === active)?.icon}
             {actions.find((a) => a.type === active)?.label}
           </div>
+          {/* Field-level revision targeting */}
+          {active === "request_revision" && revisionTargets.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 space-y-2">
+              <p className="text-xs font-semibold text-amber-800">
+                Tandai bagian yang perlu diperbaiki
+                <span className="font-normal text-amber-700/70"> (opsional)</span>
+              </p>
+              <div className="max-h-44 overflow-y-auto space-y-0.5 pr-1">
+                {revisionTargets.map((t) => (
+                  <label
+                    key={t.id}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/70 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={flagged.has(t.id)}
+                      onChange={() => toggleFlag(t.id)}
+                      className="rounded border-amber-300 text-amber-600 focus:ring-amber-400/30"
+                    />
+                    <span className="text-xs text-khatulistiwa-800 flex-1 min-w-0 truncate">{t.label}</span>
+                    <span className="text-[10px] font-medium text-amber-700/60 shrink-0">
+                      {t.isDoc ? "Dokumen" : "Data"}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {flagged.size > 0 && (
+                <p className="text-[11px] text-amber-700/80">{flagged.size} bagian ditandai</p>
+              )}
+            </div>
+          )}
           {actions.find((a) => a.type === active)?.requiresNote && (
             <textarea
               value={note}
@@ -262,8 +321,8 @@ export default function VerifierSubmissionPage() {
   });
 
   const actMutation = useMutation({
-    mutationFn: ({ action, notes }: { action: string; notes?: string }) =>
-      api.post(`/submissions/${id}/act/`, { action, notes }),
+    mutationFn: ({ action, notes, revision_fields }: { action: string; notes?: string; revision_fields?: RevisionFieldInput[] }) =>
+      api.post(`/submissions/${id}/act/`, { action, notes, revision_fields }),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["submission", id] });
       qc.invalidateQueries({ queryKey: ["verifier-queue"] });
@@ -273,8 +332,8 @@ export default function VerifierSubmissionPage() {
   });
 
   const handleAction = useCallback(
-    (type: ActionType, note: string) => {
-      actMutation.mutate({ action: type, notes: note });
+    (type: ActionType, note: string, revisionFields?: RevisionFieldInput[]) => {
+      actMutation.mutate({ action: type, notes: note, revision_fields: revisionFields });
     },
     [actMutation]
   );

@@ -399,6 +399,16 @@ export default function SubmissionDetailPage() {
 
   const stages: StageRow[] = submission.schema_snapshot?.stages ?? [];
   const canUploadDocs = submission.status === "revision" || submission.status === "in_review";
+
+  // Field-level revision flags (what the verifier asked to fix).
+  const openRevisions = (submission.revision_fields ?? []).filter((r) => !r.is_resolved);
+  const flaggedFieldKeys = new Set(openRevisions.filter((r) => !r.is_doc_requirement).map((r) => r.field_key));
+  const flaggedDocKeys = openRevisions.filter((r) => r.is_doc_requirement).map((r) => r.field_key);
+  const fieldLabelMap = new Map((submission.schema_snapshot?.form_fields ?? []).map((f) => [f.key, f.label]));
+  const docLabelMap = new Map((submission.schema_snapshot?.doc_requirements ?? []).map((d) => [d.key, d.title]));
+  function revisionLabel(r: { field_key: string; is_doc_requirement: boolean }) {
+    return (r.is_doc_requirement ? docLabelMap.get(r.field_key) : fieldLabelMap.get(r.field_key)) ?? r.field_key;
+  }
   const isIssued = ["issued", "collected", "approved"].includes(submission.status);
 
   return (
@@ -491,6 +501,32 @@ export default function SubmissionDetailPage() {
           {/* What happens next */}
           <NextStepCard status={submission.status} />
 
+          {/* Specific items the verifier flagged for revision */}
+          {openRevisions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-amber-200 bg-amber-50 p-5"
+            >
+              <p className="font-display font-bold text-sm text-amber-900 mb-3">
+                Bagian yang perlu diperbaiki ({openRevisions.length})
+              </p>
+              <ul className="space-y-2">
+                {openRevisions.map((r) => (
+                  <li key={r.id} className="flex items-start gap-2.5">
+                    <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded shrink-0">
+                      {r.is_doc_requirement ? "Dokumen" : "Data"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-amber-900">{revisionLabel(r)}</p>
+                      {r.note && <p className="text-xs text-amber-800/80 mt-0.5">{r.note}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
+
           {/* Document requirements */}
           {(submission.schema_snapshot?.doc_requirements?.length ?? 0) > 0 && (
             <div className="bg-white rounded-2xl border border-khatulistiwa-100 shadow-sm p-5">
@@ -498,6 +534,7 @@ export default function SubmissionDetailPage() {
                 submissionId={submission.id}
                 requirements={submission.schema_snapshot.doc_requirements}
                 readOnly={!canUploadDocs}
+                flaggedKeys={flaggedDocKeys}
               />
             </div>
           )}
@@ -526,12 +563,23 @@ export default function SubmissionDetailPage() {
                   (f: { key: string; label: string }) => {
                     const val = submission.form_data?.[f.key];
                     if (val === undefined || val === null || val === "") return null;
+                    const flagged = flaggedFieldKeys.has(f.key);
                     return (
                       <div
                         key={f.key}
-                        className="grid grid-cols-2 gap-4 py-2.5 border-b border-khatulistiwa-50 last:border-0"
+                        className={cn(
+                          "grid grid-cols-2 gap-4 py-2.5 border-b border-khatulistiwa-50 last:border-0",
+                          flagged && "bg-amber-50 -mx-2 px-2 rounded-lg border-amber-100"
+                        )}
                       >
-                        <span className="text-khatulistiwa-400/70 text-sm">{f.label}</span>
+                        <span className="text-khatulistiwa-400/70 text-sm flex items-center gap-1.5">
+                          {f.label}
+                          {flagged && (
+                            <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                              Revisi
+                            </span>
+                          )}
+                        </span>
                         <span className="text-khatulistiwa-900 font-semibold text-sm">
                           {Array.isArray(val) ? val.join(", ") : String(val)}
                         </span>
