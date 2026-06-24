@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { ChevronRight, Plus, Edit3, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import api from "@/lib/api";
+import { toast } from "@/lib/toast";
 
 interface Sektor {
   id: string;
@@ -140,8 +141,10 @@ function SektorModal({
         : api.post("/admin/engine/sektors/", body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-engine-sektors"] });
+      toast.success(isEdit ? "Sektor diperbarui." : "Sektor ditambahkan.");
       onClose();
     },
+    onError: () => toast.error("Gagal menyimpan sektor. Coba lagi."),
   });
 
   function set(field: keyof SektorForm, value: string | boolean) {

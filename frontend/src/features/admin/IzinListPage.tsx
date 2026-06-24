@@ -8,6 +8,7 @@ import { Link, useParams } from "react-router-dom";
 import { ChevronRight, Plus, Eye, EyeOff, Edit3, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import api from "@/lib/api";
+import { toast } from "@/lib/toast";
 
 interface PermitType {
   id: string;
@@ -132,8 +133,10 @@ function IzinModal({
         : api.post("/admin/engine/permit-types/", body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-izin-list", sektorKey] });
+      toast.success(isEdit ? "Izin diperbarui." : "Izin ditambahkan.");
       onClose();
     },
+    onError: () => toast.error("Gagal menyimpan izin. Coba lagi."),
   });
 
   function set(field: keyof IzinForm, value: string) {
@@ -282,7 +285,11 @@ export default function IzinListPage() {
   const togglePublish = useMutation({
     mutationFn: ({ key, published }: { key: string; published: boolean }) =>
       api.post(`/admin/engine/permit-types/${key}/${published ? "unpublish" : "publish"}/`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-izin-list", sektorKey] }),
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["admin-izin-list", sektorKey] });
+      toast.success(v.published ? "Izin disembunyikan dari publik." : "Izin dipublikasikan.");
+    },
+    onError: () => toast.error("Gagal mengubah status publikasi."),
   });
 
   if (isLoading) {

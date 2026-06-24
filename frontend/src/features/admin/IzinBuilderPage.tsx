@@ -12,6 +12,7 @@ import { Reorder } from "framer-motion";
 import { GripVertical, Plus, Trash2, Edit3, X, Check } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import api from "@/lib/api";
+import { toast } from "@/lib/toast";
 import type { FormField, WorkflowStage, DocumentRequirement } from "@/types";
 import DynamicForm from "@/features/applicant/DynamicForm";
 
@@ -164,7 +165,8 @@ function StageModal({
       isEdit
         ? api.patch(`/admin/engine/permit-types/${izinKey}/stages/${initial!.id}/`, body)
         : api.post(`/admin/engine/permit-types/${izinKey}/stages/`, body),
-    onSuccess: () => { onSuccess(); onClose(); },
+    onSuccess: () => { toast.success(isEdit ? "Tahap diperbarui." : "Tahap ditambahkan."); onSuccess(); onClose(); },
+    onError: () => toast.error("Gagal menyimpan tahap. Coba lagi."),
   });
 
   function set<K extends keyof StageForm>(field: K, value: StageForm[K]) {
@@ -404,7 +406,8 @@ function FieldModal({
       isEdit
         ? api.patch(`/admin/engine/permit-types/${izinKey}/fields/${initial!.id}/`, body)
         : api.post(`/admin/engine/permit-types/${izinKey}/fields/`, body),
-    onSuccess: () => { onSuccess(); onClose(); },
+    onSuccess: () => { toast.success(isEdit ? "Field diperbarui." : "Field ditambahkan."); onSuccess(); onClose(); },
+    onError: () => toast.error("Gagal menyimpan field. Coba lagi."),
   });
 
   function set<K extends keyof FieldForm>(field: K, value: FieldForm[K]) {
@@ -657,7 +660,8 @@ function DocModal({
       isEdit
         ? api.patch(`/admin/engine/permit-types/${izinKey}/doc-requirements/${initial!.id}/`, body)
         : api.post(`/admin/engine/permit-types/${izinKey}/doc-requirements/`, body),
-    onSuccess: () => { onSuccess(); onClose(); },
+    onSuccess: () => { toast.success(isEdit ? "Persyaratan diperbarui." : "Persyaratan ditambahkan."); onSuccess(); onClose(); },
+    onError: () => toast.error("Gagal menyimpan persyaratan. Coba lagi."),
   });
 
   function set<K extends keyof DocForm>(field: K, value: DocForm[K]) {
@@ -805,13 +809,15 @@ export default function IzinBuilderPage() {
   const reorderStages = useMutation({
     mutationFn: (items: { id: string; order: number }[]) =>
       api.post(`/admin/engine/permit-types/${izinKey}/stages/reorder/`, items),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] }); toast.success("Urutan tahap disimpan."); },
+    onError: () => { qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] }); toast.error("Gagal menyimpan urutan."); },
   });
 
   const reorderFields = useMutation({
     mutationFn: (items: { id: string; order: number }[]) =>
       api.post(`/admin/engine/permit-types/${izinKey}/fields/reorder/`, items),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] }); toast.success("Urutan field disimpan."); },
+    onError: () => { qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] }); toast.error("Gagal menyimpan urutan."); },
   });
 
   if (isLoading || !pt) {
@@ -964,7 +970,8 @@ function StagesEditor({
 
   const deleteStage = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/engine/permit-types/${izinKey}/stages/${id}/`),
-    onSuccess: onRefresh,
+    onSuccess: () => { onRefresh(); toast.success("Tahap dihapus."); },
+    onError: () => toast.error("Gagal menghapus tahap."),
   });
 
   function handleReorderEnd(newItems: WorkflowStage[]) {
@@ -1067,7 +1074,8 @@ function FieldsEditor({
 
   const deleteField = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/engine/permit-types/${izinKey}/fields/${id}/`),
-    onSuccess: onRefresh,
+    onSuccess: () => { onRefresh(); toast.success("Field dihapus."); },
+    onError: () => toast.error("Gagal menghapus field."),
   });
 
   function handleReorderEnd(newItems: FormField[]) {
@@ -1163,7 +1171,8 @@ function DocsEditor({
 
   const deleteDoc = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/engine/permit-types/${izinKey}/doc-requirements/${id}/`),
-    onSuccess: onRefresh,
+    onSuccess: () => { onRefresh(); toast.success("Persyaratan dihapus."); },
+    onError: () => toast.error("Gagal menghapus persyaratan."),
   });
 
   return (

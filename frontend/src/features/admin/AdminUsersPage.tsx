@@ -4,6 +4,7 @@ import { format, parseISO } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Search, ShieldCheck, ShieldPlus, X, Mail, BadgeCheck, CircleSlash } from "lucide-react";
 import api from "@/lib/api";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/cn";
 import type { PaginatedResponse } from "@/types";
 
@@ -48,13 +49,15 @@ export default function AdminUsersPage() {
   const assignMutation = useMutation({
     mutationFn: ({ userId, roleKey }: { userId: string; roleKey: string }) =>
       api.post(`/accounts/users/${userId}/assign_role/`, { role_key: roleKey }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-users"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Peran ditambahkan."); },
+    onError: () => toast.error("Gagal menambahkan peran."),
   });
 
   const revokeMutation = useMutation({
     mutationFn: ({ userId, roleKey }: { userId: string; roleKey: string }) =>
       api.post(`/accounts/users/${userId}/revoke_role/`, { role_key: roleKey }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-users"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Peran dicabut."); },
+    onError: () => toast.error("Gagal mencabut peran."),
   });
 
   return (

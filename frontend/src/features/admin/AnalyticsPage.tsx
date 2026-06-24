@@ -13,6 +13,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import api from "@/lib/api";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/cn";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -122,6 +123,7 @@ export default function AnalyticsPage() {
 
   function handleExport() {
     window.open("/api/v1/analytics/export/excel/", "_blank");
+    toast.success("Menyiapkan unduhan Excel…");
   }
 
   return (
