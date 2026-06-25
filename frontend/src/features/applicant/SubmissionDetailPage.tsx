@@ -14,6 +14,7 @@ import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type { Submission, AuditEntry } from "@/types";
 import DocumentUploadSection from "./DocumentUploadSection";
+import RevisionFieldInput from "./RevisionFieldInput";
 
 // ── Status badge — left bar + icon ────────────────────────────────────────────
 
@@ -368,8 +369,8 @@ export default function SubmissionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  // Inline edits for fields the verifier flagged for revision.
-  const [edits, setEdits] = useState<Record<string, string>>({});
+  // Inline edits for fields the verifier flagged for revision (any JSON value).
+  const [edits, setEdits] = useState<Record<string, unknown>>({});
 
   const { data: submission, isLoading } = useQuery<Submission>({
     queryKey: ["submission", id],
@@ -384,7 +385,7 @@ export default function SubmissionDetailPage() {
   });
 
   const resubmit = useMutation({
-    mutationFn: (formData: Record<string, string>) =>
+    mutationFn: (formData: Record<string, unknown>) =>
       api.post(`/submissions/${id}/resubmit/`, { form_data: formData }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["submission", id] });
@@ -556,7 +557,14 @@ export default function SubmissionDetailPage() {
                 </p>
               )}
               <button
-                onClick={() => resubmit.mutate(edits)}
+                onClick={() => {
+                  // Send every flagged data field with its edited (or current) value.
+                  const payload: Record<string, unknown> = {};
+                  flaggedFieldKeys.forEach((k) => {
+                    payload[k] = k in edits ? edits[k] : submission.form_data?.[k];
+                  });
+                  resubmit.mutate(payload);
+                }}
                 disabled={resubmit.isPending}
                 className="w-full inline-flex items-center justify-center gap-2 bg-khatulistiwa-600 hover:bg-khatulistiwa-500
                            disabled:opacity-60 text-white font-display font-bold py-3 rounded-xl transition-colors"
@@ -603,45 +611,47 @@ export default function SubmissionDetailPage() {
                 Data Formulir
               </p>
               <div>
-                {submission.schema_snapshot?.form_fields?.map(
-                  (f: { key: string; label: string }) => {
-                    const val = submission.form_data?.[f.key];
-                    const flagged = flaggedFieldKeys.has(f.key);
-                    const editable = flagged && isRevision;
-                    // Show empty fields only when flagged (so they can be filled in).
-                    if (!editable && (val === undefined || val === null || val === "")) return null;
-                    const display = Array.isArray(val) ? val.join(", ") : val != null ? String(val) : "";
+                {submission.schema_snapshot?.form_fields?.map((f) => {
+                  const val = submission.form_data?.[f.key];
+                  const flagged = flaggedFieldKeys.has(f.key);
+                  const editable = flagged && isRevision;
+                  // Show empty fields only when flagged (so they can be filled in).
+                  if (!editable && (val === undefined || val === null || val === "")) return null;
+                  const display = Array.isArray(val) ? val.join(", ") : val != null ? String(val) : "—";
+
+                  // Editable flagged field — full-width type-aware editor.
+                  if (editable) {
                     return (
                       <div
                         key={f.key}
-                        className={cn(
-                          "grid grid-cols-2 gap-4 py-2.5 border-b border-khatulistiwa-50 last:border-0 items-center",
-                          flagged && "bg-amber-50 -mx-2 px-2 rounded-lg border-amber-100"
-                        )}
+                        className="py-3 border-b border-amber-100 last:border-0 bg-amber-50 -mx-2 px-2 rounded-lg"
                       >
-                        <span className="text-khatulistiwa-400/70 text-sm flex items-center gap-1.5">
-                          {f.label}
-                          {flagged && (
-                            <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                              Revisi
-                            </span>
-                          )}
-                        </span>
-                        {editable ? (
-                          <input
-                            value={edits[f.key] ?? display}
-                            onChange={(e) => setEdits((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                            placeholder="Perbaiki nilai…"
-                            className="w-full bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-sm text-khatulistiwa-900
-                                       outline-none focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/15 transition-all"
-                            aria-label={`Perbaiki ${f.label}`}
-                          />
-                        ) : (
-                          <span className="text-khatulistiwa-900 font-semibold text-sm">{display}</span>
-                        )}
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="text-khatulistiwa-800 text-sm font-medium">{f.label}</span>
+                          <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                            Revisi
+                          </span>
+                        </div>
+                        <RevisionFieldInput
+                          field={f}
+                          value={f.key in edits ? edits[f.key] : val}
+                          onChange={(v) => setEdits((prev) => ({ ...prev, [f.key]: v }))}
+                        />
                       </div>
                     );
                   }
+
+                  // Read-only field.
+                  return (
+                    <div
+                      key={f.key}
+                      className="grid grid-cols-2 gap-4 py-2.5 border-b border-khatulistiwa-50 last:border-0 items-center"
+                    >
+                      <span className="text-khatulistiwa-400/70 text-sm">{f.label}</span>
+                      <span className="text-khatulistiwa-900 font-semibold text-sm">{display}</span>
+                    </div>
+                  );
+                }
                 )}
               </div>
             </div>
