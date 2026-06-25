@@ -42,7 +42,10 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
     whatsapp_verified = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
 
-    # OIKN organizational placement — null for public (warga) users
+    # OIKN organizational placement — null/blank for public (warga) users
+    jabatan = models.CharField(
+        max_length=255, blank=True, help_text="Job title from SSO (jabatan/unit_kerja claim)"
+    )
     direktorat = models.ForeignKey(
         "reference.Direktorat",
         null=True,

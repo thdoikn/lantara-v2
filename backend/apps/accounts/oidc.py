@@ -64,6 +64,11 @@ def _extract_full_name(claims: dict) -> str:
     return _title_case(full)
 
 
+def _extract_jabatan(claims: dict) -> str:
+    """Job title from SSO. Prefer an explicit 'jabatan' claim, else 'unit_kerja'."""
+    return (claims.get("jabatan") or claims.get("unit_kerja") or "").strip()
+
+
 # ---------------------------------------------------------------------------
 # Direktorat fuzzy matching
 # ---------------------------------------------------------------------------
@@ -210,10 +215,17 @@ class JDIHOIDCBackend(OIDCAuthenticationBackend):
             is_active=True,
             is_email_verified=True,
         )
+        fields = []
         direktorat = self._resolve_direktorat(claims)
         if direktorat:
             user.direktorat = direktorat
-            user.save(update_fields=["direktorat"])
+            fields.append("direktorat")
+        jabatan = _extract_jabatan(claims)
+        if jabatan:
+            user.jabatan = jabatan
+            fields.append("jabatan")
+        if fields:
+            user.save(update_fields=fields)
         return user
 
     def update_user(self, user, claims):
@@ -238,6 +250,11 @@ class JDIHOIDCBackend(OIDCAuthenticationBackend):
         if user.direktorat_id != new_pk:
             user.direktorat = direktorat
             changed.append("direktorat")
+
+        jabatan = _extract_jabatan(claims)
+        if jabatan and user.jabatan != jabatan:
+            user.jabatan = jabatan
+            changed.append("jabatan")
 
         if changed:
             user.save(update_fields=changed)

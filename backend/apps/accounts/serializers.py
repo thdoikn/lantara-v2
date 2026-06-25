@@ -113,6 +113,7 @@ class UserMeSerializer(serializers.ModelSerializer):
 class UserListSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
     direktorat_name = serializers.SerializerMethodField()
+    kedeputian_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -121,12 +122,15 @@ class UserListSerializer(serializers.ModelSerializer):
             "email",
             "full_name",
             "nik",
+            "jabatan",
             "is_active",
             "is_staff",
             "is_email_verified",
             "created_at",
+            "last_seen",
             "roles",
             "direktorat_name",
+            "kedeputian_name",
         ]
 
     def get_roles(self, obj):
@@ -135,6 +139,11 @@ class UserListSerializer(serializers.ModelSerializer):
     def get_direktorat_name(self, obj):
         if obj.direktorat_id:
             return obj.direktorat.name
+        return None
+
+    def get_kedeputian_name(self, obj):
+        if obj.direktorat_id and obj.direktorat.kedeputian_id:
+            return obj.direktorat.kedeputian.name
         return None
 
 

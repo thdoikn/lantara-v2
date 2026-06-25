@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Case, F, IntegerField, Min, Value, When
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -276,20 +277,49 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """Admin and superadmin — user management and verifier assignments."""
 
     permission_classes = [IsAdminOrSuperAdmin]
-    queryset = (
-        User.objects.filter(is_deleted=False).select_related("direktorat").order_by("-created_at")
-    )
+    queryset = User.objects.filter(is_deleted=False)
     serializer_class = UserListSerializer
     filterset_fields = ["is_active", "is_staff", "is_email_verified"]
     search_fields = ["email", "full_name", "nik"]
 
+    def get_queryset(self):
+        # Sort by role priority (superadmin → admin → verifier → registered user),
+        # then by most-recent login (never-logged-in last), then newest.
+        return (
+            User.objects.filter(is_deleted=False)
+            .select_related("direktorat", "direktorat__kedeputian")
+            .annotate(
+                role_rank=Min(
+                    Case(
+                        When(
+                            user_roles__role__key="superadmin",
+                            user_roles__is_active=True,
+                            then=Value(0),
+                        ),
+                        When(
+                            user_roles__role__key="admin", user_roles__is_active=True, then=Value(1)
+                        ),
+                        When(
+                            user_roles__role__key="verifier",
+                            user_roles__is_active=True,
+                            then=Value(2),
+                        ),
+                        default=Value(3),
+                        output_field=IntegerField(),
+                    )
+                )
+            )
+            .order_by("role_rank", F("last_seen").desc(nulls_last=True), "-created_at")
+        )
+
     @action(detail=True, methods=["post"])
     def assign_role(self, request, pk=None):
-        # Only superadmin can assign the superadmin role
         role_key = request.data.get("role_key", "")
-        if role_key == "superadmin" and not request.user.has_any_role("superadmin"):
+        # Superadmin is never granted through the UI — protects against privilege
+        # escalation. Manage it via the bootstrap command / shell only.
+        if role_key == "superadmin":
             return Response(
-                {"detail": "Hanya superadmin yang dapat memberikan role superadmin."}, status=403
+                {"detail": "Role superadmin tidak dapat ditetapkan melalui antarmuka."}, status=403
             )
         user = self.get_object()
         try:
@@ -306,9 +336,10 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"])
     def revoke_role(self, request, pk=None):
         role_key = request.data.get("role_key", "")
-        if role_key == "superadmin" and not request.user.has_any_role("superadmin"):
+        # A superadmin can never be downgraded through the UI.
+        if role_key == "superadmin":
             return Response(
-                {"detail": "Hanya superadmin yang dapat mencabut role superadmin."}, status=403
+                {"detail": "Role superadmin tidak dapat dicabut melalui antarmuka."}, status=403
             )
         user = self.get_object()
         UserRole.objects.filter(user=user, role__key=role_key).update(is_active=False)
