@@ -9,11 +9,12 @@ import type { User } from "@/types";
  * landing access panel, the public nav, and route guards all read from here so
  * they can never disagree.
  *
- * Access model:
- *   - superadmin → all three portals
- *   - admin      → admin + verifier (+ pemohon); verifier queue may be empty
+ * Access model (roles are additive — a user can hold several):
+ *   - superadmin → all three portals + every izin (no assignment needed)
+ *   - admin      → admin (+ pemohon). Does NOT imply verifier; to verify, the
+ *                  admin must ALSO be given the verifier role.
  *   - verifier   → verifier (+ pemohon); queue scoped by VerifierPermitAssignment
- *   - everyone authenticated → pemohon (baseline; an admin is also a citizen)
+ *   - everyone authenticated → pemohon (baseline)
  */
 export interface PortalAccess {
   pemohon: boolean;
@@ -32,9 +33,10 @@ export function getPortals(user: User | null): PortalAccess {
   const roles = rolesOf(user);
   const isSuperadmin = roles.includes("superadmin");
   const isAdmin = isSuperadmin || roles.includes("admin");
-  // sektor_admin:{key} roles carry a colon and grant verifier-level access.
+  // Admin does NOT imply verifier — only superadmin, an explicit verifier role,
+  // or a sektor_admin:{key} role (carries a colon) grants verifier access.
   const isVerifier =
-    isAdmin || roles.includes("verifier") || roles.some((r) => r.includes(":"));
+    isSuperadmin || roles.includes("verifier") || roles.some((r) => r.includes(":"));
   return {
     pemohon: true,
     verifier: isVerifier,

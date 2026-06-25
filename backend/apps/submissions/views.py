@@ -36,11 +36,12 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             "audit_entries", "revision_fields", "site_visits"
         )
 
-        if user.has_any_role("superadmin", "admin") or user.is_sektor_admin:
-            # Superadmin and admin see all submissions
+        if user.has_any_role("superadmin") or user.is_sektor_admin:
+            # Superadmin (and sektor admin) see all submissions
             pass
         elif user.has_any_role("verifier"):
-            # Verifiers only see submissions for their assigned permit types
+            # Verifiers — incl. admins who also hold the verifier role — only see
+            # submissions for their assigned permit types.
             from apps.accounts.models import VerifierPermitAssignment
 
             assigned_keys = VerifierPermitAssignment.objects.filter(
@@ -48,7 +49,8 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             ).values_list("permit_type__key", flat=True)
             qs = qs.filter(permit_type__key__in=assigned_keys)
         else:
-            # Public users see only their own submissions
+            # Everyone else (incl. admins without a verifier role) sees only
+            # their own submissions — their applicant view.
             qs = qs.filter(applicant=user)
 
         # Support comma-separated status filter: ?status=in_review,submitted
@@ -124,12 +126,10 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        # Check act permission: superadmin/admin can always act;
-        # verifiers must have an active VerifierPermitAssignment for this permit type
-        if (
-            not request.user.has_any_role("superadmin", "admin")
-            and not request.user.is_sektor_admin
-        ):
+        # Check act permission: superadmin (and sektor admin) can always act;
+        # everyone else — including admins — must hold the verifier role with an
+        # active VerifierPermitAssignment for this permit type.
+        if not request.user.has_any_role("superadmin") and not request.user.is_sektor_admin:
             from apps.accounts.models import VerifierPermitAssignment
 
             has_assignment = VerifierPermitAssignment.objects.filter(
