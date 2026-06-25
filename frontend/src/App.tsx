@@ -1,7 +1,9 @@
 import { Routes, Route } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from "./components/Toaster";
+import api from "./lib/api";
+import { useAuthStore, getAccessToken, clearTokens } from "./lib/auth";
 
 // Public
 const LandingPage = lazy(() => import("./features/public/LandingPage"));
@@ -51,6 +53,30 @@ function LoadingSpinner() {
 }
 
 export default function App() {
+  const setUser = useAuthStore((s) => s.setUser);
+  // Rehydrate the signed-in user on every app load. Without this, a full page
+  // reload (e.g. the SSO callback's redirect, or any refresh) leaves `user`
+  // null even though a token exists — so role-driven UI (admin/verifier
+  // portals) would never appear. Block routing until this resolves to avoid a
+  // wrong-access flash.
+  const [ready, setReady] = useState(() => !getAccessToken());
+  useEffect(() => {
+    if (!getAccessToken()) {
+      setReady(true);
+      return;
+    }
+    api
+      .get("/auth/me/")
+      .then((r) => setUser(r.data))
+      .catch(() => {
+        clearTokens();
+        setUser(null);
+      })
+      .finally(() => setReady(true));
+  }, [setUser]);
+
+  if (!ready) return <LoadingSpinner />;
+
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Toaster />
