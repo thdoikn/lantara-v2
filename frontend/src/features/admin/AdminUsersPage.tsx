@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, isToday, parseISO } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Search, ShieldCheck, ShieldPlus, X, Mail, BadgeCheck, CircleSlash, Lock, Clock } from "lucide-react";
+import {
+  Search, ShieldCheck, ShieldPlus, X, Mail, BadgeCheck, CircleSlash, Lock, Clock, Plus, FileCheck2,
+} from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/cn";
@@ -57,6 +59,142 @@ function lastSeenLabel(iso: string | null): string {
   const d = parseISO(iso);
   // Today → time of day (e.g. 11.30); earlier → date (e.g. 20 Juni 2026).
   return isToday(d) ? format(d, "HH.mm") : format(d, "d MMMM yyyy", { locale: localeId });
+}
+
+interface Assignment {
+  id: string;
+  permit_type_key: string;
+  permit_type_name: string;
+  sektor_name: string;
+  is_active: boolean;
+}
+
+interface PermitTypeLite {
+  id: string;
+  key: string;
+  name: string;
+  sektor_name: string;
+}
+
+// ── Verifier permit-assignment manager ──────────────────────────────────────────
+// Controls which permit types a verifier may process. A verifier with no
+// assignment has an empty queue (superadmin sees all regardless, so this is
+// only shown for non-superadmin verifiers).
+
+function AssignmentManager({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const [q, setQ] = useState("");
+
+  const { data: assignments = [] } = useQuery<Assignment[]>({
+    queryKey: ["user-assignments", userId],
+    queryFn: () => api.get(`/auth/users/${userId}/assignments/`).then((r) => r.data),
+  });
+
+  const { data: permitsData } = useQuery<PaginatedResponse<PermitTypeLite> | PermitTypeLite[]>({
+    queryKey: ["permit-types-lite"],
+    queryFn: () => api.get("/permit-types/?page_size=200").then((r) => r.data),
+  });
+  const permits = Array.isArray(permitsData) ? permitsData : permitsData?.results ?? [];
+
+  const active = assignments.filter((a) => a.is_active);
+  const assignedKeys = new Set(active.map((a) => a.permit_type_key));
+  const needle = q.trim().toLowerCase();
+  const candidates = permits.filter(
+    (p) =>
+      !assignedKeys.has(p.key) &&
+      (!needle || `${p.name} ${p.sektor_name}`.toLowerCase().includes(needle)),
+  );
+
+  const add = useMutation({
+    mutationFn: (permit_type_id: string) =>
+      api.post(`/auth/users/${userId}/assignments/`, { permit_type_id }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-assignments", userId] });
+      toast.success("Penugasan ditambahkan.");
+    },
+    onError: () => toast.error("Gagal menambahkan penugasan."),
+  });
+
+  const remove = useMutation({
+    mutationFn: (key: string) => api.delete(`/auth/users/${userId}/assignments/${key}/`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-assignments", userId] });
+      toast.success("Penugasan dicabut.");
+    },
+    onError: () => toast.error("Gagal mencabut penugasan."),
+  });
+
+  const busy = add.isPending || remove.isPending;
+
+  return (
+    <div className="space-y-2.5 pt-4 mt-1 border-t border-khatulistiwa-100">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-khatulistiwa-600/70 flex items-center gap-1.5">
+          <FileCheck2 className="w-3.5 h-3.5" aria-hidden="true" />
+          Penugasan Perizinan
+        </p>
+        <span className="text-[11px] text-khatulistiwa-400">{active.length} izin</span>
+      </div>
+      <p className="text-xs text-khatulistiwa-500/70 leading-relaxed">
+        Verifikator hanya dapat memproses izin yang ditugaskan. Tanpa penugasan, antreannya kosong.
+      </p>
+
+      {/* Current assignments */}
+      {active.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {active.map((a) => (
+            <span
+              key={a.id}
+              className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-semibold pl-2.5 pr-1 py-1 rounded-full"
+            >
+              {a.permit_type_name}
+              <button
+                onClick={() => remove.mutate(a.permit_type_key)}
+                disabled={busy}
+                className="rounded-full hover:bg-emerald-200/60 p-0.5 transition-colors disabled:opacity-50"
+                aria-label={`Cabut penugasan ${a.permit_type_name}`}
+              >
+                <X className="w-3 h-3" aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Add assignment */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-khatulistiwa-300" aria-hidden="true" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Tambah izin… cari nama atau sektor"
+          className="w-full bg-white border border-khatulistiwa-100 rounded-lg pl-9 pr-3 py-2 text-sm text-khatulistiwa-900 placeholder-khatulistiwa-300 outline-none focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/15 transition-all"
+        />
+      </div>
+      <div className="max-h-44 overflow-y-auto rounded-lg border border-khatulistiwa-100 divide-y divide-khatulistiwa-50">
+        {candidates.length === 0 ? (
+          <p className="text-xs text-khatulistiwa-400 px-3 py-3 text-center">
+            {permits.length === 0 ? "Memuat daftar izin…" : "Semua izin yang cocok sudah ditugaskan."}
+          </p>
+        ) : (
+          candidates.slice(0, 50).map((p) => (
+            <button
+              key={p.id}
+              onClick={() => add.mutate(p.id)}
+              disabled={busy}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-khatulistiwa-50/60 transition-colors disabled:opacity-50"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm text-khatulistiwa-900 truncate">{p.name}</span>
+                <span className="block text-[11px] text-khatulistiwa-400">{p.sektor_name}</span>
+              </span>
+              <Plus className="w-4 h-4 text-khatulistiwa-500 shrink-0" aria-hidden="true" />
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminUsersPage() {
@@ -331,6 +469,11 @@ export default function AdminUsersPage() {
                 <p className="text-xs text-khatulistiwa-400">Belum ada peran yang dapat ditetapkan.</p>
               )}
             </div>
+
+            {/* Permit assignments — only relevant for a (non-superadmin) verifier */}
+            {!activeIsSuperadmin && activeUser.roles.includes("verifier") && (
+              <AssignmentManager userId={activeUser.id} />
+            )}
           </div>
         </div>
       )}
