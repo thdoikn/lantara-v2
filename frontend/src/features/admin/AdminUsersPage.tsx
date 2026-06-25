@@ -35,12 +35,12 @@ export default function AdminUsersPage() {
   const { data, isLoading } = useQuery<PaginatedResponse<AdminUser>>({
     queryKey: ["admin-users", search],
     queryFn: () =>
-      api.get("/accounts/users/", { params: search ? { search } : {} }).then((r) => r.data),
+      api.get("/auth/users/", { params: search ? { search } : {} }).then((r) => r.data),
   });
 
   const { data: rolesData } = useQuery<PaginatedResponse<Role> | Role[]>({
     queryKey: ["admin-roles"],
-    queryFn: () => api.get("/accounts/roles/").then((r) => r.data),
+    queryFn: () => api.get("/auth/roles/").then((r) => r.data),
   });
 
   const roles = Array.isArray(rolesData) ? rolesData : rolesData?.results ?? [];
@@ -48,14 +48,14 @@ export default function AdminUsersPage() {
 
   const assignMutation = useMutation({
     mutationFn: ({ userId, roleKey }: { userId: string; roleKey: string }) =>
-      api.post(`/accounts/users/${userId}/assign_role/`, { role_key: roleKey }),
+      api.post(`/auth/users/${userId}/assign_role/`, { role_key: roleKey }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Peran ditambahkan."); },
     onError: () => toast.error("Gagal menambahkan peran."),
   });
 
   const revokeMutation = useMutation({
     mutationFn: ({ userId, roleKey }: { userId: string; roleKey: string }) =>
-      api.post(`/accounts/users/${userId}/revoke_role/`, { role_key: roleKey }),
+      api.post(`/auth/users/${userId}/revoke_role/`, { role_key: roleKey }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Peran dicabut."); },
     onError: () => toast.error("Gagal mencabut peran."),
   });
