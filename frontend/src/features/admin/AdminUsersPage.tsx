@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { formatDistanceToNow, parseISO } from "date-fns";
+import { format, isToday, parseISO } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Search, ShieldCheck, ShieldPlus, X, Mail, BadgeCheck, CircleSlash, Lock, Clock } from "lucide-react";
 import api from "@/lib/api";
@@ -54,7 +54,9 @@ const ROLE_CHIP: Record<string, string> = {
 
 function lastSeenLabel(iso: string | null): string {
   if (!iso) return "Belum pernah";
-  return formatDistanceToNow(parseISO(iso), { addSuffix: true, locale: localeId });
+  const d = parseISO(iso);
+  // Today → time of day (e.g. 11.30); earlier → date (e.g. 20 Juni 2026).
+  return isToday(d) ? format(d, "HH.mm") : format(d, "d MMMM yyyy", { locale: localeId });
 }
 
 export default function AdminUsersPage() {
@@ -120,101 +122,115 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-khatulistiwa-100 rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-[1.6fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-khatulistiwa-100 text-[11px] font-bold uppercase tracking-[0.08em] text-khatulistiwa-600/70">
-          <span>Pengguna</span>
-          <span>Peran</span>
-          <span>Login Terakhir</span>
-          <span>Status</span>
-          <span className="sr-only">Aksi</span>
-        </div>
+      <div className="bg-white border border-khatulistiwa-100 rounded-2xl overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-khatulistiwa-100 text-[11px] font-bold uppercase tracking-[0.08em] text-khatulistiwa-600/70 text-left">
+              <th className="font-bold px-5 py-3">Pengguna</th>
+              <th className="font-bold px-3 py-3">Peran</th>
+              <th className="font-bold px-3 py-3">Login Terakhir</th>
+              <th className="font-bold px-3 py-3">Status</th>
+              <th className="font-bold px-5 py-3 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-khatulistiwa-100">
+            {isLoading &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i}>
+                  <td colSpan={5} className="h-16 animate-pulse bg-khatulistiwa-50/50" />
+                </tr>
+              ))}
 
-        {isLoading && (
-          <div className="divide-y divide-khatulistiwa-100">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse bg-khatulistiwa-50/50" />
-            ))}
-          </div>
-        )}
+            {!isLoading && users.length === 0 && (
+              <tr>
+                <td colSpan={5} className="text-center py-16 text-khatulistiwa-600/70 text-sm">
+                  Tidak ada pengguna ditemukan.
+                </td>
+              </tr>
+            )}
 
-        {!isLoading && users.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-khatulistiwa-600/70 text-sm">Tidak ada pengguna ditemukan.</p>
-          </div>
-        )}
+            {!isLoading &&
+              users.map((u) => {
+                // Superadmin already implies all access — don't show redundant chips.
+                const displayRoles = u.roles.includes("superadmin") ? ["superadmin"] : u.roles;
+                return (
+                  <tr key={u.id} className="align-middle">
+                    {/* Pengguna + jabatan/direktorat/kedeputian */}
+                    <td className="px-5 py-3.5 max-w-xs">
+                      <p className="text-sm font-semibold text-khatulistiwa-900 truncate">{u.full_name}</p>
+                      <p className="text-xs text-khatulistiwa-600/70 flex items-center gap-1 mt-0.5">
+                        <Mail className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                        <span className="truncate">{u.email}</span>
+                      </p>
+                      {(u.jabatan || u.direktorat_name) && (
+                        <p className="text-[11px] text-khatulistiwa-500/70 truncate mt-0.5">
+                          {[u.jabatan, u.direktorat_name].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
+                      {u.kedeputian_name && (
+                        <p className="text-[11px] text-khatulistiwa-400/60 truncate">{u.kedeputian_name}</p>
+                      )}
+                    </td>
 
-        {!isLoading && users.length > 0 && (
-          <div className="divide-y divide-khatulistiwa-100">
-            {users.map((u) => (
-              <div key={u.id} className="grid grid-cols-[1.6fr_auto_auto_auto_auto] gap-4 px-5 py-3.5 items-center">
-                {/* Pengguna + jabatan/direktorat/kedeputian */}
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-khatulistiwa-900 truncate">{u.full_name}</p>
-                  <p className="text-xs text-khatulistiwa-600/70 flex items-center gap-1 mt-0.5">
-                    <Mail className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
-                    <span className="truncate">{u.email}</span>
-                  </p>
-                  {(u.jabatan || u.direktorat_name) && (
-                    <p className="text-[11px] text-khatulistiwa-500/70 truncate mt-0.5">
-                      {[u.jabatan, u.direktorat_name].filter(Boolean).join(" · ")}
-                    </p>
-                  )}
-                  {u.kedeputian_name && (
-                    <p className="text-[11px] text-khatulistiwa-400/60 truncate">{u.kedeputian_name}</p>
-                  )}
-                </div>
-
-                {/* Peran */}
-                <div className="flex flex-wrap gap-1 max-w-[200px]">
-                  {u.roles.length === 0 ? (
-                    <span className="text-xs text-khatulistiwa-300">Pengguna terdaftar</span>
-                  ) : (
-                    u.roles.map((r) => (
-                      <span
-                        key={r}
-                        className={cn(
-                          "text-[11px] font-semibold border px-2 py-0.5 rounded-full",
-                          ROLE_CHIP[r] ?? "bg-khatulistiwa-50 text-khatulistiwa-700 border-khatulistiwa-100",
+                    {/* Peran */}
+                    <td className="px-3 py-3.5">
+                      <div className="flex flex-wrap gap-1 max-w-[180px]">
+                        {displayRoles.length === 0 ? (
+                          <span className="text-xs text-khatulistiwa-300">Pengguna terdaftar</span>
+                        ) : (
+                          displayRoles.map((r) => (
+                            <span
+                              key={r}
+                              className={cn(
+                                "text-[11px] font-semibold border px-2 py-0.5 rounded-full whitespace-nowrap",
+                                ROLE_CHIP[r] ?? "bg-khatulistiwa-50 text-khatulistiwa-700 border-khatulistiwa-100",
+                              )}
+                            >
+                              {roleLabel(r)}
+                            </span>
+                          ))
                         )}
-                      >
-                        {roleLabel(r)}
+                      </div>
+                    </td>
+
+                    {/* Login terakhir */}
+                    <td className="px-3 py-3.5">
+                      <span className="text-xs text-khatulistiwa-600/70 inline-flex items-center gap-1 whitespace-nowrap">
+                        <Clock className="w-3 h-3 text-khatulistiwa-400/60" aria-hidden="true" />
+                        {lastSeenLabel(u.last_seen)}
                       </span>
-                    ))
-                  )}
-                </div>
+                    </td>
 
-                {/* Login terakhir */}
-                <div className="text-xs text-khatulistiwa-600/70 inline-flex items-center gap-1 whitespace-nowrap">
-                  <Clock className="w-3 h-3 text-khatulistiwa-400/60" aria-hidden="true" />
-                  {lastSeenLabel(u.last_seen)}
-                </div>
+                    {/* Status */}
+                    <td className="px-3 py-3.5">
+                      {u.is_active ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                          <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                          Aktif
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-khatulistiwa-400">
+                          <CircleSlash className="w-3.5 h-3.5" aria-hidden="true" />
+                          Nonaktif
+                        </span>
+                      )}
+                    </td>
 
-                {/* Status */}
-                <div>
-                  {u.is_active ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
-                      <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
-                      Aktif
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-khatulistiwa-400">
-                      <CircleSlash className="w-3.5 h-3.5" aria-hidden="true" />
-                      Nonaktif
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setActiveUser(u)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-khatulistiwa-600 hover:text-khatulistiwa-800 transition-colors whitespace-nowrap"
-                >
-                  <ShieldPlus className="w-3.5 h-3.5" aria-hidden="true" />
-                  Kelola Peran
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+                    {/* Aksi */}
+                    <td className="px-5 py-3.5 text-right">
+                      <button
+                        onClick={() => setActiveUser(u)}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-khatulistiwa-600 hover:text-khatulistiwa-800 transition-colors whitespace-nowrap"
+                      >
+                        <ShieldPlus className="w-3.5 h-3.5" aria-hidden="true" />
+                        Kelola Peran
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
       </div>
 
       {/* Role management drawer */}
@@ -255,18 +271,22 @@ export default function AdminUsersPage() {
                 Peran Ditetapkan
               </p>
 
-              {/* Superadmin — locked, cannot be changed here */}
+              {/* Superadmin — locked; already implies admin, verifier & all izin */}
               {activeIsSuperadmin && (
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-terakota-300/50 bg-terakota-50 px-4 py-2.5">
-                  <div className="min-w-0">
+                <div className="rounded-xl border border-terakota-300/50 bg-terakota-50 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-khatulistiwa-900">Superadmin</p>
-                    <p className="text-xs text-khatulistiwa-600/70">Akses penuh — tidak dapat diubah di sini.</p>
+                    <Lock className="w-4 h-4 text-terakota-600 shrink-0" aria-hidden="true" />
                   </div>
-                  <Lock className="w-4 h-4 text-terakota-600 shrink-0" aria-hidden="true" />
+                  <p className="text-xs text-khatulistiwa-600/70 mt-1 leading-relaxed">
+                    Sudah memiliki seluruh akses (admin, verifikator, dan semua perizinan).
+                    Peran lain tidak perlu ditetapkan dan tidak dapat diubah di sini.
+                  </p>
                 </div>
               )}
 
-              {assignableRoles.map((role) => {
+              {/* Admin/Verifier toggles — hidden for superadmin (redundant) */}
+              {!activeIsSuperadmin && assignableRoles.map((role) => {
                 const isAssigned = activeUser.roles.includes(role.key);
                 const pending = assignMutation.isPending || revokeMutation.isPending;
                 return (
@@ -307,7 +327,7 @@ export default function AdminUsersPage() {
                   </label>
                 );
               })}
-              {assignableRoles.length === 0 && (
+              {!activeIsSuperadmin && assignableRoles.length === 0 && (
                 <p className="text-xs text-khatulistiwa-400">Belum ada peran yang dapat ditetapkan.</p>
               )}
             </div>
