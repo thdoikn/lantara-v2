@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { format, parseISO, formatDistanceToNow, isPast } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -11,6 +11,7 @@ import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { toast } from "@/lib/toast";
 import type { Submission, AuditEntry } from "@/types";
 import DocumentUploadSection from "./DocumentUploadSection";
 
@@ -366,6 +367,9 @@ function NextStepCard({ status }: { status: string }) {
 export default function SubmissionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  // Inline edits for fields the verifier flagged for revision.
+  const [edits, setEdits] = useState<Record<string, string>>({});
 
   const { data: submission, isLoading } = useQuery<Submission>({
     queryKey: ["submission", id],
@@ -377,6 +381,18 @@ export default function SubmissionDetailPage() {
     queryKey: ["submission", id, "audit"],
     queryFn: () => api.get(`/submissions/${id}/audit/`).then((r) => r.data.results ?? r.data),
     enabled: !!id,
+  });
+
+  const resubmit = useMutation({
+    mutationFn: (formData: Record<string, string>) =>
+      api.post(`/submissions/${id}/resubmit/`, { form_data: formData }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["submission", id] });
+      qc.invalidateQueries({ queryKey: ["submission", id, "audit"] });
+      setEdits({});
+      toast.success("Revisi dikirim. Permohonan kembali diverifikasi.");
+    },
+    onError: () => toast.error("Gagal mengirim revisi. Silakan coba lagi."),
   });
 
   if (isLoading) {
@@ -410,6 +426,7 @@ export default function SubmissionDetailPage() {
     return (r.is_doc_requirement ? docLabelMap.get(r.field_key) : fieldLabelMap.get(r.field_key)) ?? r.field_key;
   }
   const isIssued = ["issued", "collected", "approved"].includes(submission.status);
+  const isRevision = submission.status === "revision";
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
@@ -501,29 +518,56 @@ export default function SubmissionDetailPage() {
           {/* What happens next */}
           <NextStepCard status={submission.status} />
 
-          {/* Specific items the verifier flagged for revision */}
-          {openRevisions.length > 0 && (
+          {/* Revision: flagged items + resubmit */}
+          {isRevision && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="rounded-2xl border border-amber-200 bg-amber-50 p-5"
             >
-              <p className="font-display font-bold text-sm text-amber-900 mb-3">
-                Bagian yang perlu diperbaiki ({openRevisions.length})
+              <p className="font-display font-bold text-sm text-amber-900 mb-1">
+                {openRevisions.length > 0
+                  ? `Bagian yang perlu diperbaiki (${openRevisions.length})`
+                  : "Revisi diperlukan"}
               </p>
-              <ul className="space-y-2">
-                {openRevisions.map((r) => (
-                  <li key={r.id} className="flex items-start gap-2.5">
-                    <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded shrink-0">
-                      {r.is_doc_requirement ? "Dokumen" : "Data"}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-amber-900">{revisionLabel(r)}</p>
-                      {r.note && <p className="text-xs text-amber-800/80 mt-0.5">{r.note}</p>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              {openRevisions.length > 0 ? (
+                <>
+                  <p className="text-xs text-amber-800/70 mb-3">
+                    Perbaiki data di bawah / unggah ulang dokumen, lalu kirim ulang.
+                  </p>
+                  <ul className="space-y-2 mb-4">
+                    {openRevisions.map((r) => (
+                      <li key={r.id} className="flex items-start gap-2.5">
+                        <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded shrink-0">
+                          {r.is_doc_requirement ? "Dokumen" : "Data"}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-amber-900">{revisionLabel(r)}</p>
+                          {r.note && <p className="text-xs text-amber-800/80 mt-0.5">{r.note}</p>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-xs text-amber-800/80 mb-4">
+                  Perbaiki dokumen atau data sesuai catatan verifikator (lihat Riwayat Aktivitas),
+                  lalu kirim ulang agar proses berlanjut.
+                </p>
+              )}
+              <button
+                onClick={() => resubmit.mutate(edits)}
+                disabled={resubmit.isPending}
+                className="w-full inline-flex items-center justify-center gap-2 bg-khatulistiwa-600 hover:bg-khatulistiwa-500
+                           disabled:opacity-60 text-white font-display font-bold py-3 rounded-xl transition-colors"
+              >
+                {resubmit.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Send className="w-4 h-4" aria-hidden="true" />
+                )}
+                Kirim Ulang Revisi
+              </button>
             </motion.div>
           )}
 
@@ -562,13 +606,16 @@ export default function SubmissionDetailPage() {
                 {submission.schema_snapshot?.form_fields?.map(
                   (f: { key: string; label: string }) => {
                     const val = submission.form_data?.[f.key];
-                    if (val === undefined || val === null || val === "") return null;
                     const flagged = flaggedFieldKeys.has(f.key);
+                    const editable = flagged && isRevision;
+                    // Show empty fields only when flagged (so they can be filled in).
+                    if (!editable && (val === undefined || val === null || val === "")) return null;
+                    const display = Array.isArray(val) ? val.join(", ") : val != null ? String(val) : "";
                     return (
                       <div
                         key={f.key}
                         className={cn(
-                          "grid grid-cols-2 gap-4 py-2.5 border-b border-khatulistiwa-50 last:border-0",
+                          "grid grid-cols-2 gap-4 py-2.5 border-b border-khatulistiwa-50 last:border-0 items-center",
                           flagged && "bg-amber-50 -mx-2 px-2 rounded-lg border-amber-100"
                         )}
                       >
@@ -580,9 +627,18 @@ export default function SubmissionDetailPage() {
                             </span>
                           )}
                         </span>
-                        <span className="text-khatulistiwa-900 font-semibold text-sm">
-                          {Array.isArray(val) ? val.join(", ") : String(val)}
-                        </span>
+                        {editable ? (
+                          <input
+                            value={edits[f.key] ?? display}
+                            onChange={(e) => setEdits((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                            placeholder="Perbaiki nilai…"
+                            className="w-full bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-sm text-khatulistiwa-900
+                                       outline-none focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/15 transition-all"
+                            aria-label={`Perbaiki ${f.label}`}
+                          />
+                        ) : (
+                          <span className="text-khatulistiwa-900 font-semibold text-sm">{display}</span>
+                        )}
                       </div>
                     );
                   }
