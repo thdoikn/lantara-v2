@@ -249,6 +249,105 @@ class TestReorderCollisionSafe:
         assert s2.order == 1
 
 
+# ── P2: version history / rollback (F5/F9/F14) ───────────────────────────────
+
+
+@pytest.mark.django_db
+class TestVersionHistory:
+    def test_publish_creates_checkpoint_and_baseline(self, client_for, permit_type, admin_user):
+        from apps.engine.models import PermitTypeVersion
+
+        client = client_for(admin_user)
+        resp = client.post(f"/api/v1/admin/engine/permit-types/{permit_type.key}/publish/")
+        assert resp.status_code == 200
+
+        v = PermitTypeVersion.objects.get(
+            permit_type=permit_type, version=permit_type.schema_version
+        )
+        assert v.note == "Diterbitkan"
+        permit_type.refresh_from_db()
+        assert permit_type.published_schema_version == permit_type.schema_version
+        assert permit_type.has_unpublished_changes is False
+
+    def test_editing_after_publish_flags_unpublished_changes(
+        self, client_for, permit_type, admin_user
+    ):
+        client = client_for(admin_user)
+        client.post(f"/api/v1/admin/engine/permit-types/{permit_type.key}/publish/")
+        # Add a stage → bumps schema_version above the published baseline.
+        client.post(
+            f"/api/v1/admin/engine/permit-types/{permit_type.key}/stages/",
+            {
+                "key": "extra",
+                "name": "Extra",
+                "stage_type": "verification",
+                "actor_role": "verifier",
+            },
+            format="json",
+        )
+        permit_type.refresh_from_db()
+        assert permit_type.has_unpublished_changes is True
+
+    def test_rollback_restores_archived_schema(self, client_for, permit_type, admin_user):
+        client = client_for(admin_user)
+        client.post(f"/api/v1/admin/engine/permit-types/{permit_type.key}/publish/")
+        published_version = permit_type.schema_version
+
+        # Add a 3rd stage after publishing.
+        client.post(
+            f"/api/v1/admin/engine/permit-types/{permit_type.key}/stages/",
+            {
+                "key": "tambahan",
+                "name": "Tambahan",
+                "stage_type": "verification",
+                "actor_role": "verifier",
+            },
+            format="json",
+        )
+        assert permit_type.stages.count() == 3
+
+        resp = client.post(
+            f"/api/v1/admin/engine/permit-types/{permit_type.key}/versions/{published_version}/rollback/"
+        )
+        assert resp.status_code == 200
+        assert permit_type.stages.count() == 2
+        assert not permit_type.stages.filter(key="tambahan").exists()
+
+    def test_versions_endpoint_lists_history(self, client_for, permit_type, admin_user):
+        client = client_for(admin_user)
+        client.post(f"/api/v1/admin/engine/permit-types/{permit_type.key}/publish/")
+        resp = client.get(f"/api/v1/admin/engine/permit-types/{permit_type.key}/versions/")
+        assert resp.status_code == 200
+        assert len(resp.data) >= 1
+        assert resp.data[0]["note"] == "Diterbitkan"
+
+
+# ── P2: document-requirement reorder (F10) ───────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestDocReorder:
+    def test_doc_reorder(self, client_for, permit_type, admin_user):
+        from apps.engine.models import DocumentRequirement
+
+        d1 = DocumentRequirement.objects.create(
+            permit_type=permit_type, key="ktp", title="KTP", order=1
+        )
+        d2 = DocumentRequirement.objects.create(
+            permit_type=permit_type, key="proposal", title="Proposal", order=2
+        )
+        client = client_for(admin_user)
+        resp = client.post(
+            f"/api/v1/admin/engine/permit-types/{permit_type.key}/doc-requirements/reorder/",
+            [{"id": str(d1.id), "order": 2}, {"id": str(d2.id), "order": 1}],
+            format="json",
+        )
+        assert resp.status_code == 200
+        d1.refresh_from_db()
+        d2.refresh_from_db()
+        assert d1.order == 2 and d2.order == 1
+
+
 @pytest.fixture
 def client_for():
     def _make(user):

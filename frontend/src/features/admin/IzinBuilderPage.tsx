@@ -14,7 +14,7 @@ import { GripVertical, Plus, Trash2, Edit3, X, Check, Loader2, AlertTriangle } f
 import * as Dialog from "@radix-ui/react-dialog";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
-import type { FormField, WorkflowStage, DocumentRequirement } from "@/types";
+import type { FormField, WorkflowStage, DocumentRequirement, PermitTypeVersion } from "@/types";
 import DynamicForm from "@/features/applicant/DynamicForm";
 
 interface PermitTypeFull {
@@ -23,8 +23,12 @@ interface PermitTypeFull {
   name: string;
   description: string;
   sla_days: number;
+  product_name: string;
+  legal_basis: string[];
   is_published: boolean;
   schema_version: number;
+  published_schema_version: number;
+  has_unpublished_changes: boolean;
   sektor_name: string;
   stages: WorkflowStage[];
   form_fields: FormField[];
@@ -455,6 +459,8 @@ interface FieldForm {
   val_max_length: string;
   val_pattern: string;
   val_pattern_msg: string;
+  cond_field_key: string;
+  cond_field_value: string;
 }
 
 function FieldModal({
@@ -463,6 +469,7 @@ function FieldModal({
   izinKey,
   nextOrder,
   initial,
+  availableFieldKeys = [],
   onSuccess,
 }: {
   open: boolean;
@@ -470,6 +477,7 @@ function FieldModal({
   izinKey: string;
   nextOrder: number;
   initial?: FormField;
+  availableFieldKeys?: string[];
   onSuccess: () => void;
 }) {
   const isEdit = !!initial;
@@ -490,6 +498,8 @@ function FieldModal({
           val_max_length: String(initial.validation_json?.maxLength ?? ""),
           val_pattern: String(initial.validation_json?.pattern ?? ""),
           val_pattern_msg: String(initial.validation_json?.patternMessage ?? ""),
+          cond_field_key: initial.conditional_field_key ?? "",
+          cond_field_value: initial.conditional_field_value ?? "",
         }
       : {
           key: "",
@@ -505,6 +515,8 @@ function FieldModal({
           val_max_length: "",
           val_pattern: "",
           val_pattern_msg: "",
+          cond_field_key: "",
+          cond_field_value: "",
         }
   );
   const [errors, setErrors] = useState<Partial<Record<keyof FieldForm, string>>>({});
@@ -578,6 +590,8 @@ function FieldModal({
       prefill_from_profile: form.prefill_from_profile,
       options_json: needsOptions ? form.options : [],
       validation_json,
+      conditional_field_key: form.cond_field_key,
+      conditional_field_value: form.cond_field_key ? form.cond_field_value : "",
       order: isEdit ? initial!.order : nextOrder,
     });
   }
@@ -665,6 +679,38 @@ function FieldModal({
             </Field>
             <Field label="Pesan Error Pola">
               <input className={inputCls} value={form.val_pattern_msg} onChange={(e) => set("val_pattern_msg", e.target.value)} placeholder="Format tidak valid" />
+            </Field>
+          </div>
+        </details>
+
+        {/* Conditional visibility (F11) */}
+        <details className="group" open={!!form.cond_field_key}>
+          <summary className="text-sm font-medium text-ink-muted cursor-pointer select-none hover:text-ink">
+            Tampilkan Bersyarat (opsional)
+          </summary>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Field label="Tampilkan jika field" hint="Field lain yang memicu">
+              <select
+                className={selectCls}
+                value={form.cond_field_key}
+                onChange={(e) => set("cond_field_key", e.target.value)}
+              >
+                <option value="">— Selalu tampil —</option>
+                {availableFieldKeys
+                  .filter((k) => k !== form.key)
+                  .map((k) => (
+                    <option key={k} value={k}>{k}</option>
+                  ))}
+              </select>
+            </Field>
+            <Field label="Bernilai" hint="Nilai pemicu (sama persis)">
+              <input
+                className={inputCls}
+                value={form.cond_field_value}
+                onChange={(e) => set("cond_field_value", e.target.value)}
+                disabled={!form.cond_field_key}
+                placeholder="cth. ya"
+              />
             </Field>
           </div>
         </details>
@@ -912,17 +958,181 @@ function DocModal({
   );
 }
 
+// ── Readiness: SK checklist (F12) + SLA visualizer (F13) ──────────────────────
+
+function ReadinessPanel({ pt }: { pt: PermitTypeFull }) {
+  const stageHours = pt.stages.reduce((sum, s) => sum + (s.sla_hours || 0), 0);
+  const stageDays = stageHours / 8; // engine convention: 8 working hours = 1 day
+  const slaOver = pt.sla_days > 0 && stageDays > pt.sla_days;
+
+  const hasTerminal = pt.stages.some(
+    (s) => s.is_terminal || s.stage_type === "publish" || s.stage_type === "collection",
+  );
+  const hasVerifier = pt.stages.some((s) => s.actor_role && s.actor_role !== "applicant");
+
+  // Mirrors backend publish-readiness + the Standar Pelayanan fields (CLAUDE.md §3.7).
+  const checks = [
+    { ok: pt.stages.length > 0, label: "Punya alur kerja (≥1 tahap)" },
+    { ok: hasTerminal, label: "Punya tahap akhir (penerbitan/pengambilan)" },
+    { ok: hasVerifier, label: "Punya tahap dengan aktor verifikator" },
+    { ok: pt.form_fields.length > 0, label: "Punya field formulir" },
+    { ok: pt.sla_days > 0, label: "Jangka waktu (SLA) terisi" },
+    { ok: !!pt.product_name, label: "Produk layanan terisi" },
+    { ok: (pt.legal_basis?.length ?? 0) > 0, label: "Dasar hukum terisi" },
+  ];
+  const ready = checks.filter((c) => c.ok).length;
+
+  return (
+    <div className="px-6 py-3 border-b border-border bg-surface/60 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+      {/* SLA visualizer (F13) */}
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-1">
+          Anggaran SLA
+        </p>
+        <p className={`text-sm ${slaOver ? "text-status-danger font-medium" : "text-ink"}`}>
+          Σ tahap {stageHours} jam (~{stageDays.toFixed(1)} hari) dari {pt.sla_days} hari layanan
+          {slaOver && " · melebihi SLA!"}
+        </p>
+        <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full rounded-full ${slaOver ? "bg-status-danger" : "bg-royal-500"}`}
+            style={{ width: `${Math.min(100, pt.sla_days > 0 ? (stageDays / pt.sla_days) * 100 : 0)}%` }}
+          />
+        </div>
+      </div>
+
+      {/* SK checklist (F12) */}
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-1">
+          Kesiapan Standar Pelayanan ({ready}/{checks.length})
+        </p>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+          {checks.map((c) => (
+            <li key={c.label} className="flex items-center gap-1.5 text-xs">
+              {c.ok ? (
+                <Check className="w-3.5 h-3.5 text-status-success shrink-0" aria-hidden="true" />
+              ) : (
+                <X className="w-3.5 h-3.5 text-ink-faint shrink-0" aria-hidden="true" />
+              )}
+              <span className={c.ok ? "text-ink" : "text-ink-muted"}>{c.label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ── Version history + rollback (F9) ───────────────────────────────────────────
+
+function VersionHistoryModal({
+  open,
+  onClose,
+  izinKey,
+}: {
+  open: boolean;
+  onClose: () => void;
+  izinKey: string;
+}) {
+  const qc = useQueryClient();
+  const [confirmVersion, setConfirmVersion] = useState<number | null>(null);
+
+  const { data: versions, isLoading } = useQuery<PermitTypeVersion[]>({
+    queryKey: ["admin-izin-versions", izinKey],
+    queryFn: () =>
+      api.get(`/admin/engine/permit-types/${izinKey}/versions/`).then((r) => r.data),
+    enabled: open,
+  });
+
+  const rollback = useMutation({
+    mutationFn: (version: number) =>
+      api.post(`/admin/engine/permit-types/${izinKey}/versions/${version}/rollback/`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] });
+      qc.invalidateQueries({ queryKey: ["admin-izin-versions", izinKey] });
+      setConfirmVersion(null);
+      toast.success("Konfigurasi dipulihkan dari versi terpilih.");
+    },
+    onError: () => toast.error("Gagal memulihkan versi."),
+  });
+
+  return (
+    <Modal open={open} onClose={onClose} title="Riwayat Versi">
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 rounded-lg bg-muted animate-pulse" />
+          ))}
+        </div>
+      ) : !versions?.length ? (
+        <p className="text-sm text-ink-muted py-6 text-center">
+          Belum ada versi terarsip. Versi dibuat saat izin diterbitkan.
+        </p>
+      ) : (
+        <ul className="space-y-2 max-h-[60vh] overflow-y-auto">
+          {versions.map((v) => (
+            <li
+              key={v.id}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium">
+                  v{v.version}
+                  {v.note && <span className="text-ink-muted font-normal"> · {v.note}</span>}
+                </p>
+                <p className="text-xs text-ink-muted">
+                  {new Date(v.created_at).toLocaleString("id-ID")}
+                  {v.created_by_name ? ` · ${v.created_by_name}` : ""}
+                </p>
+              </div>
+              <button
+                onClick={() => setConfirmVersion(v.version)}
+                className="shrink-0 text-xs font-semibold text-royal-600 hover:underline"
+              >
+                Pulihkan
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <ConfirmDialog
+        open={confirmVersion !== null}
+        onClose={() => setConfirmVersion(null)}
+        onConfirm={() => confirmVersion !== null && rollback.mutate(confirmVersion)}
+        title={`Pulihkan ke v${confirmVersion}?`}
+        body="Alur kerja, formulir, dan persyaratan saat ini akan diganti dengan konfigurasi versi terpilih. Pengajuan yang sedang berjalan tidak terpengaruh."
+        confirmLabel="Pulihkan"
+        pending={rollback.isPending}
+      />
+    </Modal>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function IzinBuilderPage() {
   const { sektorKey, izinKey } = useParams<{ sektorKey: string; izinKey: string }>();
   const [activeTab, setActiveTab] = useState<Tab>("stages");
+  const [showHistory, setShowHistory] = useState(false);
   const qc = useQueryClient();
 
   const { data: pt, isLoading } = useQuery<PermitTypeFull>({
     queryKey: ["admin-izin-detail", izinKey],
     queryFn: () => api.get(`/admin/engine/permit-types/${izinKey}/`).then((r) => r.data),
     enabled: !!izinKey,
+  });
+
+  const publish = useMutation({
+    mutationFn: () => api.post(`/admin/engine/permit-types/${izinKey}/publish/`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] });
+      toast.success("Perubahan diterbitkan.");
+    },
+    onError: (err) => {
+      const { fieldErrors, message } = extractApiErrors(err);
+      const reasons = Object.values(fieldErrors);
+      toast.error(reasons.length ? `${message} ${reasons.join(" ")}` : message);
+    },
   });
 
   const reorderStages = useMutation({
@@ -978,9 +1188,17 @@ export default function IzinBuilderPage() {
           <span className="mx-1">›</span>
           <span>{pt.name}</span>
         </nav>
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="font-display text-xl font-bold">{pt.name}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-display text-xl font-bold">{pt.name}</h1>
+              {pt.has_unpublished_changes && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-gold-500/15 text-gold-600 text-xs font-semibold px-2 py-0.5">
+                  <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                  Perubahan belum diterbitkan
+                </span>
+              )}
+            </div>
             <p className="text-ink-muted text-sm mt-0.5">
               SLA {pt.sla_days} hari · v{pt.schema_version} ·{" "}
               <span className={pt.is_published ? "text-status-success" : "text-ink-muted"}>
@@ -988,8 +1206,29 @@ export default function IzinBuilderPage() {
               </span>
             </p>
           </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShowHistory(true)}
+              className="px-3 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors"
+            >
+              Riwayat Versi
+            </button>
+            {(pt.has_unpublished_changes || !pt.is_published) && (
+              <button
+                onClick={() => publish.mutate()}
+                disabled={publish.isPending}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-royal-700 text-white font-medium hover:bg-royal-800 disabled:opacity-60 transition-colors"
+              >
+                {publish.isPending && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+                {pt.is_published ? "Terbitkan Perubahan" : "Terbitkan"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      <ReadinessPanel pt={pt} />
+      <VersionHistoryModal open={showHistory} onClose={() => setShowHistory(false)} izinKey={izinKey!} />
 
       {/* Two-panel layout */}
       <div className="flex-1 flex overflow-hidden">
@@ -1267,6 +1506,7 @@ function FieldsEditor({
         onClose={() => setShowAdd(false)}
         izinKey={izinKey}
         nextOrder={items.length + 1}
+        availableFieldKeys={items.map((f) => f.key)}
         onSuccess={onRefresh}
       />
       {editField && (
@@ -1277,6 +1517,7 @@ function FieldsEditor({
           izinKey={izinKey}
           nextOrder={items.length + 1}
           initial={editField}
+          availableFieldKeys={items.map((f) => f.key)}
           onSuccess={onRefresh}
         />
       )}
@@ -1305,9 +1546,11 @@ function DocsEditor({
   fieldKeys: string[];
   onRefresh: () => void;
 }) {
+  const [items, setItems] = useState(docs);
   const [showAdd, setShowAdd] = useState(false);
   const [editDoc, setEditDoc] = useState<DocumentRequirement | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<DocumentRequirement | null>(null);
+  const qc = useQueryClient();
 
   const deleteDoc = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/engine/permit-types/${izinKey}/doc-requirements/${id}/`),
@@ -1315,11 +1558,23 @@ function DocsEditor({
     onError: () => toast.error("Gagal menghapus persyaratan."),
   });
 
+  const reorderDocs = useMutation({
+    mutationFn: (payload: { id: string; order: number }[]) =>
+      api.post(`/admin/engine/permit-types/${izinKey}/doc-requirements/reorder/`, payload),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] }); toast.success("Urutan persyaratan disimpan."); },
+    onError: () => { qc.invalidateQueries({ queryKey: ["admin-izin-detail", izinKey] }); toast.error("Gagal menyimpan urutan."); },
+  });
+
+  function handleReorderEnd(newItems: DocumentRequirement[]) {
+    setItems(newItems);
+    reorderDocs.mutate(newItems.map((d, i) => ({ id: d.id, order: i + 1 })));
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs text-ink-muted font-medium uppercase tracking-wide">
-          {docs.length} persyaratan dokumen
+          Drag untuk mengubah urutan · {items.length} persyaratan
         </p>
         <button
           onClick={() => setShowAdd(true)}
@@ -1330,12 +1585,14 @@ function DocsEditor({
         </button>
       </div>
 
-      <div className="space-y-2">
-        {docs.map((doc) => (
-          <div
+      <Reorder.Group axis="y" values={items} onReorder={handleReorderEnd} className="space-y-2">
+        {items.map((doc) => (
+          <Reorder.Item
             key={doc.id}
-            className="flex items-center gap-3 bg-white rounded-xl ring-1 ring-black/[0.06] shadow-sm px-3 py-3"
+            value={doc}
+            className="flex items-center gap-3 bg-white rounded-xl ring-1 ring-black/[0.06] shadow-sm px-3 py-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
           >
+            <GripVertical className="w-4 h-4 text-ink-muted shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{doc.title}</p>
               <p className="text-xs text-ink-muted mt-0.5">
@@ -1367,15 +1624,15 @@ function DocsEditor({
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
-          </div>
+          </Reorder.Item>
         ))}
-      </div>
+      </Reorder.Group>
 
       <DocModal
         open={showAdd}
         onClose={() => setShowAdd(false)}
         izinKey={izinKey}
-        nextOrder={docs.length + 1}
+        nextOrder={items.length + 1}
         availableFieldKeys={fieldKeys}
         onSuccess={onRefresh}
       />
@@ -1385,7 +1642,7 @@ function DocsEditor({
           open={true}
           onClose={() => setEditDoc(null)}
           izinKey={izinKey}
-          nextOrder={docs.length + 1}
+          nextOrder={items.length + 1}
           initial={editDoc}
           availableFieldKeys={fieldKeys}
           onSuccess={onRefresh}

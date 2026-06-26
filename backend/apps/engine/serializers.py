@@ -6,6 +6,7 @@ from .models import (
     DocumentRequirement,
     FormField,
     PermitType,
+    PermitTypeVersion,
     Sektor,
     WorkflowStage,
 )
@@ -22,6 +23,8 @@ class DirektoratLiteSerializer(serializers.ModelSerializer):
 class WorkflowStageSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowStage
+        # order is optional on create — the server assigns max+1 when omitted (F4).
+        extra_kwargs = {"order": {"required": False}}
         fields = [
             "id",
             "key",
@@ -40,6 +43,7 @@ class WorkflowStageSerializer(serializers.ModelSerializer):
 class FormFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = FormField
+        extra_kwargs = {"order": {"required": False}}
         fields = [
             "id",
             "key",
@@ -53,6 +57,8 @@ class FormFieldSerializer(serializers.ModelSerializer):
             "prefill_from_profile",
             "help_text_field",
             "placeholder",
+            "conditional_field_key",
+            "conditional_field_value",
         ]
 
 
@@ -92,7 +98,19 @@ class PermitTypeListSerializer(serializers.ModelSerializer):
             "fee_description",
             "is_published",
             "schema_version",
+            "published_schema_version",
+            "has_unpublished_changes",
         ]
+
+
+class PermitTypeVersionSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.CharField(
+        source="created_by.full_name", read_only=True, default=None
+    )
+
+    class Meta:
+        model = PermitTypeVersion
+        fields = ["id", "version", "note", "created_by_name", "created_at"]
 
 
 class PermitTypeDetailSerializer(serializers.ModelSerializer):
@@ -123,6 +141,8 @@ class PermitTypeDetailSerializer(serializers.ModelSerializer):
             "complaint_info",
             "is_published",
             "schema_version",
+            "published_schema_version",
+            "has_unpublished_changes",
             "stages",
             "form_fields",
             "doc_requirements",

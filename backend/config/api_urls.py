@@ -96,6 +96,7 @@ def permit_nested_router():
                             }
                         ),
                     ),
+                    path("reorder/", AdminDocRequirementViewSet.as_view({"post": "reorder"})),
                 ]
             ),
         ),

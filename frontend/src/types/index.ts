@@ -94,9 +94,19 @@ export interface PermitType {
   complaint_info: string;
   is_published: boolean;
   schema_version: number;
+  published_schema_version?: number;
+  has_unpublished_changes?: boolean;
   stages: WorkflowStage[];
   form_fields: FormField[];
   doc_requirements: DocumentRequirement[];
+}
+
+export interface PermitTypeVersion {
+  id: string;
+  version: number;
+  note: string;
+  created_by_name: string | null;
+  created_at: string;
 }
 
 // ── Auth types ────────────────────────────────────────────────────────────────

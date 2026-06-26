@@ -5,12 +5,20 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import DocumentRequirement, FormField, PermitType, Sektor, WorkflowStage
+from .models import (
+    DocumentRequirement,
+    FormField,
+    PermitType,
+    PermitTypeVersion,
+    Sektor,
+    WorkflowStage,
+)
 from .serializers import (
     DocumentRequirementSerializer,
     FormFieldSerializer,
     PermitTypeDetailSerializer,
     PermitTypeListSerializer,
+    PermitTypeVersionSerializer,
     SektorDetailSerializer,
     SektorSerializer,
     WorkflowStageSerializer,
@@ -109,6 +117,109 @@ def _next_order(model, permit) -> int:
     return (current_max or 0) + 1
 
 
+# Model fields recreated verbatim when rolling a permit back to an archived
+# snapshot (id/permit_type are re-derived, everything else is copied).
+_STAGE_RESTORE_FIELDS = [
+    "key",
+    "order",
+    "name",
+    "stage_type",
+    "actor_role",
+    "sla_hours",
+    "requires_site_visit",
+    "allowed_actions",
+    "is_terminal",
+    "instructions",
+]
+_FIELD_RESTORE_FIELDS = [
+    "key",
+    "label",
+    "field_type",
+    "section",
+    "order",
+    "required",
+    "validation_json",
+    "options_json",
+    "prefill_from_profile",
+    "help_text_field",
+    "placeholder",
+    "conditional_field_key",
+    "conditional_field_value",
+]
+_DOC_RESTORE_FIELDS = [
+    "key",
+    "title",
+    "description",
+    "allowed_types",
+    "max_bytes",
+    "required",
+    "order",
+    "conditional_field_key",
+    "conditional_field_value",
+]
+# Permit-level scalars that shape the form/SLA and are part of a version snapshot.
+_PERMIT_RESTORE_FIELDS = [
+    "description",
+    "sla_days",
+    "product_name",
+    "legal_basis",
+    "fee_description",
+    "complaint_info",
+]
+
+
+def _checkpoint_version(pt: PermitType, note: str, user) -> PermitTypeVersion:
+    """Archive pt's current full schema as a PermitTypeVersion (F5/F9).
+
+    Idempotent per schema_version — re-publishing without edits won't duplicate."""
+    snapshot = PermitTypeDetailSerializer(pt).data
+    version, _ = PermitTypeVersion.objects.update_or_create(
+        permit_type=pt,
+        version=pt.schema_version,
+        defaults={
+            "snapshot": snapshot,
+            "note": note,
+            "created_by": user if getattr(user, "is_authenticated", False) else None,
+        },
+    )
+    return version
+
+
+def _restore_from_snapshot(pt: PermitType, snapshot: dict) -> None:
+    """Replace pt's children + form scalars from an archived snapshot (F9 rollback)."""
+    with transaction.atomic():
+        for f in _PERMIT_RESTORE_FIELDS:
+            if f in snapshot:
+                setattr(pt, f, snapshot[f])
+        pt.schema_version += 1
+        pt.save()
+
+        pt.stages.all().delete()
+        pt.form_fields.all().delete()
+        pt.doc_requirements.all().delete()
+
+        WorkflowStage.objects.bulk_create(
+            [
+                WorkflowStage(permit_type=pt, **{k: s[k] for k in _STAGE_RESTORE_FIELDS if k in s})
+                for s in snapshot.get("stages", [])
+            ]
+        )
+        FormField.objects.bulk_create(
+            [
+                FormField(permit_type=pt, **{k: f[k] for k in _FIELD_RESTORE_FIELDS if k in f})
+                for f in snapshot.get("form_fields", [])
+            ]
+        )
+        DocumentRequirement.objects.bulk_create(
+            [
+                DocumentRequirement(
+                    permit_type=pt, **{k: d[k] for k in _DOC_RESTORE_FIELDS if k in d}
+                )
+                for d in snapshot.get("doc_requirements", [])
+            ]
+        )
+
+
 def _publish_readiness_errors(pt: PermitType) -> dict:
     """Validate an izin is operable before it can be published (F3).
 
@@ -195,8 +306,12 @@ class AdminPermitTypeViewSet(viewsets.ModelViewSet):
                 status=400,
             )
 
+        # Archive this published config and mark it as the published baseline
+        # so later edits surface as "unpublished changes" (F5/F9/F14).
+        _checkpoint_version(pt, note="Diterbitkan", user=request.user)
         pt.is_published = True
-        pt.save(update_fields=["is_published"])
+        pt.published_schema_version = pt.schema_version
+        pt.save(update_fields=["is_published", "published_schema_version"])
         return Response(PermitTypeListSerializer(pt).data)
 
     @action(detail=True, methods=["post"], url_path="unpublish")
@@ -205,6 +320,25 @@ class AdminPermitTypeViewSet(viewsets.ModelViewSet):
         pt.is_published = False
         pt.save(update_fields=["is_published"])
         return Response(PermitTypeListSerializer(pt).data)
+
+    @action(detail=True, methods=["get"], url_path="versions")
+    def versions(self, request, key=None):
+        """Read-only version timeline for this izin (F9)."""
+        pt = self.get_object()
+        return Response(PermitTypeVersionSerializer(pt.versions.all(), many=True).data)
+
+    @action(detail=True, methods=["post"], url_path="versions/(?P<version>[0-9]+)/rollback")
+    def rollback(self, request, key=None, version=None):
+        """Restore this izin's schema from an archived version (F9)."""
+        pt = self.get_object()
+        try:
+            archived = pt.versions.get(version=int(version))
+        except PermitTypeVersion.DoesNotExist:
+            return Response({"detail": "Versi tidak ditemukan."}, status=404)
+
+        _restore_from_snapshot(pt, archived.snapshot)
+        _checkpoint_version(pt, note=f"Rollback dari v{version}", user=request.user)
+        return Response(PermitTypeDetailSerializer(pt).data)
 
 
 class AdminStageViewSet(viewsets.ModelViewSet):
@@ -288,7 +422,10 @@ class AdminDocRequirementViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         permit = PermitType.objects.get(key=self.kwargs["permit_key"])
-        serializer.save(permit_type=permit)
+        order = serializer.validated_data.get("order")
+        if not order:
+            order = _next_order(DocumentRequirement, permit)
+        serializer.save(permit_type=permit, order=order)
         permit.schema_version += 1
         permit.save(update_fields=["schema_version"])
 
@@ -297,3 +434,11 @@ class AdminDocRequirementViewSet(viewsets.ModelViewSet):
         permit = serializer.instance.permit_type
         permit.schema_version += 1
         permit.save(update_fields=["schema_version"])
+
+    @action(detail=False, methods=["post"], url_path="reorder")
+    def reorder(self, request, permit_key=None):
+        _apply_reorder(DocumentRequirement, request.data)
+        permit = PermitType.objects.get(key=permit_key)
+        permit.schema_version += 1
+        permit.save(update_fields=["schema_version"])
+        return Response({"detail": "Urutan persyaratan diperbarui."})

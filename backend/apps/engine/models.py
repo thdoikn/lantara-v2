@@ -5,6 +5,7 @@ The golden rule: adding a new izin = inserting rows here, never a migration.
 No per-permit-type tables, no if/elif on permit type anywhere.
 """
 
+from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
@@ -72,11 +73,18 @@ class PermitType(TimestampedModel):
     complaint_info = models.TextField(blank=True)
     is_published = models.BooleanField(default=False)
     schema_version = models.PositiveIntegerField(default=1)
+    # The schema_version that was last published. A live schema_version greater
+    # than this means there are unpublished edits (F14 "unpublished changes").
+    published_schema_version = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["sektor__order", "name"]
         verbose_name = "Permit Type"
         verbose_name_plural = "Permit Types"
+
+    @property
+    def has_unpublished_changes(self) -> bool:
+        return self.is_published and self.schema_version > self.published_schema_version
 
     def __str__(self):
         return f"{self.sektor.key} / {self.name}"
@@ -92,6 +100,15 @@ class PermitTypeVersion(TimestampedModel):
     permit_type = models.ForeignKey(PermitType, on_delete=models.CASCADE, related_name="versions")
     version = models.PositiveIntegerField()
     snapshot = models.JSONField()
+    # Short human label for the version timeline, e.g. "Diterbitkan" / "Rollback dari v3".
+    note = models.CharField(max_length=200, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="permit_versions",
+    )
 
     class Meta:
         unique_together = [("permit_type", "version")]
@@ -175,6 +192,11 @@ class FormField(TimestampedModel):
     prefill_from_profile = models.BooleanField(default=False)
     help_text_field = models.TextField(blank=True)
     placeholder = models.CharField(max_length=300, blank=True)
+    # Conditional visibility — show this field only when another field's answer
+    # equals the trigger value. Blank key = always shown. Mirrors
+    # DocumentRequirement.conditional_field_key/value (F11).
+    conditional_field_key = models.CharField(max_length=120, blank=True)
+    conditional_field_value = models.CharField(max_length=300, blank=True)
 
     class Meta:
         unique_together = [("permit_type", "key")]
