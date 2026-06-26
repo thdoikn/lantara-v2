@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.reference.models import Direktorat
+
 from .models import (
     DocumentRequirement,
     FormField,
@@ -7,6 +9,14 @@ from .models import (
     Sektor,
     WorkflowStage,
 )
+
+
+class DirektoratLiteSerializer(serializers.ModelSerializer):
+    kedeputian_name = serializers.CharField(source="kedeputian.name", read_only=True, default=None)
+
+    class Meta:
+        model = Direktorat
+        fields = ["id", "key", "name", "kedeputian_name"]
 
 
 class WorkflowStageSerializer(serializers.ModelSerializer):
@@ -119,8 +129,24 @@ class PermitTypeDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+def _pengampu_display(obj) -> str:
+    names = [d.name for d in obj.direktorats.all()]
+    if names:
+        return ", ".join(names)
+    return obj.pengampu or ""
+
+
 class SektorSerializer(serializers.ModelSerializer):
     permit_count = serializers.IntegerField(read_only=True)
+    direktorats = DirektoratLiteSerializer(many=True, read_only=True)
+    direktorat_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        write_only=True,
+        required=False,
+        source="direktorats",
+        queryset=Direktorat.objects.all(),
+    )
+    pengampu_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Sektor
@@ -134,12 +160,20 @@ class SektorSerializer(serializers.ModelSerializer):
             "is_active",
             "is_catchall",
             "pengampu",
+            "pengampu_display",
+            "direktorats",
+            "direktorat_ids",
             "permit_count",
         ]
+
+    def get_pengampu_display(self, obj):
+        return _pengampu_display(obj)
 
 
 class SektorDetailSerializer(serializers.ModelSerializer):
     permit_types = PermitTypeListSerializer(many=True, read_only=True)
+    direktorats = DirektoratLiteSerializer(many=True, read_only=True)
+    pengampu_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Sektor
@@ -153,5 +187,10 @@ class SektorDetailSerializer(serializers.ModelSerializer):
             "is_active",
             "is_catchall",
             "pengampu",
+            "pengampu_display",
+            "direktorats",
             "permit_types",
         ]
+
+    def get_pengampu_display(self, obj):
+        return _pengampu_display(obj)

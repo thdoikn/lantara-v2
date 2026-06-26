@@ -1,5 +1,12 @@
 // ── Engine types ──────────────────────────────────────────────────────────────
 
+export interface DirektoratLite {
+  id: string;
+  key: string;
+  name: string;
+  kedeputian_name: string | null;
+}
+
 export interface Sektor {
   id: string;
   key: string;
@@ -9,6 +16,8 @@ export interface Sektor {
   order: number;
   permit_count: number;
   pengampu: string;
+  pengampu_display?: string;
+  direktorats?: DirektoratLite[];
 }
 
 export interface WorkflowStage {

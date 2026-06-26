@@ -10,6 +10,13 @@ import * as Dialog from "@radix-ui/react-dialog";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
 
+interface DirektoratOption {
+  id: string;
+  key: string;
+  name: string;
+  kedeputian_name: string | null;
+}
+
 interface Sektor {
   id: string;
   key: string;
@@ -19,6 +26,8 @@ interface Sektor {
   order: number;
   is_active: boolean;
   pengampu: string;
+  pengampu_display?: string;
+  direktorats?: DirektoratOption[];
   permit_count: number;
 }
 
@@ -93,7 +102,7 @@ interface SektorForm {
   description: string;
   icon: string;
   order: string;
-  pengampu: string;
+  direktorat_ids: string[];
   is_active: boolean;
 }
 
@@ -103,7 +112,7 @@ const emptySektorForm = (): SektorForm => ({
   description: "",
   icon: "",
   order: "0",
-  pengampu: "",
+  direktorat_ids: [],
   is_active: true,
 });
 
@@ -127,12 +136,27 @@ function SektorModal({
           description: initial.description,
           icon: initial.icon,
           order: String(initial.order),
-          pengampu: initial.pengampu,
+          direktorat_ids: (initial.direktorats ?? []).map((d) => d.id),
           is_active: initial.is_active,
         }
       : emptySektorForm()
   );
-  const [errors, setErrors] = useState<Partial<SektorForm>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof SektorForm, string>>>({});
+  const [dirSearch, setDirSearch] = useState("");
+
+  const { data: direktorats = [] } = useQuery<DirektoratOption[]>({
+    queryKey: ["reference-direktorat"],
+    queryFn: () => api.get("/reference/direktorat/").then((r) => r.data),
+  });
+
+  function toggleDirektorat(id: string) {
+    setForm((f) => ({
+      ...f,
+      direktorat_ids: f.direktorat_ids.includes(id)
+        ? f.direktorat_ids.filter((x) => x !== id)
+        : [...f.direktorat_ids, id],
+    }));
+  }
 
   const save = useMutation({
     mutationFn: (body: object) =>
@@ -159,7 +183,7 @@ function SektorModal({
   }
 
   function validate() {
-    const e: Partial<SektorForm> = {};
+    const e: Partial<Record<keyof SektorForm, string>> = {};
     if (!form.name.trim()) e.name = "Nama wajib diisi";
     if (!form.key.trim()) e.key = "Key wajib diisi";
     return e;
@@ -175,7 +199,7 @@ function SektorModal({
       description: form.description,
       icon: form.icon,
       order: parseInt(form.order) || 0,
-      pengampu: form.pengampu,
+      direktorat_ids: form.direktorat_ids,
       is_active: form.is_active,
     });
   }
@@ -222,8 +246,72 @@ function SektorModal({
           />
         </Field>
 
-        <Field label="Unit Pengampu">
-          <input className={inputCls} value={form.pengampu} onChange={(e) => set("pengampu", e.target.value)} placeholder="Dinas Kesehatan IKN" />
+        <Field label="Direktorat Pengampu">
+          {/* Selected chips */}
+          {form.direktorat_ids.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {form.direktorat_ids.map((id) => {
+                const d = direktorats.find((x) => x.id === id);
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1.5 bg-royal-50 border border-royal-200 text-royal-700 text-xs font-medium pl-2.5 pr-1 py-1 rounded-full"
+                  >
+                    {d?.name ?? "Direktorat"}
+                    <button
+                      type="button"
+                      onClick={() => toggleDirektorat(id)}
+                      className="rounded-full hover:bg-royal-200/60 p-0.5 transition-colors"
+                      aria-label={`Hapus ${d?.name ?? "direktorat"}`}
+                    >
+                      <X className="w-3 h-3" aria-hidden="true" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+          {/* Search + checkbox list */}
+          <input
+            className={inputCls}
+            value={dirSearch}
+            onChange={(e) => setDirSearch(e.target.value)}
+            placeholder="Cari direktorat atau kedeputian…"
+          />
+          <div className="max-h-44 overflow-y-auto mt-1.5 rounded-lg border border-border divide-y divide-border/60">
+            {direktorats.length === 0 ? (
+              <p className="text-xs text-ink-faint px-3 py-3 text-center">Memuat daftar direktorat…</p>
+            ) : (
+              direktorats
+                .filter((d) => {
+                  const q = dirSearch.trim().toLowerCase();
+                  return !q || `${d.name} ${d.kedeputian_name ?? ""}`.toLowerCase().includes(q);
+                })
+                .map((d) => {
+                  const checked = form.direktorat_ids.includes(d.id);
+                  return (
+                    <label
+                      key={d.id}
+                      className="flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleDirektorat(d.id)}
+                        className="mt-0.5 rounded border-border text-royal-600 focus:ring-royal-500/30"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-sm text-ink truncate">{d.name}</span>
+                        {d.kedeputian_name && (
+                          <span className="block text-xs text-ink-faint truncate">{d.kedeputian_name}</span>
+                        )}
+                      </span>
+                    </label>
+                  );
+                })
+            )}
+          </div>
+          <p className="text-xs text-ink-faint mt-1">Boleh memilih lebih dari satu direktorat.</p>
         </Field>
 
         <label className="flex items-center gap-2 cursor-pointer select-none">

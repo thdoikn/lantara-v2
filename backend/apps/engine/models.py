@@ -22,14 +22,22 @@ class Sektor(TimestampedModel):
         default=False,
         help_text="True for the 'Lainnya' escape-hatch sektor",
     )
-    pengampu = models.CharField(max_length=200, blank=True)
+    pengampu = models.CharField(
+        max_length=200, blank=True, help_text="Legacy free-text pengampu (fallback display)"
+    )
     pengampu_direktorat = models.ForeignKey(
         "reference.Direktorat",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="pengampu_sektor",
-        help_text="Direktorat OIKN yang bertanggung jawab atas sektor ini",
+        help_text="Legacy single direktorat — superseded by direktorats (M2M)",
+    )
+    direktorats = models.ManyToManyField(
+        "reference.Direktorat",
+        blank=True,
+        related_name="sektors",
+        help_text="Direktorat OIKN yang mengampu sektor ini (boleh lebih dari satu)",
     )
 
     class Meta:
