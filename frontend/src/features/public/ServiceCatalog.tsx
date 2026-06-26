@@ -10,6 +10,7 @@ import {
 import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { useAuthStore } from "@/lib/auth";
 import { getSektorVisual } from "@/lib/sektorVisuals";
 import type { Sektor, PermitType } from "@/types";
 
@@ -128,6 +129,7 @@ function CatalogSkeleton() {
 export default function ServiceCatalog() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   // URL is the source of truth → search from the landing hero (?q=) lands here
   // pre-filled, and results are shareable / back-button friendly.
@@ -409,8 +411,10 @@ export default function ServiceCatalog() {
                         >
                           {sektor.name}
                         </h2>
-                        {sektor.pengampu && (
-                          <p className="text-khatulistiwa-500/70 text-sm truncate">{sektor.pengampu}</p>
+                        {(sektor.pengampu_display || sektor.pengampu) && (
+                          <p className="text-khatulistiwa-500/70 text-sm truncate">
+                            {sektor.pengampu_display || sektor.pengampu}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -450,25 +454,41 @@ export default function ServiceCatalog() {
           </div>
           <p className="text-white font-display font-bold text-lg">Siap mengajukan izin?</p>
           <p className="text-khatulistiwa-300/55 text-sm mt-1.5 max-w-sm mx-auto">
-            Masuk atau daftar untuk memulai permohonan dan memantau prosesnya secara real-time.
+            {isAuthenticated
+              ? "Buka portal pemohon untuk memulai permohonan dan memantau prosesnya secara real-time."
+              : "Masuk atau daftar untuk memulai permohonan dan memantau prosesnya secara real-time."}
           </p>
           <div className="flex gap-3 justify-center mt-6 flex-wrap">
-            <Link
-              to="/auth/register"
-              className="inline-flex items-center gap-2 rounded-xl bg-terakota-500 hover:bg-terakota-400
-                         text-khatulistiwa-900 px-6 py-3 text-sm font-bold transition-colors
-                         shadow-lg shadow-terakota-500/25"
-            >
-              Daftar Gratis
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-            <Link
-              to="/auth/login"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.06]
-                         text-white px-6 py-3 text-sm font-semibold hover:bg-white/[0.12] transition-colors"
-            >
-              Masuk
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/portal"
+                className="inline-flex items-center gap-2 rounded-xl bg-terakota-500 hover:bg-terakota-400
+                           text-khatulistiwa-900 px-6 py-3 text-sm font-bold transition-colors
+                           shadow-lg shadow-terakota-500/25"
+              >
+                Buka Portal Pemohon
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/auth/register"
+                  className="inline-flex items-center gap-2 rounded-xl bg-terakota-500 hover:bg-terakota-400
+                             text-khatulistiwa-900 px-6 py-3 text-sm font-bold transition-colors
+                             shadow-lg shadow-terakota-500/25"
+                >
+                  Daftar Gratis
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+                <Link
+                  to="/auth/login"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.06]
+                             text-white px-6 py-3 text-sm font-semibold hover:bg-white/[0.12] transition-colors"
+                >
+                  Masuk
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

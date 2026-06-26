@@ -11,6 +11,7 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import { getPortals, staffPortals, isStaffWithoutRole } from "@/lib/access";
 import { getSektorVisual } from "@/lib/sektorVisuals";
+import { WA_LINK, WA_NUMBER_DISPLAY } from "@/lib/contact";
 import PublicNav from "@/components/PublicNav";
 import BatangBanyu from "@/components/BatangBanyu";
 import type { Sektor } from "@/types";
@@ -403,7 +404,7 @@ function SektorCards({ sektors }: { sektors: Sektor[] }) {
                     <p className={`text-sm leading-relaxed mb-6 flex-1 ${
                       isFeatured ? "text-khatulistiwa-200/60" : "text-khatulistiwa-500/70"
                     }`}>
-                      {sektor.pengampu || "Layanan perizinan sektor"}
+                      {sektor.pengampu_display || sektor.pengampu || "Layanan perizinan sektor"}
                     </p>
 
                     {/* Footer CTA */}
@@ -618,6 +619,7 @@ function FAQ() {
 // ── CTA — brand blue, definitive close ────────────────────────────────────────
 
 function CTA() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return (
     <section
       className="relative overflow-hidden py-24 px-8"
@@ -642,10 +644,10 @@ function CTA() {
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link
-              to="/auth/register"
+              to={isAuthenticated ? "/portal" : "/auth/register"}
               className="inline-flex items-center gap-2 bg-terakota-500 hover:bg-terakota-400 text-khatulistiwa-900 font-display font-bold px-10 py-4 rounded-2xl transition-all shadow-xl shadow-terakota-500/30 hover:-translate-y-0.5"
             >
-              Daftar Gratis
+              {isAuthenticated ? "Pantau Permohonan Saya" : "Daftar Gratis"}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <Link
@@ -698,9 +700,9 @@ function Footer() {
             <p className="text-white/50 text-sm leading-relaxed max-w-[220px]">
               Otorita Ibu Kota Nusantara<br />Kalimantan Timur, Indonesia
             </p>
-            <a href="https://wa.me/6280000000000" className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
+            <a href={WA_LINK} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
               <MessageCircle className="h-4 w-4 text-terakota-400" aria-hidden="true" />
-              WhatsApp Resmi
+              WhatsApp Resmi · {WA_NUMBER_DISPLAY}
             </a>
           </div>
         </div>

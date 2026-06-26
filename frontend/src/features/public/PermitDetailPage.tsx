@@ -10,6 +10,7 @@ import PublicNav from "@/components/PublicNav";
 import BatangBanyu from "@/components/BatangBanyu";
 import LantaraLoader from "@/components/LantaraLoader";
 import { useAuthStore } from "@/lib/auth";
+import { WA_LINK, WA_NUMBER_DISPLAY } from "@/lib/contact";
 import api from "@/lib/api";
 import type { PermitType } from "@/types";
 
@@ -322,14 +323,14 @@ export default function PermitDetailPage() {
                     </div>
                     <p className="text-khatulistiwa-200/70 text-xs leading-relaxed mb-3">{permit.complaint_info}</p>
                     <a
-                      href="https://wa.me/6280000000000"
+                      href={WA_LINK}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/25 text-emerald-300
                                  px-3 py-2 rounded-xl text-xs font-semibold hover:bg-emerald-500/25 transition-colors"
                     >
                       <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                      WhatsApp Satu Nomor IKN
+                      WhatsApp Satu Nomor IKN · {WA_NUMBER_DISPLAY}
                     </a>
                   </div>
                 )}
