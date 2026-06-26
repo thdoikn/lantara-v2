@@ -5,11 +5,12 @@
  * Stages and form fields support drag-to-reorder via Framer Motion Reorder.
  * All five CRUD operations (add/edit for stages, fields, docs) are wired up.
  */
-import { useState } from "react";
+import { useState, useId, cloneElement, isValidElement } from "react";
+import type { ReactElement } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Reorder } from "framer-motion";
-import { GripVertical, Plus, Trash2, Edit3, X, Check, Loader2 } from "lucide-react";
+import { GripVertical, Plus, Trash2, Edit3, X, Check, Loader2, AlertTriangle } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
@@ -72,16 +73,119 @@ function Field({ label, required, error, hint, children }: {
   hint?: string;
   children: React.ReactNode;
 }) {
+  // Associate the label with the control and wire ARIA so screen readers
+  // announce the name, required state, validation errors and hints (F8 / §4.5).
+  const id = useId();
+  const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
+  const describedBy = error ? errorId : hint ? hintId : undefined;
+
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+        id,
+        "aria-invalid": error ? true : undefined,
+        "aria-describedby": describedBy,
+        "aria-required": required || undefined,
+      })
+    : children;
+
   return (
     <div className="space-y-1">
-      <label className="text-sm font-medium text-ink">
+      <label htmlFor={id} className="text-sm font-medium text-ink">
         {label}
         {required && <span className="text-danger ml-0.5">*</span>}
       </label>
-      {children}
-      {hint && !error && <p className="text-xs text-ink-faint">{hint}</p>}
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {control}
+      {hint && !error && (
+        <p id={hintId} className="text-xs text-ink-faint">{hint}</p>
+      )}
+      {error && (
+        <p id={errorId} role="alert" className="text-xs text-danger">{error}</p>
+      )}
     </div>
+  );
+}
+
+// Pull a readable message + per-field errors out of a DRF error response,
+// so the builder shows "key already used" on the field instead of a generic
+// toast (F6). Handles {detail}, {field: [msg]}, and {errors: {field: msg}}.
+function extractApiErrors(err: unknown): {
+  fieldErrors: Record<string, string>;
+  message: string;
+} {
+  const data = (err as { response?: { data?: unknown } })?.response?.data;
+  const fieldErrors: Record<string, string> = {};
+  let message = "Gagal menyimpan. Coba lagi.";
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    if (typeof obj.detail === "string") message = obj.detail;
+    const flat = (v: unknown) => (Array.isArray(v) ? String(v[0]) : typeof v === "string" ? v : "");
+    for (const [k, v] of Object.entries(obj)) {
+      if (k === "detail" || k === "errors") continue;
+      const msg = flat(v);
+      if (!msg) continue;
+      if (k === "non_field_errors") message = msg;
+      else fieldErrors[k] = msg;
+    }
+    if (obj.errors && typeof obj.errors === "object") {
+      for (const [k, v] of Object.entries(obj.errors as Record<string, unknown>)) {
+        fieldErrors[k] = flat(v);
+      }
+    }
+  }
+  return { fieldErrors, message };
+}
+
+// Reusable destructive-action confirm (F7) — guards stage/field/doc deletes.
+function ConfirmDialog({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  body,
+  confirmLabel = "Hapus",
+  pending,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  body: string;
+  confirmLabel?: string;
+  pending?: boolean;
+}) {
+  return (
+    <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40 animate-in fade-in-0" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-sm p-6 animate-in fade-in-0 zoom-in-95">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 mt-0.5 p-2 rounded-full bg-danger/10 text-danger">
+              <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <Dialog.Title className="font-semibold text-base text-ink">{title}</Dialog.Title>
+              <Dialog.Description className="text-sm text-ink-muted mt-1">{body}</Dialog.Description>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-6">
+            <Dialog.Close asChild>
+              <button className="px-4 py-2 rounded-lg text-sm font-medium text-ink-muted hover:bg-muted transition-colors">
+                Batal
+              </button>
+            </Dialog.Close>
+            <button
+              onClick={onConfirm}
+              disabled={pending}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-danger text-white hover:bg-danger/90 transition-colors disabled:opacity-60 inline-flex items-center gap-2"
+            >
+              {pending && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+              {confirmLabel}
+            </button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -166,7 +270,11 @@ function StageModal({
         ? api.patch(`/admin/engine/permit-types/${izinKey}/stages/${initial!.id}/`, body)
         : api.post(`/admin/engine/permit-types/${izinKey}/stages/`, body),
     onSuccess: () => { toast.success(isEdit ? "Tahap diperbarui." : "Tahap ditambahkan."); onSuccess(); onClose(); },
-    onError: () => toast.error("Gagal menyimpan tahap. Coba lagi."),
+    onError: (err) => {
+      const { fieldErrors, message } = extractApiErrors(err);
+      setErrors((e) => ({ ...e, ...fieldErrors }));
+      toast.error(message);
+    },
   });
 
   function set<K extends keyof StageForm>(field: K, value: StageForm[K]) {
@@ -408,7 +516,11 @@ function FieldModal({
         ? api.patch(`/admin/engine/permit-types/${izinKey}/fields/${initial!.id}/`, body)
         : api.post(`/admin/engine/permit-types/${izinKey}/fields/`, body),
     onSuccess: () => { toast.success(isEdit ? "Field diperbarui." : "Field ditambahkan."); onSuccess(); onClose(); },
-    onError: () => toast.error("Gagal menyimpan field. Coba lagi."),
+    onError: (err) => {
+      const { fieldErrors, message } = extractApiErrors(err);
+      setErrors((e) => ({ ...e, ...fieldErrors }));
+      toast.error(message);
+    },
   });
 
   function set<K extends keyof FieldForm>(field: K, value: FieldForm[K]) {
@@ -663,7 +775,11 @@ function DocModal({
         ? api.patch(`/admin/engine/permit-types/${izinKey}/doc-requirements/${initial!.id}/`, body)
         : api.post(`/admin/engine/permit-types/${izinKey}/doc-requirements/`, body),
     onSuccess: () => { toast.success(isEdit ? "Persyaratan diperbarui." : "Persyaratan ditambahkan."); onSuccess(); onClose(); },
-    onError: () => toast.error("Gagal menyimpan persyaratan. Coba lagi."),
+    onError: (err) => {
+      const { fieldErrors, message } = extractApiErrors(err);
+      setErrors((e) => ({ ...e, ...fieldErrors }));
+      toast.error(message);
+    },
   });
 
   function set<K extends keyof DocForm>(field: K, value: DocForm[K]) {
@@ -970,10 +1086,11 @@ function StagesEditor({
   const [items, setItems] = useState(stages);
   const [showAdd, setShowAdd] = useState(false);
   const [editStage, setEditStage] = useState<WorkflowStage | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<WorkflowStage | null>(null);
 
   const deleteStage = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/engine/permit-types/${izinKey}/stages/${id}/`),
-    onSuccess: () => { onRefresh(); toast.success("Tahap dihapus."); },
+    onSuccess: () => { onRefresh(); setConfirmDelete(null); toast.success("Tahap dihapus."); },
     onError: () => toast.error("Gagal menghapus tahap."),
   });
 
@@ -1019,7 +1136,8 @@ function StagesEditor({
                 <Edit3 className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={() => deleteStage.mutate(stage.id)}
+                onClick={() => setConfirmDelete(stage)}
+                aria-label={`Hapus tahap ${stage.name}`}
                 className="p-1 text-ink-muted hover:text-danger transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -1047,6 +1165,14 @@ function StagesEditor({
           onSuccess={onRefresh}
         />
       )}
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => confirmDelete && deleteStage.mutate(confirmDelete.id)}
+        title="Hapus tahap?"
+        body={`Tahap "${confirmDelete?.name ?? ""}" akan dihapus dari alur kerja izin ini. Pengajuan yang sedang berjalan tidak terpengaruh karena memakai snapshot. Tindakan ini tidak dapat dibatalkan.`}
+        pending={deleteStage.isPending}
+      />
     </div>
   );
 }
@@ -1074,10 +1200,11 @@ function FieldsEditor({
   const [items, setItems] = useState(fields);
   const [showAdd, setShowAdd] = useState(false);
   const [editField, setEditField] = useState<FormField | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<FormField | null>(null);
 
   const deleteField = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/engine/permit-types/${izinKey}/fields/${id}/`),
-    onSuccess: () => { onRefresh(); toast.success("Field dihapus."); },
+    onSuccess: () => { onRefresh(); setConfirmDelete(null); toast.success("Field dihapus."); },
     onError: () => toast.error("Gagal menghapus field."),
   });
 
@@ -1124,7 +1251,8 @@ function FieldsEditor({
                 <Edit3 className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={() => deleteField.mutate(field.id)}
+                onClick={() => setConfirmDelete(field)}
+                aria-label={`Hapus field ${field.label}`}
                 className="p-1 text-ink-muted hover:text-danger transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -1152,6 +1280,14 @@ function FieldsEditor({
           onSuccess={onRefresh}
         />
       )}
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => confirmDelete && deleteField.mutate(confirmDelete.id)}
+        title="Hapus field?"
+        body={`Field "${confirmDelete?.label ?? ""}" akan dihapus dari formulir izin ini. Pengajuan yang sedang berjalan tidak terpengaruh. Tindakan ini tidak dapat dibatalkan.`}
+        pending={deleteField.isPending}
+      />
     </div>
   );
 }
@@ -1171,10 +1307,11 @@ function DocsEditor({
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editDoc, setEditDoc] = useState<DocumentRequirement | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<DocumentRequirement | null>(null);
 
   const deleteDoc = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/engine/permit-types/${izinKey}/doc-requirements/${id}/`),
-    onSuccess: () => { onRefresh(); toast.success("Persyaratan dihapus."); },
+    onSuccess: () => { onRefresh(); setConfirmDelete(null); toast.success("Persyaratan dihapus."); },
     onError: () => toast.error("Gagal menghapus persyaratan."),
   });
 
@@ -1223,7 +1360,8 @@ function DocsEditor({
                 <Edit3 className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={() => deleteDoc.mutate(doc.id)}
+                onClick={() => setConfirmDelete(doc)}
+                aria-label={`Hapus persyaratan ${doc.title}`}
                 className="p-1 text-ink-muted hover:text-danger transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -1253,6 +1391,14 @@ function DocsEditor({
           onSuccess={onRefresh}
         />
       )}
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => confirmDelete && deleteDoc.mutate(confirmDelete.id)}
+        title="Hapus persyaratan?"
+        body={`Persyaratan "${confirmDelete?.title ?? ""}" akan dihapus dari izin ini. Tindakan ini tidak dapat dibatalkan.`}
+        pending={deleteDoc.isPending}
+      />
     </div>
   );
 }

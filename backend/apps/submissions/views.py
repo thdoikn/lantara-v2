@@ -89,15 +89,17 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             stage_entered_at=timezone.now(),
         )
 
-        # Move to first verifier stage (skip applicant-role stages)
-        stages = list(pt.stages.order_by("order"))
+        # Move to first verifier stage (skip applicant-role stages).
+        # Read from the just-frozen snapshot so routing matches what the
+        # applicant submitted against.
+        stages = sub.get_workflow_stages()
         first_stage = next(
-            (s for s in stages if s.actor_role != "applicant"),
+            (s for s in stages if s.get("actor_role") != "applicant"),
             stages[0] if stages else None,
         )
         if first_stage:
-            sub.current_stage_key = first_stage.key
-            sub.current_stage_order = first_stage.order
+            sub.current_stage_key = first_stage["key"]
+            sub.current_stage_order = first_stage["order"]
             sub.status = Submission.Status.IN_REVIEW
 
         compute_submission_sla(sub)
@@ -146,7 +148,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         notes = data.get("notes", "")
 
         if act == "approve":
-            self._do_approve(sub, request.user, notes)
+            err = self._do_approve(sub, request.user, notes)
+            if err is not None:
+                return err
         elif act in ("revise", "request_revision"):
             self._do_revise(sub, request.user, notes, data.get("revision_fields", []))
         elif act == "reject":
@@ -189,27 +193,39 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         from_stage = sub.current_stage_key
         from_status = sub.status
 
-        stages = list(sub.permit_type.stages.order_by("order"))
-        current_idx = next((i for i, s in enumerate(stages) if s.key == sub.current_stage_key), -1)
+        # Advance along the FROZEN workflow snapshot, never the live config —
+        # an admin editing stages must not misroute this in-flight submission.
+        stages = sub.get_workflow_stages()
+        current_idx = next(
+            (i for i, s in enumerate(stages) if s.get("key") == sub.current_stage_key), -1
+        )
         current_stage = stages[current_idx] if current_idx >= 0 else None
 
         # Skip any following applicant-role stages automatically
         next_idx = current_idx + 1
-        while next_idx < len(stages) and stages[next_idx].actor_role == "applicant":
+        while next_idx < len(stages) and stages[next_idx].get("actor_role") == "applicant":
             next_idx += 1
+
+        if current_stage is None:
+            # Current stage isn't in this submission's frozen workflow — a data
+            # integrity problem. Refuse to guess (never silently auto-approve).
+            return Response(
+                {"detail": "Tahap saat ini tidak ditemukan pada alur pengajuan ini."},
+                status=status.HTTP_409_CONFLICT,
+            )
 
         if next_idx < len(stages):
             next_stage = stages[next_idx]
-            sub.current_stage_key = next_stage.key
-            sub.current_stage_order = next_stage.order
+            sub.current_stage_key = next_stage["key"]
+            sub.current_stage_order = next_stage["order"]
             sub.stage_entered_at = timezone.now()
             sub.status = self._STAGE_TYPE_STATUS.get(
-                next_stage.stage_type, Submission.Status.IN_REVIEW
+                next_stage["stage_type"], Submission.Status.IN_REVIEW
             )
         else:
             # No more stages — terminal status depends on the stage we just completed
             sub.status = self._STAGE_COMPLETION_STATUS.get(
-                current_stage.stage_type if current_stage else None,
+                current_stage["stage_type"],
                 Submission.Status.APPROVED,
             )
 

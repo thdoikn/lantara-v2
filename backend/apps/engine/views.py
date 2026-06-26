@@ -1,4 +1,5 @@
-from django.db.models import Count, Q
+from django.db import transaction
+from django.db.models import Count, F, Max, Q
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
@@ -72,6 +73,75 @@ class PermitTypeViewSet(viewsets.ReadOnlyModelViewSet):
 # ── Admin Engine Builder ViewSets (staff-only write) ──────────────────────────
 
 
+# Stage types that legitimately end a workflow.
+_TERMINAL_STAGE_TYPES = {
+    WorkflowStage.StageType.PUBLISH,
+    WorkflowStage.StageType.COLLECTION,
+}
+
+
+# During a reorder, targeted rows are shifted into a temporary high band so no
+# intermediate write collides with the unique (permit_type, order), which Postgres
+# enforces per-statement (not deferred). `order` is a PositiveSmallIntegerField
+# (smallint, max 32767), so the band must clear realistic stage/field counts yet
+# stay well under the ceiling.
+_REORDER_OFFSET = 10_000
+
+
+def _apply_reorder(model, items) -> None:
+    """Collision-safe bulk reorder for models with a unique (permit_type, order).
+
+    Two-phase inside one transaction: shift the targeted rows into a high band
+    first, then assign final orders. The builder always sends the full ordered
+    list for the permit, so finals occupy a contiguous low range with nothing to
+    collide against.
+    """
+    ids = [item["id"] for item in items]
+    with transaction.atomic():
+        model.objects.filter(id__in=ids).update(order=F("order") + _REORDER_OFFSET)
+        for item in items:
+            model.objects.filter(id=item["id"]).update(order=item["order"])
+
+
+def _next_order(model, permit) -> int:
+    """Next free order value for a new row (max+1), assigned server-side."""
+    current_max = model.objects.filter(permit_type=permit).aggregate(m=Max("order"))["m"]
+    return (current_max or 0) + 1
+
+
+def _publish_readiness_errors(pt: PermitType) -> dict:
+    """Validate an izin is operable before it can be published (F3).
+
+    A published izin that citizens submit into must be able to progress to a
+    terminal state — otherwise submissions get stuck or (pre-F1) silently
+    auto-approve. Returns a {field: message} dict; empty == ready.
+    """
+    errors: dict = {}
+
+    stages = list(pt.stages.all())
+    if not stages:
+        errors["stages"] = "Tambahkan minimal satu tahap alur kerja."
+    else:
+        has_terminal = any(s.is_terminal or s.stage_type in _TERMINAL_STAGE_TYPES for s in stages)
+        if not has_terminal:
+            errors["stages_terminal"] = (
+                "Alur kerja harus punya tahap akhir (penerbitan/pengambilan "
+                "atau ditandai sebagai tahap terminal)."
+            )
+        if not any(s.actor_role and s.actor_role != "applicant" for s in stages):
+            errors["stages_actor"] = (
+                "Minimal satu tahap harus memiliki aktor verifikator (actor_role)."
+            )
+
+    if not pt.sla_days or pt.sla_days <= 0:
+        errors["sla_days"] = "Jangka waktu pelayanan (sla_days) harus lebih dari 0."
+
+    if not pt.form_fields.exists():
+        errors["form_fields"] = "Tambahkan minimal satu field formulir."
+
+    return errors
+
+
 class AdminSektorViewSet(viewsets.ModelViewSet):
     """Admin CRUD for Sektor. Superadmin only."""
 
@@ -117,6 +187,14 @@ class AdminPermitTypeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="publish")
     def publish(self, request, key=None):
         pt = self.get_object()
+
+        errors = _publish_readiness_errors(pt)
+        if errors:
+            return Response(
+                {"detail": "Izin belum siap diterbitkan.", "errors": errors},
+                status=400,
+            )
+
         pt.is_published = True
         pt.save(update_fields=["is_published"])
         return Response(PermitTypeListSerializer(pt).data)
@@ -141,7 +219,10 @@ class AdminStageViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         permit = PermitType.objects.get(key=self.kwargs["permit_key"])
-        serializer.save(permit_type=permit)
+        order = serializer.validated_data.get("order")
+        if not order:
+            order = _next_order(WorkflowStage, permit)
+        serializer.save(permit_type=permit, order=order)
         permit.schema_version += 1
         permit.save(update_fields=["schema_version"])
 
@@ -154,8 +235,7 @@ class AdminStageViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"], url_path="reorder")
     def reorder(self, request, permit_key=None):
         """Bulk reorder: body = [{"id": "...", "order": N}, ...]"""
-        for item in request.data:
-            WorkflowStage.objects.filter(id=item["id"]).update(order=item["order"])
+        _apply_reorder(WorkflowStage, request.data)
         permit = PermitType.objects.get(key=permit_key)
         permit.schema_version += 1
         permit.save(update_fields=["schema_version"])
@@ -174,7 +254,10 @@ class AdminFormFieldViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         permit = PermitType.objects.get(key=self.kwargs["permit_key"])
-        serializer.save(permit_type=permit)
+        order = serializer.validated_data.get("order")
+        if not order:
+            order = _next_order(FormField, permit)
+        serializer.save(permit_type=permit, order=order)
         permit.schema_version += 1
         permit.save(update_fields=["schema_version"])
 
@@ -186,8 +269,7 @@ class AdminFormFieldViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="reorder")
     def reorder(self, request, permit_key=None):
-        for item in request.data:
-            FormField.objects.filter(id=item["id"]).update(order=item["order"])
+        _apply_reorder(FormField, request.data)
         permit = PermitType.objects.get(key=permit_key)
         permit.schema_version += 1
         permit.save(update_fields=["schema_version"])

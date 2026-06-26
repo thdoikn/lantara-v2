@@ -290,7 +290,17 @@ export default function IzinListPage() {
       qc.invalidateQueries({ queryKey: ["admin-izin-list", sektorKey] });
       toast.success(v.published ? "Izin disembunyikan dari publik." : "Izin dipublikasikan.");
     },
-    onError: () => toast.error("Gagal mengubah status publikasi."),
+    onError: (err: unknown) => {
+      // Surface the publish-readiness gate (backend returns { detail, errors }).
+      const data = (err as { response?: { data?: { detail?: string; errors?: Record<string, string> } } })
+        ?.response?.data;
+      const reasons = data?.errors ? Object.values(data.errors) : [];
+      if (reasons.length) {
+        toast.error(`${data?.detail ?? "Izin belum siap diterbitkan."} ${reasons.join(" ")}`);
+      } else {
+        toast.error("Gagal mengubah status publikasi.");
+      }
+    },
   });
 
   if (isLoading) {

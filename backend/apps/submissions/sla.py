@@ -45,21 +45,18 @@ def compute_submission_sla(submission) -> None:
     if not submission.submitted_at:
         return
 
-    pt = submission.permit_type
-    submission.sla_due_at = add_working_days(submission.submitted_at, pt.sla_days)
+    # Read service time and per-stage SLA from the submission's frozen snapshot
+    # so live config edits never reshape an in-flight submission's SLA.
+    submission.sla_due_at = add_working_days(submission.submitted_at, submission.get_sla_days())
 
     # Per-stage SLA
     if submission.current_stage_key:
-        try:
-            from apps.engine.models import WorkflowStage
-
-            stage = WorkflowStage.objects.get(permit_type=pt, key=submission.current_stage_key)
-            if stage.sla_hours and submission.stage_entered_at:
-                submission.stage_sla_due_at = add_working_hours(
-                    submission.stage_entered_at, stage.sla_hours
-                )
-        except Exception:
-            pass
+        stage = submission.get_current_stage()
+        stage_sla_hours = (stage or {}).get("sla_hours") or 0
+        if stage_sla_hours and submission.stage_entered_at:
+            submission.stage_sla_due_at = add_working_hours(
+                submission.stage_entered_at, stage_sla_hours
+            )
 
     # Flag risk/breach
     now = timezone.now()

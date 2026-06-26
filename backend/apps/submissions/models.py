@@ -111,6 +111,52 @@ class Submission(TimestampedModel):
             self.reference_number = _ref_number(self.permit_type.sektor.key, self.permit_type.key)
         super().save(*args, **kwargs)
 
+    # ── Snapshot-driven workflow (immutable to live config edits) ────────────
+    # In-flight submissions MUST advance along the workflow that was frozen onto
+    # them at submit time (CLAUDE.md §3.2). Never read the live WorkflowStage
+    # table for an in-flight submission — an admin reordering/deleting a stage
+    # would otherwise misroute or silently auto-approve it.
+
+    def get_workflow_stages(self) -> list[dict]:
+        """Frozen stage list (ordered) from the submit-time snapshot.
+
+        Each item is a plain dict matching WorkflowStageSerializer
+        (key, order, name, stage_type, actor_role, sla_hours,
+        requires_site_visit, allowed_actions, is_terminal, instructions).
+        Falls back to the live config only for legacy submissions that have no
+        snapshot (e.g. created before this field existed)."""
+        snap = self.schema_snapshot or {}
+        stages = snap.get("stages")
+        if stages:
+            return sorted(stages, key=lambda s: s.get("order", 0))
+        # Legacy fallback: no snapshot recorded.
+        return [
+            {
+                "key": s.key,
+                "order": s.order,
+                "name": s.name,
+                "stage_type": s.stage_type,
+                "actor_role": s.actor_role,
+                "sla_hours": s.sla_hours,
+                "requires_site_visit": s.requires_site_visit,
+                "allowed_actions": s.allowed_actions,
+                "is_terminal": s.is_terminal,
+            }
+            for s in self.permit_type.stages.order_by("order")
+        ]
+
+    def get_current_stage(self) -> dict | None:
+        """The frozen stage dict matching current_stage_key, or None."""
+        return next(
+            (s for s in self.get_workflow_stages() if s.get("key") == self.current_stage_key),
+            None,
+        )
+
+    def get_sla_days(self) -> int:
+        """Service-time (days) frozen at submit time; falls back to live."""
+        snap = self.schema_snapshot or {}
+        return snap.get("sla_days") or self.permit_type.sla_days
+
 
 class SubmissionRevisionField(UUIDModel):
     """Tracks which specific fields/docs are flagged for revision."""
