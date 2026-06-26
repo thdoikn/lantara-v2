@@ -2,12 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import {
   Clock, FileText, CheckCircle2, ChevronRight,
-  ShieldCheck, Scale, AlertCircle, Loader2, Users, Plus,
+  ShieldCheck, Scale, AlertCircle, Users, Plus,
   Sparkles, MessageCircle, CreditCard, Award, ExternalLink,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import PublicNav from "@/components/PublicNav";
 import BatangBanyu from "@/components/BatangBanyu";
+import LantaraLoader from "@/components/LantaraLoader";
 import { useAuthStore } from "@/lib/auth";
 import api from "@/lib/api";
 import type { PermitType } from "@/types";
@@ -44,9 +45,7 @@ export default function PermitDetailPage() {
     return (
       <main className="min-h-screen bg-khatulistiwa-950">
         <PublicNav />
-        <div className="flex items-center justify-center pt-40">
-          <Loader2 className="h-8 w-8 animate-spin text-khatulistiwa-400" aria-label="Memuat" />
-        </div>
+        <LantaraLoader variant="inline" dark />
       </main>
     );
   }

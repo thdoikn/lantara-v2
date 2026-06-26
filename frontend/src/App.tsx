@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { Suspense, lazy, useEffect, useState } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
+import LantaraLoader from "./components/LantaraLoader";
 import { Toaster } from "./components/Toaster";
 import api from "./lib/api";
 import { useAuthStore, getAccessToken, clearTokens } from "./lib/auth";
@@ -44,14 +45,6 @@ const AdminUsersPage = lazy(() => import("./features/admin/AdminUsersPage"));
 // RDTR (Phase 3)
 const RDTRPage = lazy(() => import("./features/rdtr/RDTRPage"));
 
-function LoadingSpinner() {
-  return (
-    <div className="flex h-screen items-center justify-center bg-background">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-    </div>
-  );
-}
-
 export default function App() {
   const setUser = useAuthStore((s) => s.setUser);
   // Rehydrate the signed-in user on every app load. Without this, a full page
@@ -75,10 +68,10 @@ export default function App() {
       .finally(() => setReady(true));
   }, [setUser]);
 
-  if (!ready) return <LoadingSpinner />;
+  if (!ready) return <LantaraLoader />;
 
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<LantaraLoader />}>
       <Toaster />
       <Routes>
         {/* ── Public ── */}
