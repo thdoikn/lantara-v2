@@ -18,6 +18,14 @@ import BatangBanyu from "@/components/BatangBanyu";
 // Easing token from globals.css (--ease-out-quint).
 const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] as const;
 
+// Same royal-blue gradient as the landing hero (LandingPage HERO_BG) so the
+// loader stays visually aligned with the app's signature surface.
+const ROYAL_BG = `
+  radial-gradient(ellipse 60% 50% at 20% 50%, rgba(24,80,136,0.30) 0%, transparent 60%),
+  radial-gradient(ellipse 50% 40% at 80% 30%, rgba(24,80,136,0.18) 0%, transparent 55%),
+  radial-gradient(ellipse 80% 60% at 50% 110%, rgba(24,80,136,0.35) 0%, transparent 65%),
+  #04182A`;
+
 export interface LantaraLoaderProps {
   variant?: "page" | "inline";
   /** Render for a dark background surface (light label text). */
@@ -33,14 +41,19 @@ export default function LantaraLoader({
 }: LantaraLoaderProps) {
   const reduceMotion = useReducedMotion();
 
+  // The full-page loader paints the royal hero gradient; the inline loader
+  // inherits its parent surface (transparent). Either way, dark backdrop ⇒
+  // light label text.
+  const onDark = variant === "page" || dark;
   const wrapperClass =
     variant === "page"
-      ? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-surface"
+      ? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-6"
       : "flex w-full flex-col items-center justify-center gap-6 py-24";
 
   return (
     <div
       className={wrapperClass}
+      style={variant === "page" ? { background: ROYAL_BG } : undefined}
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -86,7 +99,7 @@ export default function LantaraLoader({
       <p
         className={
           "font-display text-sm font-medium tracking-wide " +
-          (dark ? "text-khatulistiwa-100/80" : "text-ink-muted")
+          (onDark ? "text-khatulistiwa-100/80" : "text-ink-muted")
         }
       >
         {label}
