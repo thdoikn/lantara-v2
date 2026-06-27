@@ -145,14 +145,22 @@ export default function VerifierQueue() {
         if (e.key === "Escape") (document.activeElement as HTMLElement)?.blur();
         return;
       }
+      const cur = filtered[selected];
       if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault(); setSelected((s) => Math.min(s + 1, filtered.length - 1));
       } else if (e.key === "k" || e.key === "ArrowUp") {
         e.preventDefault(); setSelected((s) => Math.max(s - 1, 0));
-      } else if (e.key === "Enter" && filtered[selected]) {
-        e.preventDefault(); navigate(`/verifier/submissions/${filtered[selected].id}`);
+      } else if (e.key === "Enter" && cur) {
+        e.preventDefault(); navigate(`/verifier/submissions/${cur.id}`);
       } else if (e.key === "f") {
         e.preventDefault(); searchRef.current?.focus();
+      } else if (e.key === "x" && cur) {
+        e.preventDefault(); togglePick(cur.id);
+      } else if ((e.key === "a" || e.key === "r") && cur) {
+        // Act on the current selection set, or the row under the cursor if none picked.
+        e.preventDefault();
+        setPicked((prev) => (prev.size > 0 ? prev : new Set([cur.id])));
+        setBulkType(e.key === "a" ? "approve" : "request_revision");
       }
     }
     window.addEventListener("keydown", onKey);
@@ -248,6 +256,9 @@ export default function VerifierQueue() {
         <div className="hidden sm:flex items-center gap-2 text-[11px] text-khatulistiwa-400">
           <span className="flex items-center gap-1"><Kbd>j</Kbd><Kbd>k</Kbd> pilih</span>
           <span className="flex items-center gap-1"><Kbd>↵</Kbd> buka</span>
+          <span className="flex items-center gap-1"><Kbd>x</Kbd> tandai</span>
+          <span className="flex items-center gap-1"><Kbd>a</Kbd> setujui</span>
+          <span className="flex items-center gap-1"><Kbd>r</Kbd> revisi</span>
           <span className="flex items-center gap-1"><Kbd>f</Kbd> cari</span>
         </div>
       </div>

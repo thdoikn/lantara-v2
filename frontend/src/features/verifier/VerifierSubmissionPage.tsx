@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
 import { format, parseISO } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft, AlertTriangle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft, AlertTriangle, Clock, ArrowRightCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
-import type { Submission, AuditEntry, DocumentRequirement } from "@/types";
+import type { Submission, AuditEntry, DocumentRequirement, PaginatedResponse } from "@/types";
 import DocumentUploadSection from "../applicant/DocumentUploadSection";
 
 const ACTION_TOAST: Record<string, string> = {
@@ -338,6 +338,26 @@ export default function VerifierSubmissionPage() {
     [actMutation]
   );
 
+  // Find the submission that follows this one in any cached verifier queue, so
+  // "approve & next" keeps the verifier moving without a trip back to the list.
+  const nextQueuedId = useCallback((): string | null => {
+    const caches = qc.getQueriesData<PaginatedResponse<Submission>>({ queryKey: ["verifier-queue"] });
+    for (const [, data] of caches) {
+      const list = data?.results ?? [];
+      const idx = list.findIndex((s) => s.id === id);
+      if (idx !== -1) return (list[idx + 1] ?? list[idx - 1])?.id ?? null;
+    }
+    return null;
+  }, [qc, id]);
+
+  const approveAndNext = useCallback(() => {
+    const next = nextQueuedId();
+    actMutation.mutate(
+      { action: "approve" },
+      { onSuccess: () => navigate(next ? `/verifier/submissions/${next}` : "/verifier") },
+    );
+  }, [actMutation, navigate, nextQueuedId]);
+
   useKeyboardShortcut("ArrowLeft", () => navigate("/verifier"));
 
   if (isLoading) {
@@ -471,6 +491,24 @@ export default function VerifierSubmissionPage() {
 
         {/* Right: actions + SLA */}
         <div className="space-y-4">
+          {(() => {
+            const stageType =
+              submission.schema_snapshot?.stages?.find((s) => s.key === submission.current_stage_key)?.stage_type ??
+              "verification";
+            const canApprove = (ACTIONS_FOR_STAGE[stageType] ?? ACTIONS_FOR_STAGE.verification).includes("approve");
+            const isTerminal = ["approved", "collected", "rejected"].includes(submission.status);
+            if (!canApprove || isTerminal) return null;
+            return (
+              <button
+                onClick={approveAndNext}
+                disabled={actMutation.isPending}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-4 py-3 text-sm font-display font-bold text-white shadow-md shadow-emerald-600/20 transition-colors disabled:opacity-60"
+              >
+                <ArrowRightCircle className="h-4 w-4" aria-hidden="true" />
+                Setujui &amp; Berikutnya
+              </button>
+            );
+          })()}
           <ActionPanel
             submission={submission}
             stageType={
