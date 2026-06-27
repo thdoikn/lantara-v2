@@ -10,12 +10,47 @@ import type { ReactElement } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Reorder } from "framer-motion";
-import { GripVertical, Plus, Trash2, Edit3, X, Check, Loader2, AlertTriangle } from "lucide-react";
+import { GripVertical, Plus, Trash2, Edit3, X, Check, Loader2, AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
 import type { FormField, WorkflowStage, DocumentRequirement, PermitTypeVersion } from "@/types";
 import DynamicForm from "@/features/applicant/DynamicForm";
+
+/** Move an item between positions (returns the array unchanged if out of bounds). */
+function moveItem<T>(arr: T[], from: number, to: number): T[] {
+  if (to < 0 || to >= arr.length) return arr;
+  const next = [...arr];
+  const [it] = next.splice(from, 1);
+  next.splice(to, 0, it);
+  return next;
+}
+
+/** Keyboard-accessible reorder controls — a fallback for drag-only Reorder. */
+function ReorderButtons({ idx, count, onMove }: { idx: number; count: number; onMove: (to: number) => void }) {
+  return (
+    <div className="flex flex-col shrink-0">
+      <button
+        type="button"
+        disabled={idx === 0}
+        onClick={() => onMove(idx - 1)}
+        aria-label="Pindahkan ke atas"
+        className="p-0.5 text-ink-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        <ChevronUp className="w-3.5 h-3.5" />
+      </button>
+      <button
+        type="button"
+        disabled={idx === count - 1}
+        onClick={() => onMove(idx + 1)}
+        aria-label="Pindahkan ke bawah"
+        className="p-0.5 text-ink-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        <ChevronDown className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
 
 interface PermitTypeFull {
   id: string;
@@ -1341,7 +1376,7 @@ function StagesEditor({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs text-ink-muted font-medium uppercase tracking-wide">Drag untuk mengubah urutan</p>
+        <p className="text-xs text-ink-muted font-medium uppercase tracking-wide">Drag atau tombol panah untuk mengubah urutan</p>
         <button
           onClick={() => setShowAdd(true)}
           className="flex items-center gap-1.5 text-xs text-royal-600 font-semibold hover:underline"
@@ -1352,13 +1387,14 @@ function StagesEditor({
       </div>
 
       <Reorder.Group axis="y" values={items} onReorder={handleReorderEnd} className="space-y-2">
-        {items.map((stage) => (
+        {items.map((stage, idx) => (
           <Reorder.Item
             key={stage.id}
             value={stage}
             className="flex items-center gap-3 bg-white rounded-xl ring-1 ring-black/[0.06] shadow-sm px-3 py-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
           >
-            <GripVertical className="w-4 h-4 text-ink-muted shrink-0" />
+            <GripVertical className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+            <ReorderButtons idx={idx} count={items.length} onMove={(to) => handleReorderEnd(moveItem(items, idx, to))} />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{stage.name}</p>
               <p className="text-xs text-ink-muted mt-0.5">
@@ -1455,7 +1491,7 @@ function FieldsEditor({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs text-ink-muted font-medium uppercase tracking-wide">Drag untuk mengubah urutan</p>
+        <p className="text-xs text-ink-muted font-medium uppercase tracking-wide">Drag atau tombol panah untuk mengubah urutan</p>
         <button
           onClick={() => setShowAdd(true)}
           className="flex items-center gap-1.5 text-xs text-royal-600 font-semibold hover:underline"
@@ -1466,13 +1502,14 @@ function FieldsEditor({
       </div>
 
       <Reorder.Group axis="y" values={items} onReorder={handleReorderEnd} className="space-y-2">
-        {items.map((field) => (
+        {items.map((field, idx) => (
           <Reorder.Item
             key={field.id}
             value={field}
             className="flex items-center gap-3 bg-white rounded-xl ring-1 ring-black/[0.06] shadow-sm px-3 py-2.5 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
           >
-            <GripVertical className="w-4 h-4 text-ink-muted shrink-0" />
+            <GripVertical className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+            <ReorderButtons idx={idx} count={items.length} onMove={(to) => handleReorderEnd(moveItem(items, idx, to))} />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{field.label}</p>
               <p className="text-xs text-ink-muted mt-0.5">
@@ -1574,7 +1611,7 @@ function DocsEditor({
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs text-ink-muted font-medium uppercase tracking-wide">
-          Drag untuk mengubah urutan · {items.length} persyaratan
+          Drag atau tombol panah untuk mengubah urutan · {items.length} persyaratan
         </p>
         <button
           onClick={() => setShowAdd(true)}
@@ -1586,13 +1623,14 @@ function DocsEditor({
       </div>
 
       <Reorder.Group axis="y" values={items} onReorder={handleReorderEnd} className="space-y-2">
-        {items.map((doc) => (
+        {items.map((doc, idx) => (
           <Reorder.Item
             key={doc.id}
             value={doc}
             className="flex items-center gap-3 bg-white rounded-xl ring-1 ring-black/[0.06] shadow-sm px-3 py-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
           >
-            <GripVertical className="w-4 h-4 text-ink-muted shrink-0" />
+            <GripVertical className="w-4 h-4 text-ink-muted shrink-0" aria-hidden="true" />
+            <ReorderButtons idx={idx} count={items.length} onMove={(to) => handleReorderEnd(moveItem(items, idx, to))} />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{doc.title}</p>
               <p className="text-xs text-ink-muted mt-0.5">
