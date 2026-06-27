@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, CheckCircle2, XCircle, Clock, Trash2, File as FileIcon, ExternalLink } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, Trash2, File as FileIcon, ExternalLink, RotateCw, X } from "lucide-react";
+import axios from "axios";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
@@ -29,6 +30,9 @@ export default function DocumentUploadSection({ submissionId, requirements, read
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [viewing, setViewing] = useState<ViewerDoc | null>(null);
+  // Last file that failed per requirement, kept so the user can retry in one click.
+  const [failed, setFailed] = useState<Record<string, File>>({});
+  const controllers = useRef<Record<string, AbortController>>({});
 
   const { data: docs } = useQuery<UploadedDocument[]>({
     queryKey: ["submissions", submissionId, "documents"],
@@ -60,33 +64,78 @@ export default function DocumentUploadSection({ submissionId, requirements, read
 
     setUploading((p) => ({ ...p, [req.key]: true }));
     setProgress((p) => ({ ...p, [req.key]: 0 }));
+    setFailed((p) => { const n = { ...p }; delete n[req.key]; return n; });
+    const controller = new AbortController();
+    controllers.current[req.key] = controller;
     try {
       const fd = new FormData();
       fd.append("requirement_key", req.key);
       fd.append("file", file);
       await api.post(`/submissions/${submissionId}/documents/`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
+        signal: controller.signal,
         onUploadProgress: (e) => {
           if (e.total) setProgress((p) => ({ ...p, [req.key]: Math.round((e.loaded / e.total!) * 100) }));
         },
       });
       qc.invalidateQueries({ queryKey: ["submissions", submissionId, "documents"] });
       toast.success(`"${req.title}" berhasil diunggah.`);
-    } catch {
-      toast.error(`Gagal mengunggah "${req.title}". Coba lagi.`);
+    } catch (err) {
+      if (axios.isCancel(err)) {
+        toast.info(`Unggahan "${req.title}" dibatalkan.`);
+      } else {
+        setFailed((p) => ({ ...p, [req.key]: file }));
+        toast.error(`Gagal mengunggah "${req.title}". Coba lagi.`);
+      }
     } finally {
+      delete controllers.current[req.key];
       setUploading((p) => ({ ...p, [req.key]: false }));
       setProgress((p) => { const n = { ...p }; delete n[req.key]; return n; });
     }
+  }
+
+  function cancelUpload(reqKey: string) {
+    controllers.current[reqKey]?.abort();
   }
 
   function getUploadedDoc(reqKey: string) {
     return docs?.find((d) => d.requirement_key === reqKey && d.is_active);
   }
 
+  const requiredReqs = requirements.filter((r) => r.required);
+  const requiredDone = requiredReqs.filter((r) => getUploadedDoc(r.key)).length;
+  const requiredPct = requiredReqs.length ? Math.round((requiredDone / requiredReqs.length) * 100) : 100;
+
   return (
     <div className="space-y-4">
-      <h2 className="text-khatulistiwa-900 font-display font-bold text-sm">Persyaratan Dokumen</h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-khatulistiwa-900 font-display font-bold text-sm">Persyaratan Dokumen</h2>
+        {requiredReqs.length > 0 && (
+          <span
+            className={cn(
+              "text-xs font-semibold",
+              requiredDone === requiredReqs.length ? "text-emerald-600" : "text-khatulistiwa-500",
+            )}
+          >
+            {requiredDone}/{requiredReqs.length} dokumen wajib
+          </span>
+        )}
+      </div>
+      {requiredReqs.length > 0 && (
+        <div
+          className="h-1.5 rounded-full bg-khatulistiwa-100 overflow-hidden"
+          role="progressbar"
+          aria-valuenow={requiredPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Progres unggah dokumen wajib"
+        >
+          <div
+            className={cn("h-full transition-[width] duration-300", requiredDone === requiredReqs.length ? "bg-emerald-500" : "bg-khatulistiwa-500")}
+            style={{ width: `${requiredPct}%` }}
+          />
+        </div>
+      )}
       {requirements.length === 0 && (
         <p className="text-sm text-buana">Tidak ada dokumen yang diperlukan untuk jenis izin ini.</p>
       )}
@@ -188,7 +237,8 @@ export default function DocumentUploadSection({ submissionId, requirements, read
                 <input
                   type="file"
                   accept={(req.allowed_types ?? []).map((t) => `.${t}`).join(",")}
-                  className="sr-only"
+                  className="sr-only peer"
+                  aria-label={`Unggah dokumen ${req.title}`}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) handleUpload(req, file);
@@ -197,9 +247,11 @@ export default function DocumentUploadSection({ submissionId, requirements, read
                 />
                 <div
                   className={cn(
-                    "flex flex-col items-center justify-center gap-2 border-2 rounded-xl px-4 py-4 text-sm transition-all",
+                    "flex flex-col items-center justify-center gap-2 border-2 rounded-xl px-4 py-4 text-sm transition-all peer-focus-visible:ring-2 peer-focus-visible:ring-khatulistiwa-400",
                     dragOver === req.key
                       ? "border-khatulistiwa-400 border-dashed bg-khatulistiwa-50 text-khatulistiwa-600"
+                      : failed[req.key]
+                      ? "border-red-200 bg-red-50/60 hover:border-red-300 text-red-500"
                       : "border-khatulistiwa-100 bg-khatulistiwa-50/60 hover:border-khatulistiwa-300 hover:bg-khatulistiwa-50 text-khatulistiwa-400",
                     isUploading && "pointer-events-none"
                   )}
@@ -213,6 +265,20 @@ export default function DocumentUploadSection({ submissionId, requirements, read
                           style={{ width: `${progress[req.key] ?? 0}%` }}
                         />
                       </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); cancelUpload(req.key); }}
+                        className="pointer-events-auto inline-flex items-center gap-1 text-xs font-semibold text-khatulistiwa-500 hover:text-red-600"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden="true" /> Batalkan
+                      </button>
+                    </>
+                  ) : failed[req.key] ? (
+                    <>
+                      <span className="font-medium text-red-600">Unggahan gagal</span>
+                      <span className="pointer-events-auto inline-flex items-center gap-1 text-xs font-semibold text-khatulistiwa-600">
+                        <RotateCw className="h-3.5 w-3.5" aria-hidden="true" /> Klik untuk coba lagi
+                      </span>
                     </>
                   ) : (
                     <>
