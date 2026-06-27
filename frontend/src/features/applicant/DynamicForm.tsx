@@ -118,6 +118,8 @@ interface Props {
   isSubmitting?: boolean;
   /** Override the submit button label */
   submitLabel?: string;
+  /** Fired (debounced upstream) on every field change — used for draft autosave. */
+  onChange?: (values: Record<string, unknown>) => void;
 }
 
 export default function DynamicForm({
@@ -127,6 +129,7 @@ export default function DynamicForm({
   onSubmit,
   isSubmitting,
   submitLabel,
+  onChange,
 }: Props) {
   const fields = useMemo(
     () => fieldsProp ?? permitType?.form_fields ?? [],
@@ -150,6 +153,13 @@ export default function DynamicForm({
   useEffect(() => {
     if (defaultValues) reset(defaultValues);
   }, [defaultValues, reset]);
+
+  // Stream value changes upstream for draft autosave (caller debounces).
+  useEffect(() => {
+    if (!onChange) return;
+    const sub = watch((values) => onChange(values as Record<string, unknown>));
+    return () => sub.unsubscribe();
+  }, [watch, onChange]);
 
   const watchAll = watch();
 
