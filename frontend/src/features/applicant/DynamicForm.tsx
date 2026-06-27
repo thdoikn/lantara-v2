@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import type { FormField, DocumentRequirement, PermitType } from "@/types";
 import { cn } from "@/lib/cn";
 
@@ -174,6 +174,45 @@ function CharCount({ value, max }: { value: unknown; max?: number }) {
 
 const idCurrency = new Intl.NumberFormat("id-ID");
 
+/** Always-visible format hint per field type (shown before any error). */
+function typeHint(f: FormField): string | null {
+  const vj = f.validation_json ?? {};
+  switch (f.field_type) {
+    case "nik":
+      return `${vj.length ?? 16} digit angka`;
+    case "npwp":
+      return "15 atau 16 digit angka";
+    case "phone":
+    case "tel":
+      return "Nomor HP — contoh: 081234567890";
+    case "geo":
+    case "map_point":
+      return "Lintang,Bujur — mis. -6.2,106.8";
+    case "number":
+      if (typeof vj.min === "number" && typeof vj.max === "number") return `Antara ${vj.min}–${vj.max}`;
+      if (typeof vj.min === "number") return `Minimal ${vj.min}`;
+      if (typeof vj.max === "number") return `Maksimal ${vj.max}`;
+      return null;
+    default:
+      return null;
+  }
+}
+
+/** Live digit-count progress for fixed-length identifiers (NIK / NPWP). */
+function digitTarget(f: FormField): number | null {
+  if (f.field_type === "nik") return f.validation_json?.length ?? 16;
+  if (f.field_type === "npwp") return 16; // accepts 15 or 16 — show progress to 16
+  return null;
+}
+
+/** Normalize an Indonesian mobile number to the local 08… form. */
+function normalizePhone(v: string): string {
+  const cleaned = v.replace(/[^\d+]/g, "");
+  if (cleaned.startsWith("+62")) return "0" + cleaned.slice(3);
+  if (cleaned.startsWith("62")) return "0" + cleaned.slice(2);
+  return cleaned;
+}
+
 // ── DynamicForm component ───────────────────────────────────────────────────
 
 interface Props {
@@ -213,10 +252,14 @@ export default function DynamicForm({
     reset,
     watch,
     setFocus,
-    formState: { errors },
+    setValue,
+    formState: { errors, touchedFields },
   } = useForm({
     resolver: zodResolver(zodSchema),
     defaultValues: defaultValues ?? {},
+    // Validate when a field loses focus, then live as the user fixes it — so an
+    // error never appears mid-typing, only after they've left the field.
+    mode: "onTouched",
   });
 
   useEffect(() => {
@@ -297,48 +340,97 @@ export default function DynamicForm({
         return (
           <div key={f.key}>
             {/* Text / email / number / tel / nik / npwp / phone */}
-            {["text", "email", "number", "tel", "nik", "npwp", "phone"].includes(f.field_type) && (
+            {["text", "email", "number", "tel", "nik", "npwp", "phone"].includes(f.field_type) && (() => {
+              const rawVal = watchAll[f.key];
+              const strVal = typeof rawVal === "string" ? rawVal : rawVal == null ? "" : String(rawVal);
+              const touched = Boolean((touchedFields as Record<string, unknown>)[f.key]);
+              const isValid = touched && !errMsg && strVal !== "";
+              const target = digitTarget(f);
+              const hint = typeHint(f);
+              const reg = register(f.key);
+              return (
               <div>
                 <FieldLabel field={f} error={errMsg} />
-                <input
-                  id={f.key}
-                  type={
-                    f.field_type === "email"
-                      ? "email"
-                      : f.field_type === "number"
-                      ? "number"
-                      : f.field_type === "tel" || f.field_type === "phone"
-                      ? "tel"
-                      : "text"
-                  }
-                  inputMode={
-                    f.field_type === "nik" || f.field_type === "npwp"
-                      ? "numeric"
-                      : f.field_type === "phone" || f.field_type === "tel"
-                      ? "tel"
-                      : undefined
-                  }
-                  maxLength={inputMaxLength(f)}
-                  {...register(f.key)}
-                  onChange={(e) => {
-                    // Strip disallowed characters before RHF stores the value.
-                    const cleaned = sanitizeInput(f.field_type, e.target.value);
-                    if (cleaned !== e.target.value) e.target.value = cleaned;
-                    register(f.key).onChange(e);
-                  }}
-                  className={cn(inputBase, errMsg && "border-red-300 focus:ring-red-200/50")}
-                  placeholder={
-                    f.validation_json?.placeholder ??
-                    (f.field_type === "nik" ? "Masukkan 16 digit NIK" :
-                     f.field_type === "npwp" ? "Masukkan nomor NPWP" :
-                     f.field_type === "phone" ? "Contoh: 08123456789" : "")
-                  }
-                />
-                {(f.field_type === "text") && (
+                <div className="relative">
+                  <input
+                    id={f.key}
+                    type={
+                      f.field_type === "email"
+                        ? "email"
+                        : f.field_type === "number"
+                        ? "number"
+                        : f.field_type === "tel" || f.field_type === "phone"
+                        ? "tel"
+                        : "text"
+                    }
+                    inputMode={
+                      f.field_type === "nik" || f.field_type === "npwp"
+                        ? "numeric"
+                        : f.field_type === "phone" || f.field_type === "tel"
+                        ? "tel"
+                        : undefined
+                    }
+                    maxLength={inputMaxLength(f)}
+                    {...reg}
+                    onChange={(e) => {
+                      // Strip disallowed characters before RHF stores the value.
+                      const cleaned = sanitizeInput(f.field_type, e.target.value);
+                      if (cleaned !== e.target.value) e.target.value = cleaned;
+                      reg.onChange(e);
+                    }}
+                    onBlur={(e) => {
+                      // Auto-parse a pasted +62/62 mobile number into the 08… form.
+                      if (f.field_type === "phone" || f.field_type === "tel") {
+                        const norm = normalizePhone(e.target.value);
+                        if (norm !== e.target.value) {
+                          setValue(f.key, norm, { shouldValidate: true, shouldTouch: true });
+                        }
+                      }
+                      reg.onBlur(e);
+                    }}
+                    className={cn(
+                      inputBase,
+                      isValid && "pr-10",
+                      errMsg && "border-red-300 focus:ring-red-200/50",
+                      isValid && "border-emerald-300 focus:ring-emerald-200/40",
+                    )}
+                    placeholder={
+                      f.validation_json?.placeholder ??
+                      (f.field_type === "nik" ? "Masukkan 16 digit NIK" :
+                       f.field_type === "npwp" ? "Masukkan nomor NPWP" :
+                       f.field_type === "phone" ? "Contoh: 08123456789" : "")
+                    }
+                  />
+                  {isValid && (
+                    <Check className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" aria-hidden="true" />
+                  )}
+                </div>
+                {/* Hint + live progress (suppressed once an error is shown) */}
+                {(hint || target) && (
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    {hint && !errMsg ? (
+                      <p className="text-[11px] text-khatulistiwa-400/60">{hint}</p>
+                    ) : <span />}
+                    {target && (
+                      <span
+                        className={cn(
+                          "text-[11px] tabular-nums",
+                          strVal.length === target || (f.field_type === "npwp" && strVal.length === 15)
+                            ? "text-emerald-600 font-medium"
+                            : "text-khatulistiwa-400/60",
+                        )}
+                      >
+                        {strVal.length}/{target}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {f.field_type === "text" && (
                   <CharCount value={watchAll[f.key]} max={f.validation_json?.maxLength} />
                 )}
               </div>
-            )}
+              );
+            })()}
 
             {/* Currency — grouped digits for legibility, numeric value preserved */}
             {f.field_type === "currency" && (
