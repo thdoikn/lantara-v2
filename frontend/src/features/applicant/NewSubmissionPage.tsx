@@ -27,7 +27,7 @@ export default function NewSubmissionPage() {
   const { permitKey } = useParams<{ permitKey: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { initial: draft, savedAt, save, clear } = useFormDraft(permitKey);
+  const { initial: draft, savedAt, save, flush, clear } = useFormDraft(permitKey);
   const [step, setStep] = useState<Step>((draft?.step as Step) ?? "form");
   const [submissionId, setSubmissionId] = useState<string | null>(
     draft?.submissionId ?? null,
@@ -86,7 +86,10 @@ export default function NewSubmissionPage() {
       setApiError(null);
       setSubmissionId(res.data.id);
       setStep("documents");
-      save({ form_data: serializableData(formData), step: "documents", submissionId: res.data.id });
+      // Flush (not debounced) so the new submissionId is persisted immediately —
+      // otherwise a quick navigation could lose it and a resume would create a
+      // second draft.
+      flush({ form_data: serializableData(formData), step: "documents", submissionId: res.data.id });
       // Refresh any cached submissions list (60s staleTime) so the new draft shows.
       qc.invalidateQueries({ queryKey: ["submissions"] });
       toast.success("Draf disimpan. Lanjutkan unggah dokumen.");
