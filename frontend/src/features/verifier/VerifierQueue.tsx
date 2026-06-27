@@ -1,15 +1,24 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, parseISO, differenceInHours } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Clock, AlertTriangle, CheckCircle2, RefreshCw, Flame, Inbox, BadgeCheck, Search, X } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle2, RefreshCw, Flame, Inbox, BadgeCheck, Search, X, RotateCcw, XCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { toast } from "@/lib/toast";
 import Kbd from "@/components/ui/Kbd";
 import type { PaginatedResponse, Submission, SubmissionStatus } from "@/types";
+
+type BulkAction = "approve" | "request_revision" | "reject";
+
+const BULK_TOAST: Record<BulkAction, string> = {
+  approve: "disetujui",
+  request_revision: "diminta revisi",
+  reject: "ditolak",
+};
 
 const STATUS_LABEL: Record<SubmissionStatus, string> = {
   draft:      "Draft",
@@ -53,7 +62,12 @@ export default function VerifierQueue() {
   const [activeTab, setActiveTab] = useState(0);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [bulkType, setBulkType] = useState<BulkAction | null>(null);
+  const [bulkNote, setBulkNote] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const searchRef = useRef<HTMLInputElement>(null);
   const rowRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const { statuses } = FILTER_TABS[activeTab];
@@ -81,7 +95,46 @@ export default function VerifierQueue() {
     );
   }, [submissions, query]);
 
-  useEffect(() => setSelected(0), [activeTab, query]);
+  useEffect(() => {
+    setSelected(0);
+    setPicked(new Set());
+  }, [activeTab, query]);
+
+  function togglePick(id: string) {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  const allVisiblePicked = filtered.length > 0 && filtered.every((s) => picked.has(s.id));
+  function togglePickAll() {
+    setPicked(allVisiblePicked ? new Set() : new Set(filtered.map((s) => s.id)));
+  }
+
+  const noteRequired = bulkType === "request_revision" || bulkType === "reject";
+
+  // Fan the chosen action out across every picked submission; report partials.
+  async function runBulk() {
+    if (!bulkType) return;
+    const ids = [...picked];
+    setBulkBusy(true);
+    const results = await Promise.allSettled(
+      ids.map((id) =>
+        api.post(`/submissions/${id}/act/`, { action: bulkType, notes: bulkNote || undefined }),
+      ),
+    );
+    const ok = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.length - ok;
+    setBulkBusy(false);
+    setBulkType(null);
+    setBulkNote("");
+    setPicked(new Set());
+    qc.invalidateQueries({ queryKey: ["verifier-queue"] });
+    if (failed === 0) toast.success(`${ok} permohonan ${BULK_TOAST[bulkType]}.`);
+    else toast.warning(`${ok} berhasil, ${failed} gagal (transisi tidak valid?).`);
+  }
 
   // Keyboard triage: j/k or arrows to move, Enter to open, f to find.
   useEffect(() => {
@@ -199,6 +252,19 @@ export default function VerifierQueue() {
         </div>
       </div>
 
+      {/* ── Select-all ── */}
+      {!isLoading && filtered.length > 0 && (
+        <label className="flex items-center gap-2 px-1 text-xs font-semibold text-khatulistiwa-600/80 cursor-pointer w-fit">
+          <input
+            type="checkbox"
+            checked={allVisiblePicked}
+            onChange={togglePickAll}
+            className="h-4 w-4 rounded border-khatulistiwa-300 text-khatulistiwa-600 focus:ring-khatulistiwa-500"
+          />
+          {picked.size > 0 ? `${picked.size} dipilih` : "Pilih semua"}
+        </label>
+      )}
+
       {/* ── Cards ── */}
       {isLoading && (
         <div className="space-y-2">
@@ -239,15 +305,30 @@ export default function VerifierQueue() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={{ delay: i * 0.03, duration: 0.25 }}
+                className="flex items-stretch gap-2"
               >
+                <label
+                  className="flex items-center pl-0.5 cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={picked.has(sub.id)}
+                    onChange={() => togglePick(sub.id)}
+                    className="h-4 w-4 rounded border-khatulistiwa-300 text-khatulistiwa-600 focus:ring-khatulistiwa-500"
+                    aria-label={`Pilih ${sub.reference_number}`}
+                  />
+                </label>
                 <Link
                   ref={(el) => { rowRefs.current[i] = el; }}
                   to={`/verifier/submissions/${sub.id}`}
                   onMouseEnter={() => setSelected(i)}
                   className={cn(
-                    "group flex gap-0 rounded-2xl overflow-hidden border transition-all duration-150",
+                    "group flex flex-1 gap-0 rounded-2xl overflow-hidden border transition-all duration-150",
                     "bg-white hover:shadow-md",
-                    i === selected
+                    picked.has(sub.id)
+                      ? "ring-2 ring-khatulistiwa-400 border-transparent"
+                      : i === selected
                       ? "ring-2 ring-khatulistiwa-500 ring-offset-1 ring-offset-pertiwi-warm border-transparent shadow-md"
                       : level !== "ok" ? cn("border-khatulistiwa-100", sla.bg) : "border-khatulistiwa-100"
                   )}
@@ -307,6 +388,96 @@ export default function VerifierQueue() {
             );
           })}
         </div>
+      </AnimatePresence>
+
+      {/* ── Sticky bulk action bar ── */}
+      <AnimatePresence>
+        {picked.size > 0 && !bulkType && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-2xl border border-khatulistiwa-200 bg-white px-3 py-2 shadow-xl"
+          >
+            <span className="px-2 text-sm font-semibold text-khatulistiwa-900">{picked.size} dipilih</span>
+            <button
+              onClick={() => setBulkType("approve")}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-sm font-semibold text-white transition-colors"
+            >
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Setujui
+            </button>
+            <button
+              onClick={() => setBulkType("request_revision")}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-2 text-sm font-semibold text-amber-700 transition-colors"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden="true" /> Revisi
+            </button>
+            <button
+              onClick={() => setBulkType("reject")}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition-colors"
+            >
+              <XCircle className="h-4 w-4" aria-hidden="true" /> Tolak
+            </button>
+            <button
+              onClick={() => setPicked(new Set())}
+              className="ml-1 text-khatulistiwa-400 hover:text-khatulistiwa-700 px-1"
+              aria-label="Batalkan pilihan"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Bulk note modal ── */}
+      <AnimatePresence>
+        {bulkType && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 flex items-center justify-center bg-khatulistiwa-950/40 p-4"
+            onClick={() => !bulkBusy && setBulkType(null)}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display font-bold text-base text-khatulistiwa-900">
+                {bulkType === "approve" ? "Setujui" : bulkType === "request_revision" ? "Minta Revisi" : "Tolak"}{" "}
+                {picked.size} permohonan
+              </h2>
+              <p className="text-xs text-khatulistiwa-600/70">
+                Tindakan ini diterapkan ke semua permohonan terpilih. Permohonan yang transisinya tidak
+                valid akan dilewati.
+              </p>
+              <textarea
+                value={bulkNote}
+                onChange={(e) => setBulkNote(e.target.value)}
+                rows={3}
+                placeholder={noteRequired ? "Catatan (wajib)…" : "Catatan (opsional)…"}
+                className="w-full bg-khatulistiwa-50/50 border border-khatulistiwa-100 rounded-xl px-4 py-3 text-khatulistiwa-900 placeholder-khatulistiwa-300 text-sm outline-none resize-none focus:bg-white focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/15 transition-all"
+                aria-label="Catatan tindakan massal"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setBulkType(null)}
+                  disabled={bulkBusy}
+                  className="flex-1 rounded-xl border border-khatulistiwa-200 py-2.5 text-sm font-semibold text-khatulistiwa-700 hover:bg-khatulistiwa-50 transition-colors disabled:opacity-60"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={runBulk}
+                  disabled={bulkBusy || (noteRequired && !bulkNote.trim())}
+                  className="flex-1 rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60"
+                >
+                  {bulkBusy ? "Memproses…" : "Konfirmasi"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
