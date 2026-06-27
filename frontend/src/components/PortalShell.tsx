@@ -155,10 +155,13 @@ export default function PortalShell({
               className="relative p-2 text-khatulistiwa-600 hover:bg-khatulistiwa-100 rounded-lg transition-colors"
               aria-label={`Notifikasi${notifications.count ? ` (${notifications.count} belum dibaca)` : ""}`}
             >
-              <Bell className="w-5 h-5" aria-hidden="true" />
+              <Bell className={cn("w-5 h-5", !!notifications.count && "text-terakota-600")} aria-hidden="true" />
               {!!notifications.count && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-terakota-500 text-white text-[10px] font-bold flex items-center justify-center">
-                  {notifications.count > 9 ? "9+" : notifications.count}
+                <span className="absolute top-1 right-1 flex items-center justify-center">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-terakota-400 opacity-60 motion-safe:animate-ping" aria-hidden="true" />
+                  <span className="relative min-w-[16px] h-4 px-1 rounded-full bg-terakota-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {notifications.count > 9 ? "9+" : notifications.count}
+                  </span>
                 </span>
               )}
             </Link>

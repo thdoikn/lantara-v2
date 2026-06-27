@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Bell, LayoutDashboard, Map, FilePlus2 } from "lucide-react";
 import api from "@/lib/api";
+import { useNotificationSocket } from "@/lib/useNotificationSocket";
 import PortalShell from "@/components/PortalShell";
 import type { NavItem } from "@/components/SharedSidebar";
 import type { QuickAction } from "@/components/PortalShell";
@@ -17,6 +18,9 @@ const QUICK_ACTIONS: QuickAction[] = [
 ];
 
 export default function PortalLayout() {
+  // Live push (with the 30s poll below as a fallback when the socket is down).
+  useNotificationSocket();
+
   const { data: unreadCount } = useQuery({
     queryKey: ["notifications", "unread"],
     queryFn: () => api.get("/notifications/unread-count/").then((r) => r.data.count as number),
