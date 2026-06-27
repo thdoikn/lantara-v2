@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Save, Trash2, CheckCircle2 } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { useFormDraft } from "@/lib/useFormDraft";
@@ -31,7 +31,6 @@ export default function NewSubmissionPage() {
   const [submissionId, setSubmissionId] = useState<string | null>(
     draft?.submissionId ?? null,
   );
-  const [referenceNumber, setReferenceNumber] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, unknown>>(
     draft?.form_data ?? {},
   );
@@ -51,31 +50,46 @@ export default function NewSubmissionPage() {
 
   const [apiError, setApiError] = useState<string | null>(null);
 
+  function readApiError(err: unknown): string {
+    const axiosErr = err as { response?: { data?: { detail?: string; permit_type_key?: string; form_data?: Record<string, string[]> } } };
+    return (
+      axiosErr.response?.data?.detail
+      ?? axiosErr.response?.data?.permit_type_key
+      ?? JSON.stringify(axiosErr.response?.data?.form_data ?? "")
+      ?? "Terjadi kesalahan. Silakan coba lagi."
+    ) || "Terjadi kesalahan. Silakan coba lagi.";
+  }
+
+  // Step 1 creates (or updates) a DRAFT — no SLA, not yet in the verifier queue.
   const createMutation = useMutation({
     mutationFn: (data: { permit_type_key: string; form_data: Record<string, unknown> }) =>
-      api.post("/submissions/", data),
+      submissionId
+        ? api.patch(`/submissions/${submissionId}/`, { form_data: data.form_data })
+        : api.post("/submissions/", data),
     onSuccess: (res) => {
       setApiError(null);
       setSubmissionId(res.data.id);
-      setReferenceNumber(res.data.reference_number ?? null);
       setStep("documents");
       save({ form_data: serializableData(formData), step: "documents", submissionId: res.data.id });
+      toast.success("Draf disimpan. Lanjutkan unggah dokumen.");
+    },
+    onError: (err: unknown) => setApiError(readApiError(err)),
+  });
+
+  // Final step submits the draft for verification — this starts the SLA clock.
+  const finalizeMutation = useMutation({
+    mutationFn: () => api.post(`/submissions/${submissionId}/finalize/`, { form_data: formData }),
+    onSuccess: (res) => {
+      clear();
       toast.success(
         res.data.reference_number
           ? `Permohonan terkirim · ${res.data.reference_number}`
           : "Permohonan terkirim.",
       );
+      navigate(`/portal/submissions/${submissionId}`);
     },
-    onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { detail?: string; permit_type_key?: string; form_data?: Record<string, string[]> } } };
-      const detail = axiosErr.response?.data?.detail
-        ?? axiosErr.response?.data?.permit_type_key
-        ?? JSON.stringify(axiosErr.response?.data?.form_data ?? "")
-        ?? "Terjadi kesalahan. Silakan coba lagi.";
-      setApiError(detail || "Terjadi kesalahan. Silakan coba lagi.");
-    },
+    onError: (err: unknown) => toast.error(readApiError(err)),
   });
-
 
   function handleFormSubmit(data: Record<string, unknown>) {
     setFormData(data);
@@ -104,7 +118,7 @@ export default function NewSubmissionPage() {
   const stepLabels: { id: Step; label: string }[] = [
     { id: "form", label: "Data Permohonan" },
     { id: "documents", label: "Unggah Dokumen" },
-    { id: "review", label: "Selesai" },
+    { id: "review", label: "Konfirmasi & Kirim" },
   ];
 
   return (
@@ -186,9 +200,9 @@ export default function NewSubmissionPage() {
       {step === "form" && (
         <div className="bg-white rounded-2xl border border-khatulistiwa-100/60 shadow-sm p-6 space-y-4">
           <div className="rounded-xl bg-khatulistiwa-50 border border-khatulistiwa-200/60 p-4 text-xs text-khatulistiwa-700">
-            Setelah menekan <strong>Kirim Permohonan</strong>, permohonan langsung masuk antrean
-            verifikasi dan batas waktu (SLA) mulai berjalan. Anda tetap dapat mengunggah dokumen pada
-            langkah berikutnya.
+            Data Anda disimpan sebagai <strong>draf</strong> — belum dikirim. Permohonan baru masuk
+            antrean verifikasi (dan SLA mulai berjalan) setelah Anda menekan <strong>Kirim
+            Permohonan</strong> di langkah terakhir.
           </div>
           <DynamicForm
             permitType={permitType}
@@ -196,7 +210,7 @@ export default function NewSubmissionPage() {
             onChange={persist}
             onSubmit={handleFormSubmit}
             isSubmitting={createMutation.isPending}
-            submitLabel="Kirim Permohonan"
+            submitLabel="Simpan & Lanjutkan →"
           />
           {apiError && (
             <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -216,21 +230,13 @@ export default function NewSubmissionPage() {
         />
       )}
 
-      {/* Step: Review — submission already received; this is a confirmation. */}
+      {/* Step: Review — final confirmation before the real submit (finalize). */}
       {step === "review" && submissionId && (
         <div className="bg-white rounded-2xl border border-khatulistiwa-100/60 shadow-sm p-6 space-y-6">
-          <div className="flex items-start gap-3 rounded-xl bg-emerald-50 border border-emerald-200 p-4">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" aria-hidden="true" />
-            <div>
-              <p className="font-display font-bold text-sm text-emerald-900">Permohonan terkirim</p>
-              <p className="text-xs text-emerald-800/80 mt-0.5">
-                Permohonan Anda sudah masuk antrean verifikasi
-                {referenceNumber && (
-                  <> dengan nomor referensi <span className="font-mono font-semibold">{referenceNumber}</span></>
-                )}
-                . Pantau statusnya kapan saja di portal.
-              </p>
-            </div>
+          <div className="rounded-xl bg-khatulistiwa-50 border border-khatulistiwa-200/60 p-4 text-sm text-khatulistiwa-700">
+            Dengan menekan <strong>Kirim Permohonan</strong>, draf ini dikirim ke antrean verifikasi
+            dan batas waktu (SLA {permitType.sla_days} hari kerja) mulai berjalan. Anda menyatakan
+            seluruh data dan dokumen benar dan dapat dipertanggungjawabkan.
           </div>
           <div>
             <h2 className="text-khatulistiwa-900 font-display font-bold text-base mb-4">
@@ -255,18 +261,17 @@ export default function NewSubmissionPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setStep("documents")}
-              className="flex-1 rounded-xl border border-khatulistiwa-200 py-2.5 text-sm font-medium text-khatulistiwa-700 hover:bg-khatulistiwa-50 transition-colors"
+              disabled={finalizeMutation.isPending}
+              className="flex-1 rounded-xl border border-khatulistiwa-200 py-2.5 text-sm font-medium text-khatulistiwa-700 hover:bg-khatulistiwa-50 transition-colors disabled:opacity-60"
             >
               Kembali ke Dokumen
             </button>
             <button
-              onClick={() => {
-                clear();
-                navigate(`/portal/submissions/${submissionId}`);
-              }}
-              className="flex-1 rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500 py-2.5 text-sm font-display font-bold text-white transition-all shadow-md shadow-khatulistiwa-600/20"
+              onClick={() => finalizeMutation.mutate()}
+              disabled={finalizeMutation.isPending}
+              className="flex-1 rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500 py-2.5 text-sm font-display font-bold text-white transition-all shadow-md shadow-khatulistiwa-600/20 disabled:opacity-60"
             >
-              Lihat Status Permohonan
+              {finalizeMutation.isPending ? "Mengirim…" : "Kirim Permohonan"}
             </button>
           </div>
         </div>

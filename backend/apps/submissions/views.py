@@ -70,6 +70,14 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         return SubmissionDetailSerializer
 
     def create(self, request, *args, **kwargs):
+        """Create a DRAFT submission.
+
+        The SLA clock does NOT start here and the submission does not enter the
+        verifier queue — that happens at `finalize`, after the applicant has had
+        a chance to upload documents. The schema is snapshotted now so the form
+        shape the applicant is filling stays frozen even if an admin edits the
+        live izin before finalization.
+        """
         serializer = SubmissionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -84,14 +92,66 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             form_data=data["form_data"],
             schema_version_snapshot=pt.schema_version,
             schema_snapshot=schema_snapshot,
-            status=Submission.Status.SUBMITTED,
-            submitted_at=timezone.now(),
-            stage_entered_at=timezone.now(),
+            status=Submission.Status.DRAFT,
         )
 
-        # Move to first verifier stage (skip applicant-role stages).
-        # Read from the just-frozen snapshot so routing matches what the
-        # applicant submitted against.
+        return Response(SubmissionDetailSerializer(sub).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        """Allow an applicant to revise a DRAFT's form_data before finalizing."""
+        sub = self.get_object()
+        if sub.applicant != request.user:
+            return Response({"detail": "Bukan pengaju ini."}, status=403)
+        if sub.status != Submission.Status.DRAFT:
+            return Response(
+                {"detail": "Hanya draf yang dapat diubah."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        new_form_data = request.data.get("form_data")
+        if isinstance(new_form_data, dict):
+            sub.form_data = new_form_data
+            sub.save(update_fields=["form_data", "updated_at"])
+        return Response(SubmissionDetailSerializer(sub).data)
+
+    @action(detail=True, methods=["post"])
+    def finalize(self, request, pk=None):
+        """Applicant finalizes a DRAFT: submit it for verification.
+
+        This is the real submission moment — it stamps `submitted_at`, starts the
+        SLA clock, routes to the first verifier stage, and notifies. Required
+        documents must be uploaded first.
+        """
+        sub = self.get_object()
+        if sub.applicant != request.user:
+            return Response({"detail": "Bukan pengaju ini."}, status=403)
+        if sub.status != Submission.Status.DRAFT:
+            return Response(
+                {"detail": "Pengajuan ini sudah dikirim."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Allow a final form_data update to ride along with finalization.
+        new_form_data = request.data.get("form_data")
+        if isinstance(new_form_data, dict):
+            sub.form_data = new_form_data
+
+        # Gate on required documents from the frozen snapshot.
+        missing = self._missing_required_docs(sub)
+        if missing:
+            return Response(
+                {
+                    "detail": "Lengkapi dokumen wajib sebelum mengirim.",
+                    "missing_documents": missing,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        now = timezone.now()
+        sub.submitted_at = now
+        sub.stage_entered_at = now
+        sub.status = Submission.Status.SUBMITTED
+
+        # Move to first verifier stage (skip applicant-role stages). Read from
+        # the frozen snapshot so routing matches what the applicant filled.
         stages = sub.get_workflow_stages()
         first_stage = next(
             (s for s in stages if s.get("actor_role") != "applicant"),
@@ -105,7 +165,6 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         compute_submission_sla(sub)
         sub.save()
 
-        # Audit log
         AuditEntry.objects.create(
             submission=sub,
             action=AuditEntry.ActionType.SUBMIT,
@@ -118,7 +177,23 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         _upsert_index(sub)
         _notify_submission(sub)
 
-        return Response(SubmissionDetailSerializer(sub).data, status=status.HTTP_201_CREATED)
+        return Response(SubmissionDetailSerializer(sub).data)
+
+    @staticmethod
+    def _missing_required_docs(sub) -> list:
+        """Keys of required doc requirements (per snapshot) lacking an active upload."""
+        snapshot = sub.schema_snapshot or {}
+        required = [
+            d for d in snapshot.get("doc_requirements", []) if d.get("required")
+        ]
+        if not required:
+            return []
+        uploaded_keys = set(
+            sub.uploaded_documents.filter(is_active=True).values_list(
+                "requirement_key", flat=True
+            )
+        )
+        return [d["key"] for d in required if d.get("key") not in uploaded_keys]
 
     @action(detail=True, methods=["post"])
     def act(self, request, pk=None):

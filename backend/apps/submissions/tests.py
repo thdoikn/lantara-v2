@@ -8,9 +8,11 @@ from datetime import date, timedelta
 
 import pytest
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from apps.accounts.models import Role, RolePermission, User, UserRole
 from apps.engine.models import (
+    DocumentRequirement,
     FormField,
     PermitType,
     Sektor,
@@ -450,3 +452,99 @@ class TestSubmissionSchemaSnapshot:
         sub.refresh_from_db()
         assert sub.form_data["nama_kegiatan"] == "Festival IKN"
         assert sub.form_data["extra"]["nested"] is True
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 5. Draft → finalize lifecycle (API)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def published_permit(permit_type):
+    permit_type.is_published = True
+    permit_type.save(update_fields=["is_published"])
+    return permit_type
+
+
+@pytest.mark.django_db
+class TestDraftFinalizeLifecycle:
+    def _client(self, user):
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
+    def test_create_yields_draft_without_sla(self, applicant, published_permit):
+        permit_type = published_permit
+        client = self._client(applicant)
+        res = client.post(
+            "/api/v1/submissions/",
+            {"permit_type_key": permit_type.key, "form_data": {"nama_kegiatan": "Festival IKN"}},
+            format="json",
+        )
+        assert res.status_code == 201
+        sub = Submission.objects.get(id=res.data["id"])
+        # A draft: no SLA clock, not yet routed into the verifier queue.
+        assert sub.status == Submission.Status.DRAFT
+        assert sub.submitted_at is None
+        assert sub.sla_due_at is None
+
+    def test_finalize_starts_sla_and_routes(self, applicant, published_permit):
+        permit_type = published_permit
+        client = self._client(applicant)
+        draft = client.post(
+            "/api/v1/submissions/",
+            {"permit_type_key": permit_type.key, "form_data": {"nama_kegiatan": "Festival IKN"}},
+            format="json",
+        ).data
+        res = client.post(f"/api/v1/submissions/{draft['id']}/finalize/", {}, format="json")
+        assert res.status_code == 200
+        sub = Submission.objects.get(id=draft["id"])
+        assert sub.status == Submission.Status.IN_REVIEW
+        assert sub.submitted_at is not None
+        assert sub.sla_due_at is not None
+        assert sub.current_stage_key == "verifikasi"
+        assert sub.audit_entries.filter(action=AuditEntry.ActionType.SUBMIT).exists()
+
+    def test_finalize_blocked_when_required_doc_missing(self, applicant, published_permit):
+        permit_type = published_permit
+        DocumentRequirement.objects.create(
+            permit_type=permit_type, key="ktp", title="KTP", required=True, order=1
+        )
+        client = self._client(applicant)
+        draft = client.post(
+            "/api/v1/submissions/",
+            {"permit_type_key": permit_type.key, "form_data": {"nama_kegiatan": "Festival IKN"}},
+            format="json",
+        ).data
+        res = client.post(f"/api/v1/submissions/{draft['id']}/finalize/", {}, format="json")
+        assert res.status_code == 400
+        assert "ktp" in res.data.get("missing_documents", [])
+        assert Submission.objects.get(id=draft["id"]).status == Submission.Status.DRAFT
+
+    def test_finalize_twice_rejected(self, applicant, published_permit):
+        permit_type = published_permit
+        client = self._client(applicant)
+        draft = client.post(
+            "/api/v1/submissions/",
+            {"permit_type_key": permit_type.key, "form_data": {"nama_kegiatan": "Festival IKN"}},
+            format="json",
+        ).data
+        client.post(f"/api/v1/submissions/{draft['id']}/finalize/", {}, format="json")
+        res = client.post(f"/api/v1/submissions/{draft['id']}/finalize/", {}, format="json")
+        assert res.status_code == 400
+
+    def test_draft_form_data_patchable(self, applicant, published_permit):
+        permit_type = published_permit
+        client = self._client(applicant)
+        draft = client.post(
+            "/api/v1/submissions/",
+            {"permit_type_key": permit_type.key, "form_data": {"nama_kegiatan": "Awal"}},
+            format="json",
+        ).data
+        res = client.patch(
+            f"/api/v1/submissions/{draft['id']}/",
+            {"form_data": {"nama_kegiatan": "Diperbarui"}},
+            format="json",
+        )
+        assert res.status_code == 200
+        assert Submission.objects.get(id=draft["id"]).form_data["nama_kegiatan"] == "Diperbarui"
