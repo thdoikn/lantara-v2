@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from apps.engine.models import PermitType, WorkflowStage
 from apps.engine.serializers import PermitTypeDetailSerializer
 
+from .field_validation import validate_form_data
 from .models import AuditEntry, Submission, SubmissionIndex, SubmissionRevisionField
 from .serializers import (
     AuditEntrySerializer,
@@ -133,6 +134,21 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         new_form_data = request.data.get("form_data")
         if isinstance(new_form_data, dict):
             sub.form_data = new_form_data
+
+        # Gate on form data: required + type-aware format, against the frozen
+        # snapshot (can't be bypassed by calling the API directly).
+        snapshot_fields = (sub.schema_snapshot or {}).get("form_fields", [])
+        field_errors = {}
+        for f in snapshot_fields:
+            if f.get("required") and sub.form_data.get(f["key"]) in (None, "", []):
+                field_errors[f["key"]] = f"{f.get('label')} wajib diisi."
+        for key, msg in validate_form_data(snapshot_fields, sub.form_data).items():
+            field_errors.setdefault(key, msg)
+        if field_errors:
+            return Response(
+                {"detail": "Periksa kembali isian formulir.", "errors": field_errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Gate on required documents from the frozen snapshot.
         missing = self._missing_required_docs(sub)
@@ -371,6 +387,19 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
         # Update form_data with new values
         new_form_data = request.data.get("form_data", {})
+
+        # Validate only the changed fields against the frozen snapshot.
+        if isinstance(new_form_data, dict) and new_form_data:
+            snapshot_fields = (sub.schema_snapshot or {}).get("form_fields", [])
+            errors = validate_form_data(
+                snapshot_fields, {**sub.form_data, **new_form_data}, only_keys=set(new_form_data)
+            )
+            if errors:
+                return Response(
+                    {"detail": "Periksa kembali isian formulir.", "errors": errors},
+                    status=400,
+                )
+
         sub.form_data.update(new_form_data)
         sub.status = Submission.Status.IN_REVIEW
 

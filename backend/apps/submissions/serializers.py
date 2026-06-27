@@ -161,6 +161,25 @@ class SubmissionCreateSerializer(serializers.Serializer):
             val = form_data.get(field.key)
             if val is None or val == "":
                 errors[field.key] = f"{field.label} wajib diisi."
+
+        # Type-aware format validation (NIK/phone/NPWP/number/select/geo/…) so
+        # the stored draft is already clean — fields not yet filled are skipped.
+        from .field_validation import validate_form_data
+
+        field_dicts = [
+            {
+                "key": f.key,
+                "label": f.label,
+                "field_type": f.field_type,
+                "required": f.required,
+                "validation_json": f.validation_json,
+                "options_json": f.options_json,
+            }
+            for f in pt.form_fields.all()
+        ]
+        for key, msg in validate_form_data(field_dicts, form_data).items():
+            errors.setdefault(key, msg)
+
         if errors:
             raise serializers.ValidationError({"form_data": errors})
 

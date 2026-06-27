@@ -634,3 +634,105 @@ class TestRevisionClarity:
         # Original value retained so the verifier can see before → after.
         assert rf.original_value == "Nilai Awal"
         assert sub.form_data["nama_kegiatan"] == "Nilai Baru"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 7. Type-aware field validation (clean data)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class TestFieldValidationUnit:
+    """Pure rule checks — a truthy return is an error message, None is valid."""
+
+    def test_nik(self):
+        from apps.submissions.field_validation import validate_field_value as v
+
+        f = {"field_type": "nik", "label": "NIK", "validation_json": {"length": 16}}
+        assert v(f, "1234567890123456") is None
+        assert v(f, "12345678901234")  # 14 digits → error
+        assert v(f, "12345678901234567")  # 17 digits → error
+        assert v(f, "abcd567890123456")  # non-digit → error
+        assert v(f, "") is None  # empty handled by required check
+
+    def test_phone_mobile_only(self):
+        from apps.submissions.field_validation import validate_field_value as v
+
+        f = {"field_type": "phone", "label": "HP"}
+        assert v(f, "081234567890") is None
+        assert v(f, "+6281234567890") is None
+        assert v(f, "6281234567890") is None
+        assert v(f, "0215551234")  # landline → error
+        assert v(f, "1234")  # too short → error
+        assert v(f, "08abc")  # non-digit → error
+
+    def test_npwp(self):
+        from apps.submissions.field_validation import validate_field_value as v
+
+        f = {"field_type": "npwp", "label": "NPWP"}
+        assert v(f, "123456789012345") is None  # 15
+        assert v(f, "1234567890123456") is None  # 16
+        assert v(f, "12345678901234")  # 14 → error
+
+    def test_select_and_number_and_geo(self):
+        from apps.submissions.field_validation import validate_field_value as v
+
+        sel = {"field_type": "select", "label": "S", "options_json": [{"value": "a", "label": "A"}]}
+        assert v(sel, "a") is None
+        assert v(sel, "z")  # not an option → error
+
+        num = {"field_type": "number", "label": "N", "validation_json": {"min": 1, "max": 10}}
+        assert v(num, 5) is None
+        assert v(num, 0)  # below min
+        assert v(num, 11)  # above max
+        assert v(num, "x")  # not a number
+
+        geo = {"field_type": "geo", "label": "G"}
+        assert v(geo, "-6.2,106.8") is None
+        assert v(geo, "200,0")  # lat out of range
+        assert v(geo, "abc")  # unparseable
+
+
+@pytest.mark.django_db
+class TestFinalizeFieldValidation:
+    def _draft_with_nik(self, applicant, permit_type, nik):
+        snap = {
+            "stages": [
+                {"key": "verifikasi", "order": 1, "name": "V",
+                 "stage_type": "verification", "actor_role": "verifier"}
+            ],
+            "form_fields": [
+                {"key": "nik_ketua", "label": "NIK", "field_type": "nik",
+                 "required": True, "validation_json": {"length": 16}, "options_json": []}
+            ],
+            "doc_requirements": [],
+            "sla_days": 8,
+        }
+        return Submission.objects.create(
+            applicant=applicant, permit_type=permit_type,
+            form_data={"nik_ketua": nik}, schema_snapshot=snap,
+            status=Submission.Status.DRAFT,
+        )
+
+    def test_finalize_rejects_bad_nik(self, applicant, permit_type):
+        sub = self._draft_with_nik(applicant, permit_type, "123")
+        client = APIClient()
+        client.force_authenticate(user=applicant)
+        res = client.post(f"/api/v1/submissions/{sub.id}/finalize/", {}, format="json")
+        assert res.status_code == 400
+        assert "nik_ketua" in res.data["errors"]
+        sub.refresh_from_db()
+        assert sub.status == Submission.Status.DRAFT  # not submitted
+
+    def test_finalize_accepts_valid_nik(self, applicant, permit_type):
+        sub = self._draft_with_nik(applicant, permit_type, "123")
+        client = APIClient()
+        client.force_authenticate(user=applicant)
+        res = client.post(
+            f"/api/v1/submissions/{sub.id}/finalize/",
+            {"form_data": {"nik_ketua": "1234567890123456"}},
+            format="json",
+        )
+        assert res.status_code == 200
+        sub.refresh_from_db()
+        assert sub.status == Submission.Status.IN_REVIEW
+        assert sub.submitted_at is not None
