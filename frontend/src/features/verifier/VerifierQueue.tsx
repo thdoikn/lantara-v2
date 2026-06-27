@@ -9,6 +9,7 @@ import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
+import { scrollIntoViewOnFocus } from "@/lib/scrollIntoViewOnFocus";
 import Kbd from "@/components/ui/Kbd";
 import type { PaginatedResponse, Submission, SubmissionStatus } from "@/types";
 
@@ -302,6 +303,7 @@ export default function VerifierQueue() {
             ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={scrollIntoViewOnFocus}
             placeholder="Cari nomor, pemohon, atau jenis izin…"
             className="flex-1 bg-transparent text-sm text-khatulistiwa-900 placeholder-khatulistiwa-400/60 outline-none"
             aria-label="Cari dalam antrean"
@@ -480,30 +482,30 @@ export default function VerifierQueue() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
-            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-2xl border border-khatulistiwa-200 bg-white px-3 py-2 shadow-xl"
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex w-[calc(100vw-1.5rem)] max-w-md items-center gap-2 overflow-x-auto rounded-2xl border border-khatulistiwa-200 bg-white px-3 py-2 shadow-xl sm:w-auto"
           >
-            <span className="px-2 text-sm font-semibold text-khatulistiwa-900">{picked.size} dipilih</span>
+            <span className="px-1 text-sm font-semibold text-khatulistiwa-900 shrink-0">{picked.size} dipilih</span>
             <button
               onClick={() => setBulkType("approve")}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-sm font-semibold text-white transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-sm font-semibold text-white transition-colors"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Setujui
             </button>
             <button
               onClick={() => setBulkType("request_revision")}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-2 text-sm font-semibold text-amber-700 transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-2 text-sm font-semibold text-amber-700 transition-colors"
             >
               <RotateCcw className="h-4 w-4" aria-hidden="true" /> Revisi
             </button>
             <button
               onClick={() => setBulkType("reject")}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition-colors"
             >
               <XCircle className="h-4 w-4" aria-hidden="true" /> Tolak
             </button>
             <button
               onClick={() => setPicked(new Set())}
-              className="ml-1 text-khatulistiwa-400 hover:text-khatulistiwa-700 px-1"
+              className="shrink-0 ml-1 text-khatulistiwa-400 hover:text-khatulistiwa-700 px-1"
               aria-label="Batalkan pilihan"
             >
               <X className="h-4 w-4" aria-hidden="true" />

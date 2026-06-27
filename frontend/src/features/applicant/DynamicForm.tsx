@@ -83,7 +83,7 @@ function buildZodSchema(fields: FormField[]): z.ZodObject<z.ZodRawShape> {
 // ── Field renderers ─────────────────────────────────────────────────────────
 
 const inputBase =
-  "w-full bg-khatulistiwa-50/50 border border-khatulistiwa-100 rounded-xl px-4 py-3 text-khatulistiwa-900 placeholder-khatulistiwa-300 text-sm outline-none focus:bg-white focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/15 disabled:opacity-60 transition-all";
+  "w-full min-h-[44px] bg-khatulistiwa-50/50 border border-khatulistiwa-100 rounded-xl px-4 py-3 text-khatulistiwa-900 placeholder-khatulistiwa-300 text-sm outline-none focus:bg-white focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/15 disabled:opacity-60 transition-all";
 
 function FieldLabel({ field, error }: { field: FormField; error?: string }) {
   return (

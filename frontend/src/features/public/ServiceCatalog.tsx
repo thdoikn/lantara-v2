@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/auth";
+import { scrollIntoViewOnFocus } from "@/lib/scrollIntoViewOnFocus";
 import { getSektorVisual } from "@/lib/sektorVisuals";
 import type { Sektor, PermitType } from "@/types";
 
@@ -254,6 +255,7 @@ export default function ServiceCatalog() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleSearchKey}
+                onFocus={scrollIntoViewOnFocus}
                 placeholder="Cari nama izin, sektor, atau produk…"
                 className="flex-1 bg-transparent text-white placeholder-white/30 text-base outline-none"
                 aria-label="Cari layanan perizinan"
