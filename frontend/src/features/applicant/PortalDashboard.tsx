@@ -9,11 +9,12 @@ import {
   Eye, Send, PenLine, Package, BadgeCheck, Loader2, FileText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import { cn } from "@/lib/cn";
+import { listFormDrafts, clearFormDraft, type SubmissionDraft } from "@/lib/useFormDraft";
 import type { PaginatedResponse, Submission, SubmissionStatus } from "@/types";
 
 // ── Status badge — left bar + icon ────────────────────────────────────────────
@@ -169,6 +170,11 @@ export default function PortalDashboard() {
   const submissions = data?.results ?? [];
   const catalogItems = catalogData?.results.slice(0, 4) ?? [];
 
+  // Unfinished local drafts the applicant can resume (read once on mount).
+  const [drafts, setDrafts] = useState<Array<SubmissionDraft & { permitKey: string }>>(
+    () => listFormDrafts(),
+  );
+
   // Concierge: surface the submissions that need the applicant's attention now.
   const actionItems = submissions.filter((s) => s.status === "revision");
 
@@ -245,6 +251,52 @@ export default function PortalDashboard() {
           >
             Perbaiki <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </Link>
+        </motion.div>
+      )}
+
+      {/* Resume drafts */}
+      {drafts.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-khatulistiwa-200/70 bg-white shadow-sm overflow-hidden"
+        >
+          <div className="px-5 py-3.5 border-b border-khatulistiwa-50 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-khatulistiwa-500" aria-hidden="true" />
+            <h2 className="text-khatulistiwa-900 font-display font-bold text-sm">Lanjutkan Draf</h2>
+            <span className="text-xs text-khatulistiwa-400">({drafts.length})</span>
+          </div>
+          {drafts.map((d) => (
+            <div
+              key={d.permitKey}
+              className="px-5 py-3 flex items-center justify-between gap-3 border-b border-khatulistiwa-50 last:border-0"
+            >
+              <div className="min-w-0">
+                <p className="text-khatulistiwa-900 font-semibold text-sm truncate">{d.permitKey}</p>
+                <p className="text-khatulistiwa-400/70 text-xs mt-0.5">
+                  Disimpan {formatDistanceToNow(new Date(d.savedAt), { addSuffix: true, locale: localeId })}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    clearFormDraft(d.permitKey);
+                    setDrafts((prev) => prev.filter((x) => x.permitKey !== d.permitKey));
+                  }}
+                  className="text-xs font-semibold text-khatulistiwa-400 hover:text-red-600 transition-colors px-2 py-1.5"
+                  aria-label={`Hapus draf ${d.permitKey}`}
+                >
+                  Hapus
+                </button>
+                <Link
+                  to={`/portal/new/${d.permitKey}`}
+                  className="inline-flex items-center gap-1.5 bg-khatulistiwa-600 hover:bg-khatulistiwa-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+                >
+                  Lanjutkan <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          ))}
         </motion.div>
       )}
 
