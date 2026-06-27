@@ -21,7 +21,7 @@ from .serializers import (
     SubmissionDetailSerializer,
     SubmissionListSerializer,
 )
-from .sla import compute_submission_sla
+from .sla import add_working_days, compute_submission_sla
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):
@@ -317,16 +317,25 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         )
         _notify_stage_advance(sub, actor)
 
+    # Working-days the applicant is given to return a requested revision.
+    REVISION_GRACE_DAYS = 5
+
     def _do_revise(self, sub, actor, notes, revision_fields):
         from_status = sub.status
         sub.status = Submission.Status.REVISION
         for rf in revision_fields:
+            field_key = rf.get("field_key", "")
+            is_doc = rf.get("is_doc_requirement", False)
             SubmissionRevisionField.objects.create(
                 submission=sub,
-                field_key=rf.get("field_key", ""),
-                is_doc_requirement=rf.get("is_doc_requirement", False),
+                field_key=field_key,
+                is_doc_requirement=is_doc,
                 note=rf.get("note", ""),
+                # Capture the value being sent back so the applicant sees "before".
+                original_value=None if is_doc else sub.form_data.get(field_key),
             )
+        # Give the applicant a working-days deadline to respond.
+        sub.revision_due_at = add_working_days(timezone.now(), self.REVISION_GRACE_DAYS)
         AuditEntry.objects.create(
             submission=sub,
             action=AuditEntry.ActionType.REVISE,
@@ -365,8 +374,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         sub.form_data.update(new_form_data)
         sub.status = Submission.Status.IN_REVIEW
 
-        # Mark revision fields resolved
+        # Mark revision fields resolved (kept, with original_value, for the diff)
         sub.revision_fields.filter(is_resolved=False).update(is_resolved=True)
+        sub.revision_due_at = None
 
         sub.stage_entered_at = timezone.now()
         compute_submission_sla(sub)

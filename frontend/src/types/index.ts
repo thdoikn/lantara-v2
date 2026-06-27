@@ -171,7 +171,9 @@ export interface RevisionField {
   field_key: string;
   is_doc_requirement: boolean;
   note: string;
+  original_value: unknown;
   is_resolved: boolean;
+  created_at: string;
 }
 
 export interface Submission {
@@ -196,6 +198,7 @@ export interface Submission {
   is_sla_breached: boolean;
   is_sla_at_risk: boolean;
   stage_sla_due_at: string | null;
+  revision_due_at: string | null;
   submitted_at: string | null;
   rejection_reason: string;
   issued_permit_id: string | null;

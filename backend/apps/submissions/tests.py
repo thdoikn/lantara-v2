@@ -548,3 +548,89 @@ class TestDraftFinalizeLifecycle:
         )
         assert res.status_code == 200
         assert Submission.objects.get(id=draft["id"]).form_data["nama_kegiatan"] == "Diperbarui"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 6. Revision clarity — original value, per-field note, revision deadline
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestRevisionClarity:
+    def _superadmin(self, user):
+        role = Role.objects.create(key="superadmin", name="Super Admin")
+        UserRole.objects.create(user=user, role=role, is_active=True)
+        return user
+
+    def _in_review_submission(self, applicant, permit_type):
+        first = WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
+        return Submission.objects.create(
+            applicant=applicant,
+            permit_type=permit_type,
+            form_data={"nama_kegiatan": "Nilai Awal"},
+            schema_snapshot={"stages": [], "form_fields": [], "doc_requirements": [], "sla_days": 8},
+            status=Submission.Status.IN_REVIEW,
+            current_stage_key=first.key,
+            current_stage_order=first.order,
+            submitted_at=timezone.now(),
+            stage_entered_at=timezone.now(),
+        )
+
+    def test_revise_captures_original_value_note_and_deadline(self, applicant, permit_type, verifier):
+        self._superadmin(verifier)
+        sub = self._in_review_submission(applicant, permit_type)
+        client = APIClient()
+        client.force_authenticate(user=verifier)
+
+        res = client.post(
+            f"/api/v1/submissions/{sub.id}/act/",
+            {
+                "action": "request_revision",
+                "notes": "Mohon perbaiki",
+                "revision_fields": [
+                    {"field_key": "nama_kegiatan", "is_doc_requirement": False, "note": "Tidak sesuai akta"}
+                ],
+            },
+            format="json",
+        )
+        assert res.status_code == 200
+        sub.refresh_from_db()
+        assert sub.status == Submission.Status.REVISION
+        assert sub.revision_due_at is not None
+        rf = sub.revision_fields.get(field_key="nama_kegiatan")
+        assert rf.original_value == "Nilai Awal"
+        assert rf.note == "Tidak sesuai akta"
+
+    def test_resubmit_clears_deadline_and_keeps_original(self, applicant, permit_type, verifier):
+        self._superadmin(verifier)
+        sub = self._in_review_submission(applicant, permit_type)
+        vclient = APIClient()
+        vclient.force_authenticate(user=verifier)
+        vclient.post(
+            f"/api/v1/submissions/{sub.id}/act/",
+            {
+                "action": "request_revision",
+                "notes": "x",
+                "revision_fields": [
+                    {"field_key": "nama_kegiatan", "is_doc_requirement": False, "note": "n"}
+                ],
+            },
+            format="json",
+        )
+
+        aclient = APIClient()
+        aclient.force_authenticate(user=applicant)
+        res = aclient.post(
+            f"/api/v1/submissions/{sub.id}/resubmit/",
+            {"form_data": {"nama_kegiatan": "Nilai Baru"}},
+            format="json",
+        )
+        assert res.status_code == 200
+        sub.refresh_from_db()
+        assert sub.status == Submission.Status.IN_REVIEW
+        assert sub.revision_due_at is None
+        rf = sub.revision_fields.get(field_key="nama_kegiatan")
+        assert rf.is_resolved is True
+        # Original value retained so the verifier can see before → after.
+        assert rf.original_value == "Nilai Awal"
+        assert sub.form_data["nama_kegiatan"] == "Nilai Baru"

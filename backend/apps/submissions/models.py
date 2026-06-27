@@ -81,6 +81,9 @@ class Submission(TimestampedModel):
     is_sla_breached = models.BooleanField(default=False)
     is_sla_at_risk = models.BooleanField(default=False)
 
+    # Deadline for the applicant to return a requested revision (set on revise).
+    revision_due_at = models.DateTimeField(null=True, blank=True)
+
     # Rejection
     rejection_reason = models.TextField(blank=True)
 
@@ -167,6 +170,8 @@ class SubmissionRevisionField(UUIDModel):
     field_key = models.CharField(max_length=120)
     is_doc_requirement = models.BooleanField(default=False)
     note = models.TextField(blank=True)
+    # The applicant's value at the moment of flagging — shown back as "before".
+    original_value = models.JSONField(null=True, blank=True)
     is_resolved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 

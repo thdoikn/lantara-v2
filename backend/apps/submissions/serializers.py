@@ -32,7 +32,15 @@ class AuditEntrySerializer(serializers.ModelSerializer):
 class RevisionFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubmissionRevisionField
-        fields = ["id", "field_key", "is_doc_requirement", "note", "is_resolved"]
+        fields = [
+            "id",
+            "field_key",
+            "is_doc_requirement",
+            "note",
+            "original_value",
+            "is_resolved",
+            "created_at",
+        ]
 
 
 class SiteVisitSerializer(serializers.ModelSerializer):
@@ -105,6 +113,7 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
             "is_sla_breached",
             "is_sla_at_risk",
             "stage_sla_due_at",
+            "revision_due_at",
             "submitted_at",
             "rejection_reason",
             "issued_permit_id",
