@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Save, Trash2 } from "lucide-react";
+import { Save, Trash2, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { useFormDraft } from "@/lib/useFormDraft";
@@ -31,6 +31,7 @@ export default function NewSubmissionPage() {
   const [submissionId, setSubmissionId] = useState<string | null>(
     draft?.submissionId ?? null,
   );
+  const [referenceNumber, setReferenceNumber] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, unknown>>(
     draft?.form_data ?? {},
   );
@@ -56,8 +57,14 @@ export default function NewSubmissionPage() {
     onSuccess: (res) => {
       setApiError(null);
       setSubmissionId(res.data.id);
+      setReferenceNumber(res.data.reference_number ?? null);
       setStep("documents");
       save({ form_data: serializableData(formData), step: "documents", submissionId: res.data.id });
+      toast.success(
+        res.data.reference_number
+          ? `Permohonan terkirim · ${res.data.reference_number}`
+          : "Permohonan terkirim.",
+      );
     },
     onError: (err: unknown) => {
       const axiosErr = err as { response?: { data?: { detail?: string; permit_type_key?: string; form_data?: Record<string, string[]> } } };
@@ -97,7 +104,7 @@ export default function NewSubmissionPage() {
   const stepLabels: { id: Step; label: string }[] = [
     { id: "form", label: "Data Permohonan" },
     { id: "documents", label: "Unggah Dokumen" },
-    { id: "review", label: "Konfirmasi" },
+    { id: "review", label: "Selesai" },
   ];
 
   return (
@@ -177,13 +184,19 @@ export default function NewSubmissionPage() {
 
       {/* Step: Form */}
       {step === "form" && (
-        <div className="bg-white rounded-2xl border border-khatulistiwa-100/60 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-khatulistiwa-100/60 shadow-sm p-6 space-y-4">
+          <div className="rounded-xl bg-khatulistiwa-50 border border-khatulistiwa-200/60 p-4 text-xs text-khatulistiwa-700">
+            Setelah menekan <strong>Kirim Permohonan</strong>, permohonan langsung masuk antrean
+            verifikasi dan batas waktu (SLA) mulai berjalan. Anda tetap dapat mengunggah dokumen pada
+            langkah berikutnya.
+          </div>
           <DynamicForm
             permitType={permitType}
             defaultValues={formData}
             onChange={persist}
             onSubmit={handleFormSubmit}
             isSubmitting={createMutation.isPending}
+            submitLabel="Kirim Permohonan"
           />
           {apiError && (
             <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -203,9 +216,22 @@ export default function NewSubmissionPage() {
         />
       )}
 
-      {/* Step: Review */}
+      {/* Step: Review — submission already received; this is a confirmation. */}
       {step === "review" && submissionId && (
         <div className="bg-white rounded-2xl border border-khatulistiwa-100/60 shadow-sm p-6 space-y-6">
+          <div className="flex items-start gap-3 rounded-xl bg-emerald-50 border border-emerald-200 p-4">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" aria-hidden="true" />
+            <div>
+              <p className="font-display font-bold text-sm text-emerald-900">Permohonan terkirim</p>
+              <p className="text-xs text-emerald-800/80 mt-0.5">
+                Permohonan Anda sudah masuk antrean verifikasi
+                {referenceNumber && (
+                  <> dengan nomor referensi <span className="font-mono font-semibold">{referenceNumber}</span></>
+                )}
+                . Pantau statusnya kapan saja di portal.
+              </p>
+            </div>
+          </div>
           <div>
             <h2 className="text-khatulistiwa-900 font-display font-bold text-base mb-4">
               Ringkasan Permohonan
@@ -226,17 +252,12 @@ export default function NewSubmissionPage() {
             </dl>
           </div>
 
-          <div className="rounded-xl bg-khatulistiwa-50 border border-khatulistiwa-200/60 p-4 text-sm text-khatulistiwa-700">
-            Dengan menekan "Kirim Permohonan", Anda menyatakan bahwa seluruh data dan dokumen yang
-            diunggah adalah benar dan dapat dipertanggungjawabkan.
-          </div>
-
           <div className="flex gap-3">
             <button
               onClick={() => setStep("documents")}
               className="flex-1 rounded-xl border border-khatulistiwa-200 py-2.5 text-sm font-medium text-khatulistiwa-700 hover:bg-khatulistiwa-50 transition-colors"
             >
-              Kembali
+              Kembali ke Dokumen
             </button>
             <button
               onClick={() => {
@@ -245,7 +266,7 @@ export default function NewSubmissionPage() {
               }}
               className="flex-1 rounded-xl bg-khatulistiwa-600 hover:bg-khatulistiwa-500 py-2.5 text-sm font-display font-bold text-white transition-all shadow-md shadow-khatulistiwa-600/20"
             >
-              Kirim Permohonan
+              Lihat Status Permohonan
             </button>
           </div>
         </div>
