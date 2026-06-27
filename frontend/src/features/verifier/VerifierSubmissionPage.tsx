@@ -142,6 +142,7 @@ function ActionPanel({
   const [active, setActive] = useState<ActionType | null>(null);
   const [note, setNote] = useState("");
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
+  const [fieldNotes, setFieldNotes] = useState<Record<string, string>>({});
 
   const allowedTypes = ACTIONS_FOR_STAGE[stageType] ?? ACTIONS_FOR_STAGE.verification;
   const actions = ALL_ACTIONS.filter((a) => allowedTypes.includes(a.type)).map((a) =>
@@ -173,12 +174,13 @@ function ActionPanel({
       active === "request_revision"
         ? revisionTargets
             .filter((t) => flagged.has(t.id))
-            .map((t) => ({ field_key: t.key, is_doc_requirement: t.isDoc, note: "" }))
+            .map((t) => ({ field_key: t.key, is_doc_requirement: t.isDoc, note: fieldNotes[t.id] ?? "" }))
         : undefined;
     onAction(active, note, revisionFields);
     setActive(null);
     setNote("");
     setFlagged(new Set());
+    setFieldNotes({});
   }
 
   if (isTerminal) {
@@ -209,23 +211,31 @@ function ActionPanel({
                 Tandai bagian yang perlu diperbaiki
                 <span className="font-normal text-amber-700/70"> (opsional)</span>
               </p>
-              <div className="max-h-44 overflow-y-auto space-y-0.5 pr-1">
+              <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
                 {revisionTargets.map((t) => (
-                  <label
-                    key={t.id}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/70 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={flagged.has(t.id)}
-                      onChange={() => toggleFlag(t.id)}
-                      className="rounded border-amber-300 text-amber-600 focus:ring-amber-400/30"
-                    />
-                    <span className="text-xs text-khatulistiwa-800 flex-1 min-w-0 truncate">{t.label}</span>
-                    <span className="text-[10px] font-medium text-amber-700/60 shrink-0">
-                      {t.isDoc ? "Dokumen" : "Data"}
-                    </span>
-                  </label>
+                  <div key={t.id}>
+                    <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/70 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={flagged.has(t.id)}
+                        onChange={() => toggleFlag(t.id)}
+                        className="rounded border-amber-300 text-amber-600 focus:ring-amber-400/30"
+                      />
+                      <span className="text-xs text-khatulistiwa-800 flex-1 min-w-0 truncate">{t.label}</span>
+                      <span className="text-[10px] font-medium text-amber-700/60 shrink-0">
+                        {t.isDoc ? "Dokumen" : "Data"}
+                      </span>
+                    </label>
+                    {flagged.has(t.id) && (
+                      <input
+                        type="text"
+                        value={fieldNotes[t.id] ?? ""}
+                        onChange={(e) => setFieldNotes((p) => ({ ...p, [t.id]: e.target.value }))}
+                        placeholder={`Catatan untuk "${t.label}"…`}
+                        className="ml-7 mb-1 w-[calc(100%-1.75rem)] rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-xs text-khatulistiwa-900 placeholder-amber-700/40 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-300/30"
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
               {flagged.size > 0 && (
@@ -422,6 +432,47 @@ export default function VerifierSubmissionPage() {
       <div className="grid lg:grid-cols-3 gap-5">
         {/* Left: form data + docs */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Revision diff — before → after for resolved data revisions */}
+          {(() => {
+            const fmt = (v: unknown) =>
+              Array.isArray(v) ? v.join(", ") : v === undefined || v === null || v === "" ? "—" : String(v);
+            const labelOf = (key: string) =>
+              submission.schema_snapshot?.form_fields?.find((f) => f.key === key)?.label ?? key;
+            const diffs = (submission.revision_fields ?? [])
+              .filter((r) => r.is_resolved && !r.is_doc_requirement)
+              .map((r) => ({
+                key: r.field_key,
+                before: fmt(r.original_value),
+                after: fmt(submission.form_data?.[r.field_key]),
+              }))
+              .filter((d) => d.before !== d.after);
+            if (diffs.length === 0) return null;
+            return (
+              <div className="bg-white border border-amber-200 rounded-2xl p-5">
+                <h2 className="font-display font-bold text-sm text-khatulistiwa-900 mb-3 flex items-center gap-1.5">
+                  <RotateCcw className="h-4 w-4 text-amber-600" aria-hidden="true" />
+                  Perubahan dari Revisi
+                </h2>
+                <ul className="space-y-3">
+                  {diffs.map((d) => (
+                    <li key={d.key} className="text-sm">
+                      <p className="text-xs font-semibold text-khatulistiwa-700 mb-1">{labelOf(d.key)}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-700 line-through decoration-red-300">
+                          {d.before}
+                        </span>
+                        <span className="text-khatulistiwa-300" aria-hidden="true">→</span>
+                        <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+                          {d.after}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
+
           {/* Form data */}
           <div className="bg-white border border-khatulistiwa-100 rounded-2xl p-5">
             <h2 className="font-display font-bold text-sm text-khatulistiwa-900 mb-4">Data Permohonan</h2>
