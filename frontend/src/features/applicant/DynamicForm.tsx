@@ -8,70 +8,126 @@ import { cn } from "@/lib/cn";
 
 // ── Runtime zod builder ─────────────────────────────────────────────────────
 
+// Indonesian-identifier rules — mirror backend apps/submissions/field_validation.py
+const NPWP_RE = /^\d{15,16}$/;
+const PHONE_RE = /^(?:\+?62|0)8\d{8,11}$/; // mobile only: 08xx / 628xx / +628xx
+const onlyDigits = (s: string) => s.replace(/\D/g, "");
+
+// String-like fields whose schema is a refine() wrapper (not a ZodString), so
+// "required" must be enforced with a non-empty refine rather than .min(1).
+const REFINED_STRING_TYPES = ["nik", "npwp", "phone", "select", "geo", "map_point"];
+
+function optionValues(f: FormField): string[] {
+  return (f.options_json ?? []).map((o) => o.value);
+}
+
+/** Keystroke-level cleanup so stored values are already clean. */
+function sanitizeInput(fieldType: string, value: string): string {
+  if (fieldType === "nik" || fieldType === "npwp") return value.replace(/\D/g, "");
+  if (fieldType === "phone" || fieldType === "tel") return value.replace(/[^\d+]/g, "");
+  return value;
+}
+
+function inputMaxLength(f: FormField): number | undefined {
+  if (f.field_type === "nik") return f.validation_json?.length ?? 16;
+  if (f.field_type === "npwp") return 16;
+  if (f.field_type === "phone" || f.field_type === "tel") return 16;
+  return f.validation_json?.maxLength;
+}
+
+/** Type-aware base schema for one field (before required/length adornments). */
+function fieldZod(f: FormField): z.ZodTypeAny {
+  const vj = f.validation_json ?? {};
+  switch (f.field_type) {
+    case "email":
+      return z.string().email("Format email tidak valid");
+    case "number":
+    case "currency": {
+      let s = z.coerce.number({ invalid_type_error: "Harus berupa angka" });
+      if (typeof vj.min === "number") s = s.min(vj.min, `Nilai minimal ${vj.min}`);
+      if (typeof vj.max === "number") s = s.max(vj.max, `Nilai maksimal ${vj.max}`);
+      return s;
+    }
+    case "date":
+      return z.string().min(1, "Tanggal wajib diisi");
+    case "boolean":
+      return z.boolean();
+    case "multiselect": {
+      const opts = optionValues(f);
+      const arr = z.array(z.string()).min(1, "Pilih setidaknya satu opsi");
+      if (opts.length)
+        return arr.refine((vals) => vals.every((v) => opts.includes(v)), "Pilihan tidak valid");
+      return arr;
+    }
+    case "select": {
+      const opts = optionValues(f);
+      return z
+        .string()
+        .refine((v) => v === "" || !opts.length || opts.includes(v), "Pilihan tidak valid");
+    }
+    case "file":
+      return z.instanceof(File).nullable();
+    case "nik": {
+      const len = vj.length ?? 16;
+      const re = new RegExp(`^\\d{${len}}$`);
+      return z.string().refine((v) => v === "" || re.test(v), `NIK harus ${len} digit angka`);
+    }
+    case "npwp":
+      return z
+        .string()
+        .refine((v) => v === "" || NPWP_RE.test(onlyDigits(v)), "NPWP harus 15 atau 16 digit angka");
+    case "phone":
+    case "tel":
+      return z
+        .string()
+        .refine(
+          (v) => v === "" || PHONE_RE.test(v.replace(/[^\d+]/g, "")),
+          "Nomor HP tidak valid (contoh: 081234567890)",
+        );
+    case "geo":
+    case "map_point":
+      return z.string().refine((v) => {
+        if (v === "") return true;
+        const p = v.split(",");
+        if (p.length !== 2) return false;
+        const lat = Number(p[0]);
+        const lng = Number(p[1]);
+        return (
+          Number.isFinite(lat) && Number.isFinite(lng) &&
+          lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+        );
+      }, "Format koordinat tidak valid (mis. -6.2,106.8)");
+    default:
+      return z.string();
+  }
+}
+
 function buildZodSchema(fields: FormField[]): z.ZodObject<z.ZodRawShape> {
   const shape: z.ZodRawShape = {};
 
   for (const f of fields) {
-    let schema: z.ZodTypeAny;
+    let schema = fieldZod(f);
+    const vj = f.validation_json ?? {};
 
-    switch (f.field_type) {
-      case "email":
-        schema = z.string().email("Format email tidak valid");
-        break;
-      case "number":
-      case "currency":
-        schema = z.coerce.number({ invalid_type_error: "Harus berupa angka" });
-        break;
-      case "date":
-        schema = z.string().min(1, "Tanggal wajib diisi");
-        break;
-      case "boolean":
-        schema = z.boolean();
-        break;
-      case "multiselect":
-        schema = z.array(z.string()).min(1, "Pilih setidaknya satu opsi");
-        break;
-      case "file":
-        schema = z.instanceof(File).nullable();
-        break;
-      default:
-        schema = z.string();
-    }
-
-    if (f.validation_json?.minLength) {
-      if (schema instanceof z.ZodString) {
-        schema = (schema as z.ZodString).min(
-          f.validation_json.minLength,
-          `Minimal ${f.validation_json.minLength} karakter`
-        );
-      }
-    }
-    if (f.validation_json?.maxLength) {
-      if (schema instanceof z.ZodString) {
-        schema = (schema as z.ZodString).max(
-          f.validation_json.maxLength,
-          `Maksimal ${f.validation_json.maxLength} karakter`
-        );
-      }
-    }
-    if (f.validation_json?.pattern) {
-      if (schema instanceof z.ZodString) {
-        schema = (schema as z.ZodString).regex(
-          new RegExp(f.validation_json.pattern),
-          f.validation_json.patternMessage ?? "Format tidak valid"
-        );
-      }
+    // length/pattern rules only apply to plain string fields (text/textarea).
+    if (schema instanceof z.ZodString) {
+      let s: z.ZodString = schema;
+      if (vj.minLength) s = s.min(vj.minLength, `Minimal ${vj.minLength} karakter`);
+      if (vj.maxLength) s = s.max(vj.maxLength, `Maksimal ${vj.maxLength} karakter`);
+      if (vj.length) s = s.length(vj.length, `Harus ${vj.length} karakter`);
+      if (vj.pattern) s = s.regex(new RegExp(vj.pattern), vj.patternMessage ?? "Format tidak valid");
+      schema = s;
     }
 
     const isRequired =
-      f.required !== false &&
-      f.field_type !== "boolean" &&
-      f.field_type !== "file";
+      f.required !== false && f.field_type !== "boolean" && f.field_type !== "file";
 
     if (!isRequired) {
       schema = schema.optional();
     } else if (schema instanceof z.ZodString) {
-      schema = (schema as z.ZodString).min(1, `${f.label} wajib diisi`);
+      schema = schema.min(1, `${f.label} wajib diisi`);
+    } else if (REFINED_STRING_TYPES.includes(f.field_type)) {
+      schema = schema.refine((v) => v != null && v !== "", `${f.label} wajib diisi`);
     }
 
     shape[f.key] = schema;
@@ -256,9 +312,20 @@ export default function DynamicForm({
                       : "text"
                   }
                   inputMode={
-                    f.field_type === "nik" || f.field_type === "npwp" ? "numeric" : undefined
+                    f.field_type === "nik" || f.field_type === "npwp"
+                      ? "numeric"
+                      : f.field_type === "phone" || f.field_type === "tel"
+                      ? "tel"
+                      : undefined
                   }
+                  maxLength={inputMaxLength(f)}
                   {...register(f.key)}
+                  onChange={(e) => {
+                    // Strip disallowed characters before RHF stores the value.
+                    const cleaned = sanitizeInput(f.field_type, e.target.value);
+                    if (cleaned !== e.target.value) e.target.value = cleaned;
+                    register(f.key).onChange(e);
+                  }}
                   className={cn(inputBase, errMsg && "border-red-300 focus:ring-red-200/50")}
                   placeholder={
                     f.validation_json?.placeholder ??

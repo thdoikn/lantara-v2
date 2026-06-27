@@ -50,6 +50,9 @@ export interface FormField {
     required?: boolean;
     minLength?: number;
     maxLength?: number;
+    length?: number;
+    min?: number;
+    max?: number;
     pattern?: string;
     patternMessage?: string;
     placeholder?: string;
