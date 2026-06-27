@@ -177,6 +177,9 @@ export default function PortalDashboard() {
 
   // Concierge: surface the submissions that need the applicant's attention now.
   const actionItems = submissions.filter((s) => s.status === "revision");
+  // SLA-breached active applications — the strongest escalation.
+  const ACTIVE = ["submitted", "in_review", "revision", "publishing", "collection"];
+  const breachedItems = submissions.filter((s) => s.is_sla_breached && ACTIVE.includes(s.status));
 
   const stats = {
     total: data?.count ?? 0,
@@ -250,6 +253,33 @@ export default function PortalDashboard() {
             className="shrink-0 inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
           >
             Perbaiki <ChevronRight className="w-4 h-4" aria-hidden="true" />
+          </Link>
+        </motion.div>
+      )}
+
+      {/* SLA breach escalation */}
+      {!isLoading && breachedItems.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-red-200 bg-red-50 p-4 flex items-center gap-4"
+        >
+          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+            <AlertCircle className="w-5 h-5 text-red-600" aria-hidden="true" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-red-900 font-semibold text-sm">
+              {breachedItems.length} permohonan melewati batas SLA
+            </p>
+            <p className="text-red-800/70 text-xs mt-0.5">
+              Batas waktu layanan terlampaui. Kami memprioritaskan tindak lanjutnya — pantau perkembangannya di sini.
+            </p>
+          </div>
+          <Link
+            to={`/portal/submissions/${breachedItems[0].id}`}
+            className="shrink-0 inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            Tinjau <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </Link>
         </motion.div>
       )}

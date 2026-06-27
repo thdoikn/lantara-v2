@@ -101,6 +101,22 @@ export default function VerifierQueue() {
   const breachedCount = submissions.filter((s) => s.is_sla_breached).length;
   const atRiskCount = submissions.filter((s) => !s.is_sla_breached && s.is_sla_at_risk).length;
 
+  // Announce submissions that newly breach SLA between auto-refetches, so a
+  // breach landing in the queue is felt rather than silently appearing.
+  const seenBreached = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    const current = new Set(submissions.filter((s) => s.is_sla_breached).map((s) => s.id));
+    if (seenBreached.current === null) {
+      seenBreached.current = current; // baseline on first load — don't toast
+      return;
+    }
+    const fresh = [...current].filter((id) => !seenBreached.current!.has(id));
+    if (fresh.length > 0) {
+      toast.warning(`${fresh.length} permohonan baru melewati SLA`);
+    }
+    seenBreached.current = current;
+  }, [submissions]);
+
   // Client-side search + SLA filter + sort across the loaded queue.
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
