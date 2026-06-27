@@ -253,7 +253,7 @@ export default function DynamicForm({
     watch,
     setFocus,
     setValue,
-    formState: { errors, touchedFields },
+    formState: { errors, touchedFields, isSubmitted },
   } = useForm({
     resolver: zodResolver(zodSchema),
     defaultValues: defaultValues ?? {},
@@ -302,10 +302,22 @@ export default function DynamicForm({
     document.getElementById(firstKey)?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  // Visible fields that currently have an error — drives the summary banner.
+  // The error to actually surface for a field: format errors show on blur, but
+  // "empty/required" errors stay quiet until the user attempts to submit — so we
+  // never nag about a field they simply haven't reached yet.
+  function visibleError(f: FormField): string | undefined {
+    const raw = (errors[f.key] as { message?: string })?.message;
+    if (!raw) return undefined;
+    const v = watchAll[f.key];
+    const isEmpty =
+      v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
+    return isSubmitted || !isEmpty ? raw : undefined;
+  }
+
+  // Visible fields that currently have a surfaced error — drives the summary banner.
   const errorList = fields
-    .filter((f) => isFieldVisible(f) && errors[f.key])
-    .map((f) => ({ key: f.key, label: f.label, message: (errors[f.key] as { message?: string })?.message }));
+    .filter((f) => isFieldVisible(f) && visibleError(f))
+    .map((f) => ({ key: f.key, label: f.label, message: visibleError(f) }));
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit as never, handleInvalid)} className="space-y-6" noValidate>
@@ -335,7 +347,7 @@ export default function DynamicForm({
       )}
       {fields.map((f) => {
         if (!isFieldVisible(f)) return null;
-        const errMsg = (errors[f.key] as { message?: string })?.message;
+        const errMsg = visibleError(f);
 
         return (
           <div key={f.key}>
