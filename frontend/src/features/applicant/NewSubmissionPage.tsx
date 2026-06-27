@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -26,6 +26,7 @@ function serializableData(values: Record<string, unknown>): Record<string, unkno
 export default function NewSubmissionPage() {
   const { permitKey } = useParams<{ permitKey: string }>();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { initial: draft, savedAt, save, clear } = useFormDraft(permitKey);
   const [step, setStep] = useState<Step>((draft?.step as Step) ?? "form");
   const [submissionId, setSubmissionId] = useState<string | null>(
@@ -86,6 +87,8 @@ export default function NewSubmissionPage() {
       setSubmissionId(res.data.id);
       setStep("documents");
       save({ form_data: serializableData(formData), step: "documents", submissionId: res.data.id });
+      // Refresh any cached submissions list (60s staleTime) so the new draft shows.
+      qc.invalidateQueries({ queryKey: ["submissions"] });
       toast.success("Draf disimpan. Lanjutkan unggah dokumen.");
     },
     onError: (err: unknown) => setApiError(readApiError(err)),
@@ -96,6 +99,9 @@ export default function NewSubmissionPage() {
     mutationFn: () => api.post(`/submissions/${submissionId}/finalize/`, { form_data: formData }),
     onSuccess: (res) => {
       clear();
+      // The draft just became a real submission — invalidate cached lists so the
+      // dashboard doesn't keep showing it as a hanging draft (staleTime is 60s).
+      qc.invalidateQueries({ queryKey: ["submissions"] });
       toast.success(
         res.data.reference_number
           ? `Permohonan terkirim · ${res.data.reference_number}`
