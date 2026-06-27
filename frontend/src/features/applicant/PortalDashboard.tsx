@@ -393,7 +393,11 @@ export default function PortalDashboard() {
                   transition={{ delay: i * 0.04 }}
                 >
                   <div
-                    onClick={() => navigate(`/portal/submissions/${sub.id}`)}
+                    onClick={() =>
+                      sub.status === "draft"
+                        ? navigate(`/portal/new/${sub.permit_type_key}?draft=${sub.id}`)
+                        : navigate(`/portal/submissions/${sub.id}`)
+                    }
                     className="px-5 py-4 flex items-center justify-between hover:bg-khatulistiwa-50/50
                                cursor-pointer transition-colors border-b border-khatulistiwa-50 last:border-0"
                   >
@@ -422,6 +426,11 @@ export default function PortalDashboard() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
+                      {sub.status === "draft" && (
+                        <span className="hidden sm:inline text-xs font-semibold text-khatulistiwa-600">
+                          Lanjutkan
+                        </span>
+                      )}
                       <StatusBadge status={sub.status} />
                       <ChevronRight className="w-4 h-4 text-khatulistiwa-300" aria-hidden="true" />
                     </div>

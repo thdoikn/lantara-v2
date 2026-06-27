@@ -52,6 +52,7 @@ class SiteVisitSerializer(serializers.ModelSerializer):
 
 class SubmissionListSerializer(serializers.ModelSerializer):
     permit_type_name = serializers.CharField(source="permit_type.name", read_only=True)
+    permit_type_key = serializers.CharField(source="permit_type.key", read_only=True)
     sektor_name = serializers.CharField(source="permit_type.sektor.name", read_only=True)
     sektor_key = serializers.CharField(source="permit_type.sektor.key", read_only=True)
     applicant_name = serializers.CharField(source="applicant.full_name", read_only=True)
@@ -63,6 +64,7 @@ class SubmissionListSerializer(serializers.ModelSerializer):
             "reference_number",
             "status",
             "permit_type_name",
+            "permit_type_key",
             "sektor_name",
             "sektor_key",
             "applicant_name",

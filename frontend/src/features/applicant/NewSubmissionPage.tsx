@@ -1,13 +1,13 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Save, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { useFormDraft } from "@/lib/useFormDraft";
-import type { PermitType, UploadedDocument } from "@/types";
+import type { PermitType, UploadedDocument, Submission } from "@/types";
 import DynamicForm from "./DynamicForm";
 import DocumentUploadSection from "./DocumentUploadSection";
 
@@ -40,6 +40,21 @@ export default function NewSubmissionPage() {
       save({ form_data: serializableData(values), step, submissionId }),
     [save, step, submissionId],
   );
+
+  // Resume an existing server-side DRAFT (from the dashboard list) by ?draft=<id>.
+  const [searchParams] = useSearchParams();
+  const draftId = searchParams.get("draft");
+  const { data: serverDraft } = useQuery<Submission>({
+    queryKey: ["submission-draft", draftId],
+    queryFn: () => api.get(`/submissions/${draftId}/`).then((r) => r.data),
+    enabled: !!draftId,
+  });
+  useEffect(() => {
+    if (!serverDraft) return;
+    setSubmissionId(serverDraft.id);
+    setFormData((serverDraft.form_data as Record<string, unknown>) ?? {});
+    setStep("documents");
+  }, [serverDraft]);
 
   const { data: permitType, isLoading } = useQuery<PermitType>({
     queryKey: ["permit-type", permitKey],
