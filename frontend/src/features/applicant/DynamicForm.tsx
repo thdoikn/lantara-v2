@@ -106,6 +106,18 @@ function FieldLabel({ field, error }: { field: FormField; error?: string }) {
   );
 }
 
+function CharCount({ value, max }: { value: unknown; max?: number }) {
+  if (!max) return null;
+  const len = typeof value === "string" ? value.length : 0;
+  return (
+    <p className={cn("mt-1 text-right text-[11px]", len > max ? "text-red-500" : "text-khatulistiwa-400/60")}>
+      {len}/{max}
+    </p>
+  );
+}
+
+const idCurrency = new Intl.NumberFormat("id-ID");
+
 // ── DynamicForm component ───────────────────────────────────────────────────
 
 interface Props {
@@ -144,6 +156,7 @@ export default function DynamicForm({
     control,
     reset,
     watch,
+    setFocus,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(zodSchema),
@@ -182,16 +195,53 @@ export default function DynamicForm({
     onSubmit(clean, fileMap);
   }
 
+  // On a failed submit, focus + scroll to the first errored field (in field order).
+  function handleInvalid() {
+    const firstKey = fields.find((f) => errors[f.key])?.key;
+    if (!firstKey) return;
+    setFocus(firstKey);
+    document.getElementById(firstKey)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  // Visible fields that currently have an error — drives the summary banner.
+  const errorList = fields
+    .filter((f) => isFieldVisible(f) && errors[f.key])
+    .map((f) => ({ key: f.key, label: f.label, message: (errors[f.key] as { message?: string })?.message }));
+
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit as never)} className="space-y-6" noValidate>
+    <form onSubmit={handleSubmit(handleFormSubmit as never, handleInvalid)} className="space-y-6" noValidate>
+      {errorList.length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4" role="alert">
+          <p className="text-sm font-semibold text-red-800">
+            {errorList.length} isian perlu diperbaiki
+          </p>
+          <ul className="mt-2 space-y-1">
+            {errorList.map((e) => (
+              <li key={e.key}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFocus(e.key);
+                    document.getElementById(e.key)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }}
+                  className="text-xs text-red-700 underline underline-offset-2 hover:text-red-900"
+                >
+                  {e.label}
+                  {e.message ? ` — ${e.message}` : ""}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {fields.map((f) => {
         if (!isFieldVisible(f)) return null;
         const errMsg = (errors[f.key] as { message?: string })?.message;
 
         return (
           <div key={f.key}>
-            {/* Text / email / number / currency / tel / nik / npwp / phone */}
-            {["text", "email", "number", "currency", "tel", "nik", "npwp", "phone"].includes(f.field_type) && (
+            {/* Text / email / number / tel / nik / npwp / phone */}
+            {["text", "email", "number", "tel", "nik", "npwp", "phone"].includes(f.field_type) && (
               <div>
                 <FieldLabel field={f} error={errMsg} />
                 <input
@@ -199,7 +249,7 @@ export default function DynamicForm({
                   type={
                     f.field_type === "email"
                       ? "email"
-                      : f.field_type === "number" || f.field_type === "currency"
+                      : f.field_type === "number"
                       ? "number"
                       : f.field_type === "tel" || f.field_type === "phone"
                       ? "tel"
@@ -217,6 +267,43 @@ export default function DynamicForm({
                      f.field_type === "phone" ? "Contoh: 08123456789" : "")
                   }
                 />
+                {(f.field_type === "text") && (
+                  <CharCount value={watchAll[f.key]} max={f.validation_json?.maxLength} />
+                )}
+              </div>
+            )}
+
+            {/* Currency — grouped digits for legibility, numeric value preserved */}
+            {f.field_type === "currency" && (
+              <div>
+                <FieldLabel field={f} error={errMsg} />
+                <Controller
+                  name={f.key}
+                  control={control}
+                  render={({ field: ctrl }) => {
+                    const digits = String(ctrl.value ?? "").replace(/\D/g, "");
+                    return (
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-khatulistiwa-400">
+                          Rp
+                        </span>
+                        <input
+                          id={f.key}
+                          type="text"
+                          inputMode="numeric"
+                          value={digits ? idCurrency.format(Number(digits)) : ""}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, "");
+                            ctrl.onChange(raw ? Number(raw) : "");
+                          }}
+                          onBlur={ctrl.onBlur}
+                          className={cn(inputBase, "pl-9", errMsg && "border-red-300 focus:ring-red-200/50")}
+                          placeholder={f.validation_json?.placeholder ?? "0"}
+                        />
+                      </div>
+                    );
+                  }}
+                />
               </div>
             )}
 
@@ -231,6 +318,7 @@ export default function DynamicForm({
                   className={cn(inputBase, "resize-y", errMsg && "border-red-300 focus:ring-red-200/50")}
                   placeholder={f.validation_json?.placeholder ?? ""}
                 />
+                <CharCount value={watchAll[f.key]} max={f.validation_json?.maxLength} />
               </div>
             )}
 
@@ -282,6 +370,9 @@ export default function DynamicForm({
                   defaultValue={[]}
                   render={({ field: ctrl }) => (
                     <div className="space-y-2">
+                      <p className="text-[11px] font-medium text-khatulistiwa-400/70">
+                        {(ctrl.value as string[]).length} dari {(f.options_json ?? []).length} dipilih
+                      </p>
                       {(f.options_json ?? []).map((opt) => {
                         const checked = (ctrl.value as string[]).includes(opt.value);
                         return (
