@@ -531,6 +531,19 @@ export default function SubmissionDetailPage() {
                   ? `Bagian yang perlu diperbaiki (${openRevisions.length})`
                   : "Revisi diperlukan"}
               </p>
+              {submission.revision_due_at && (
+                <p
+                  className={cn(
+                    "text-xs font-semibold mb-2 inline-flex items-center gap-1.5",
+                    isPast(parseISO(submission.revision_due_at)) ? "text-red-600" : "text-amber-700",
+                  )}
+                >
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                  {isPast(parseISO(submission.revision_due_at))
+                    ? `Batas revisi terlewati ${formatDistanceToNow(parseISO(submission.revision_due_at), { locale: localeId })}`
+                    : `Batas revisi ${formatDistanceToNow(parseISO(submission.revision_due_at), { addSuffix: true, locale: localeId })}`}
+                </p>
+              )}
               {openRevisions.length > 0 ? (
                 <>
                   <p className="text-xs text-amber-800/70 mb-3">
@@ -545,6 +558,19 @@ export default function SubmissionDetailPage() {
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-amber-900">{revisionLabel(r)}</p>
                           {r.note && <p className="text-xs text-amber-800/80 mt-0.5">{r.note}</p>}
+                          {!r.is_doc_requirement &&
+                            r.original_value !== undefined &&
+                            r.original_value !== null &&
+                            r.original_value !== "" && (
+                              <p className="text-xs text-amber-700/70 mt-0.5">
+                                Sebelumnya:{" "}
+                                <span className="font-medium line-through decoration-amber-300">
+                                  {Array.isArray(r.original_value)
+                                    ? r.original_value.join(", ")
+                                    : String(r.original_value)}
+                                </span>
+                              </p>
+                            )}
                         </div>
                       </li>
                     ))}
