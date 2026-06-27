@@ -20,6 +20,21 @@ const BULK_TOAST: Record<BulkAction, string> = {
   reject: "ditolak",
 };
 
+// Common reasons, offered as one-tap chips to fill the note field.
+const NOTE_TEMPLATES: Record<BulkAction, string[]> = {
+  approve: [],
+  request_revision: [
+    "Kualitas pindaian dokumen kurang jelas.",
+    "Data tidak sesuai dokumen pendukung.",
+    "Mohon lengkapi dokumen yang masih kurang.",
+  ],
+  reject: [
+    "Tidak memenuhi persyaratan.",
+    "Dokumen tidak valid atau kedaluwarsa.",
+    "Data tidak dapat diverifikasi.",
+  ],
+};
+
 const STATUS_LABEL: Record<SubmissionStatus, string> = {
   draft:      "Draft",
   submitted:  "Baru Masuk",
@@ -62,6 +77,8 @@ export default function VerifierQueue() {
   const [activeTab, setActiveTab] = useState(0);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
+  const [slaFilter, setSlaFilter] = useState<"all" | "at_risk" | "breached">("all");
+  const [sortBy, setSortBy] = useState<"sla" | "newest" | "applicant">("sla");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [bulkType, setBulkType] = useState<BulkAction | null>(null);
   const [bulkNote, setBulkNote] = useState("");
@@ -72,7 +89,7 @@ export default function VerifierQueue() {
   const rowRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const { statuses } = FILTER_TABS[activeTab];
 
-  const { data, isLoading, refetch, isFetching } = useQuery<PaginatedResponse<Submission>>({
+  const { data, isLoading, refetch, isFetching, dataUpdatedAt } = useQuery<PaginatedResponse<Submission>>({
     queryKey: ["verifier-queue", statuses],
     queryFn: () =>
       api.get(`/submissions/?status=${statuses.join(",")}&ordering=sla_due_at`).then((r) => r.data),
@@ -83,22 +100,36 @@ export default function VerifierQueue() {
   const breachedCount = submissions.filter((s) => s.is_sla_breached).length;
   const atRiskCount = submissions.filter((s) => !s.is_sla_breached && s.is_sla_at_risk).length;
 
-  // Client-side search across the loaded queue (ref #, applicant, permit).
+  // Client-side search + SLA filter + sort across the loaded queue.
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return submissions;
-    return submissions.filter(
-      (s) =>
+    let out = submissions.filter((s) => {
+      if (slaFilter === "breached" && !s.is_sla_breached) return false;
+      if (slaFilter === "at_risk" && !(s.is_sla_at_risk && !s.is_sla_breached)) return false;
+      if (!q) return true;
+      return (
         s.permit_type_name?.toLowerCase().includes(q) ||
         s.applicant_name?.toLowerCase().includes(q) ||
-        s.reference_number?.toLowerCase().includes(q),
-    );
-  }, [submissions, query]);
+        s.reference_number?.toLowerCase().includes(q)
+      );
+    });
+    out = [...out].sort((a, b) => {
+      if (sortBy === "newest")
+        return (b.submitted_at ?? "").localeCompare(a.submitted_at ?? "");
+      if (sortBy === "applicant")
+        return (a.applicant_name ?? "").localeCompare(b.applicant_name ?? "");
+      // sla: nulls last, soonest first
+      return (a.sla_due_at ?? "9999").localeCompare(b.sla_due_at ?? "9999");
+    });
+    return out;
+  }, [submissions, query, slaFilter, sortBy]);
 
   useEffect(() => {
     setSelected(0);
     setPicked(new Set());
-  }, [activeTab, query]);
+  }, [activeTab, query, slaFilter, sortBy]);
+
+  useEffect(() => setSlaFilter("all"), [activeTab]);
 
   function togglePick(id: string) {
     setPicked((prev) => {
@@ -181,40 +212,68 @@ export default function VerifierQueue() {
             {isLoading ? "Memuat…" : `${data?.count ?? 0} permohonan aktif`}
           </p>
         </div>
-        <button
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="flex items-center gap-1.5 bg-white border border-khatulistiwa-100 hover:border-khatulistiwa-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-khatulistiwa-700 shadow-sm transition-colors"
-          aria-label="Refresh antrean"
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} aria-hidden="true" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {dataUpdatedAt > 0 && (
+            <span className="hidden sm:inline text-[11px] text-khatulistiwa-400">
+              Diperbarui {format(new Date(dataUpdatedAt), "HH:mm", { locale: localeId })}
+            </span>
+          )}
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="flex items-center gap-1.5 bg-white border border-khatulistiwa-100 hover:border-khatulistiwa-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-khatulistiwa-700 shadow-sm transition-colors"
+            aria-label="Refresh antrean"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} aria-hidden="true" />
+            Refresh
+          </button>
+        </div>
       </div>
 
-      {/* ── Quick stats ── */}
+      {/* ── Quick stats (at-risk / breached double as filters) ── */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="flex flex-col justify-between min-h-[100px] rounded-2xl border border-khatulistiwa-100 bg-white p-4">
+        <button
+          onClick={() => setSlaFilter("all")}
+          className={cn(
+            "flex flex-col justify-between min-h-[100px] rounded-2xl border bg-white p-4 text-left transition-all",
+            slaFilter === "all" ? "border-khatulistiwa-400 ring-2 ring-khatulistiwa-200" : "border-khatulistiwa-100 hover:border-khatulistiwa-300",
+          )}
+          aria-pressed={slaFilter === "all"}
+        >
           <Inbox className="w-5 h-5 text-khatulistiwa-400" aria-hidden="true" />
           <div>
             <p className="text-2xl font-bold text-khatulistiwa-900">{data?.count ?? 0}</p>
             <p className="text-xs text-khatulistiwa-600/70">Total Dalam Kategori</p>
           </div>
-        </div>
-        <div className="flex flex-col justify-between min-h-[100px] rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        </button>
+        <button
+          onClick={() => setSlaFilter((f) => (f === "at_risk" ? "all" : "at_risk"))}
+          className={cn(
+            "flex flex-col justify-between min-h-[100px] rounded-2xl border bg-amber-50 p-4 text-left transition-all",
+            slaFilter === "at_risk" ? "border-amber-400 ring-2 ring-amber-200" : "border-amber-200 hover:border-amber-300",
+          )}
+          aria-pressed={slaFilter === "at_risk"}
+        >
           <Clock className="w-5 h-5 text-amber-500" aria-hidden="true" />
           <div>
             <p className="text-2xl font-bold text-khatulistiwa-900">{atRiskCount}</p>
             <p className="text-xs text-khatulistiwa-600/70">Mendekati SLA</p>
           </div>
-        </div>
-        <div className="flex flex-col justify-between min-h-[100px] rounded-2xl border border-red-200 bg-red-50 p-4">
+        </button>
+        <button
+          onClick={() => setSlaFilter((f) => (f === "breached" ? "all" : "breached"))}
+          className={cn(
+            "flex flex-col justify-between min-h-[100px] rounded-2xl border bg-red-50 p-4 text-left transition-all",
+            slaFilter === "breached" ? "border-red-400 ring-2 ring-red-200" : "border-red-200 hover:border-red-300",
+          )}
+          aria-pressed={slaFilter === "breached"}
+        >
           <Flame className="w-5 h-5 text-red-500" aria-hidden="true" />
           <div>
             <p className="text-2xl font-bold text-khatulistiwa-900">{breachedCount}</p>
             <p className="text-xs text-khatulistiwa-600/70">SLA Terlampaui</p>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* ── Filter tabs ── */}
@@ -253,6 +312,19 @@ export default function VerifierQueue() {
             </button>
           )}
         </div>
+        <label className="flex items-center gap-1.5 bg-white border border-khatulistiwa-100 rounded-xl px-3 py-2.5 text-xs text-khatulistiwa-600">
+          <span className="text-khatulistiwa-400">Urutkan</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="bg-transparent font-semibold text-khatulistiwa-800 outline-none cursor-pointer"
+            aria-label="Urutkan antrean"
+          >
+            <option value="sla">SLA terdekat</option>
+            <option value="newest">Terbaru diajukan</option>
+            <option value="applicant">Nama pemohon</option>
+          </select>
+        </label>
         <div className="hidden sm:flex items-center gap-2 text-[11px] text-khatulistiwa-400">
           <span className="flex items-center gap-1"><Kbd>j</Kbd><Kbd>k</Kbd> pilih</span>
           <span className="flex items-center gap-1"><Kbd>↵</Kbd> buka</span>
@@ -462,6 +534,20 @@ export default function VerifierQueue() {
                 Tindakan ini diterapkan ke semua permohonan terpilih. Permohonan yang transisinya tidak
                 valid akan dilewati.
               </p>
+              {NOTE_TEMPLATES[bulkType].length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {NOTE_TEMPLATES[bulkType].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setBulkNote(t)}
+                      className="rounded-full border border-khatulistiwa-200 bg-khatulistiwa-50 px-2.5 py-1 text-[11px] font-medium text-khatulistiwa-700 hover:bg-khatulistiwa-100 transition-colors"
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
               <textarea
                 value={bulkNote}
                 onChange={(e) => setBulkNote(e.target.value)}
