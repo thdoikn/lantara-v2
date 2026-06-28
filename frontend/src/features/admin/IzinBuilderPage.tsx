@@ -5,7 +5,7 @@
  * Stages and form fields support drag-to-reorder via Framer Motion Reorder.
  * All five CRUD operations (add/edit for stages, fields, docs) are wired up.
  */
-import { useState, useId, cloneElement, isValidElement } from "react";
+import { useState, useId, useRef, cloneElement, isValidElement } from "react";
 import type { ReactElement } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -103,6 +103,22 @@ function Modal({
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+/**
+ * Returns a close handler that warns if the form has unsaved edits. Pass it as
+ * the modal's onClose (covers the X / overlay / Esc) and to the Batal button.
+ * Call after a successful save with the raw onClose to skip the prompt.
+ */
+function useUnsavedGuard<T>(form: T, onClose: () => void) {
+  const initial = useRef(JSON.stringify(form));
+  return () => {
+    if (JSON.stringify(form) !== initial.current &&
+        !window.confirm("Ada perubahan yang belum disimpan. Tutup tanpa menyimpan?")) {
+      return;
+    }
+    onClose();
+  };
 }
 
 function Field({ label, required, error, hint, children }: {
@@ -238,11 +254,11 @@ function slugify(s: string) {
 // ── Stage Modal ───────────────────────────────────────────────────────────────
 
 const STAGE_TYPES = [
-  { value: "verification", label: "Verifikasi" },
-  { value: "payment", label: "Pembayaran" },
-  { value: "external", label: "Proses Eksternal" },
-  { value: "publish", label: "Penerbitan" },
-  { value: "collection", label: "Pengambilan" },
+  { value: "verification", label: "Verifikasi", desc: "Tim teknis memeriksa & menyetujui/menolak/meminta revisi." },
+  { value: "payment", label: "Pembayaran", desc: "Menunggu/konfirmasi pembayaran retribusi." },
+  { value: "external", label: "Proses Eksternal", desc: "Menunggu proses di sistem/instansi lain." },
+  { value: "publish", label: "Penerbitan", desc: "Tahap akhir — dokumen izin diterbitkan (terminal)." },
+  { value: "collection", label: "Pengambilan", desc: "Pemohon mengambil/menerima izin (terminal)." },
 ] as const;
 
 const ACTION_OPTIONS = ["approve", "revise", "reject", "generate", "sign", "visit", "payment"];
@@ -302,6 +318,7 @@ function StageModal({
         }
   );
   const [errors, setErrors] = useState<Partial<Record<keyof StageForm, string>>>({});
+  const requestClose = useUnsavedGuard(form, onClose);
 
   const save = useMutation({
     mutationFn: (body: object) =>
@@ -361,7 +378,7 @@ function StageModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? "Edit Tahap" : "Tambah Tahap"}>
+    <Modal open={open} onClose={requestClose} title={isEdit ? "Edit Tahap" : "Tambah Tahap"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Nama Tahap" required error={errors.name}>
           <input className={inputCls} value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="cth. Verifikasi Tim Teknis" />
@@ -376,7 +393,12 @@ function StageModal({
               disabled={isEdit}
             />
           </Field>
-          <Field label="Tipe Tahap" required error={errors.stage_type}>
+          <Field
+            label="Tipe Tahap"
+            required
+            error={errors.stage_type}
+            hint={STAGE_TYPES.find((t) => t.value === form.stage_type)?.desc}
+          >
             <select className={selectCls} value={form.stage_type} onChange={(e) => set("stage_type", e.target.value)}>
               {STAGE_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -386,7 +408,7 @@ function StageModal({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Pelaksana / Peran">
+          <Field label="Pelaksana / Peran" hint="Peran yang menangani tahap ini, mis. tim_teknis. Wajib untuk tahap verifikasi.">
             <input className={inputCls} value={form.actor_role} onChange={(e) => set("actor_role", e.target.value)} placeholder="tim_teknis" />
           </Field>
           <Field label="SLA (jam)">
@@ -446,7 +468,7 @@ function StageModal({
         )}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors">Batal</button>
+          <button type="button" onClick={requestClose} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors">Batal</button>
           <button
             type="submit"
             disabled={save.isPending}
@@ -555,7 +577,9 @@ function FieldModal({
         }
   );
   const [errors, setErrors] = useState<Partial<Record<keyof FieldForm, string>>>({});
+  const requestClose = useUnsavedGuard(form, onClose);
   const [newOptionLabel, setNewOptionLabel] = useState("");
+  const [bulkText, setBulkText] = useState("");
 
   const save = useMutation({
     mutationFn: (body: object) =>
@@ -632,7 +656,7 @@ function FieldModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? "Edit Field" : "Tambah Field"}>
+    <Modal open={open} onClose={requestClose} title={isEdit ? "Edit Field" : "Tambah Field"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Label Field" required error={errors.label}>
           <input className={inputCls} value={form.label} onChange={(e) => set("label", e.target.value)} placeholder="cth. Nama Lengkap" />
@@ -693,6 +717,35 @@ function FieldModal({
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
+              <details className="group">
+                <summary className="text-xs text-ink-muted cursor-pointer select-none hover:text-ink">
+                  Tempel banyak pilihan sekaligus
+                </summary>
+                <div className="mt-2 space-y-1.5">
+                  <textarea
+                    className={inputCls + " resize-none text-xs"}
+                    rows={3}
+                    value={bulkText}
+                    onChange={(e) => setBulkText(e.target.value)}
+                    placeholder={"Satu pilihan per baris\nBadan Hukum\nPerorangan\nKoperasi"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const labels = bulkText.split("\n").map((s) => s.trim()).filter(Boolean);
+                      if (!labels.length) return;
+                      setForm((f) => ({
+                        ...f,
+                        options: [...f.options, ...labels.map((l) => ({ value: slugify(l), label: l }))],
+                      }));
+                      setBulkText("");
+                    }}
+                    className="text-xs font-semibold text-royal-700 hover:text-royal-800"
+                  >
+                    + Tambah {bulkText.split("\n").map((s) => s.trim()).filter(Boolean).length || ""} pilihan
+                  </button>
+                </div>
+              </details>
             </div>
           </Field>
         )}
@@ -776,7 +829,7 @@ function FieldModal({
         )}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors">Batal</button>
+          <button type="button" onClick={requestClose} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors">Batal</button>
           <button
             type="submit"
             disabled={save.isPending}
@@ -849,6 +902,7 @@ function DocModal({
         }
   );
   const [errors, setErrors] = useState<Partial<Record<keyof DocForm, string>>>({});
+  const requestClose = useUnsavedGuard(form, onClose);
 
   const save = useMutation({
     mutationFn: (body: object) =>
@@ -907,7 +961,7 @@ function DocModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? "Edit Persyaratan" : "Tambah Persyaratan Dokumen"}>
+    <Modal open={open} onClose={requestClose} title={isEdit ? "Edit Persyaratan" : "Tambah Persyaratan Dokumen"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Judul Dokumen" required error={errors.title}>
           <input className={inputCls} value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="cth. KTP Pemohon" />
@@ -978,7 +1032,7 @@ function DocModal({
         )}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors">Batal</button>
+          <button type="button" onClick={requestClose} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors">Batal</button>
           <button
             type="submit"
             disabled={save.isPending}
@@ -1421,6 +1475,14 @@ function StagesEditor({
           </Reorder.Item>
         ))}
       </Reorder.Group>
+      {items.length === 0 && (
+        <button
+          onClick={() => setShowAdd(true)}
+          className="w-full rounded-xl border border-dashed border-border py-8 text-sm text-ink-muted hover:border-royal-400 hover:text-royal-700 transition-colors"
+        >
+          Belum ada tahap. <span className="font-semibold">Tambahkan tahap pertama</span> untuk membangun alur kerja.
+        </button>
+      )}
 
       <StageModal
         open={showAdd}
@@ -1537,6 +1599,14 @@ function FieldsEditor({
           </Reorder.Item>
         ))}
       </Reorder.Group>
+      {items.length === 0 && (
+        <button
+          onClick={() => setShowAdd(true)}
+          className="w-full rounded-xl border border-dashed border-border py-8 text-sm text-ink-muted hover:border-royal-400 hover:text-royal-700 transition-colors"
+        >
+          Belum ada field. <span className="font-semibold">Tambahkan field pertama</span> untuk formulir pemohon.
+        </button>
+      )}
 
       <FieldModal
         open={showAdd}
@@ -1665,6 +1735,14 @@ function DocsEditor({
           </Reorder.Item>
         ))}
       </Reorder.Group>
+      {items.length === 0 && (
+        <button
+          onClick={() => setShowAdd(true)}
+          className="w-full rounded-xl border border-dashed border-border py-8 text-sm text-ink-muted hover:border-royal-400 hover:text-royal-700 transition-colors"
+        >
+          Belum ada persyaratan dokumen. <span className="font-semibold">Tambahkan persyaratan pertama</span>.
+        </button>
+      )}
 
       <DocModal
         open={showAdd}
