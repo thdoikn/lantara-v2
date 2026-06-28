@@ -890,3 +890,46 @@ class TestWorkloadAssignment:
         res = client.get("/api/v1/submissions/?assigned=me")
         ids = [r["id"] for r in res.data["results"]]
         assert str(mine.id) in ids and len(ids) == 1
+
+    def test_stale_claim_released_by_sweep(self, applicant, permit_type, verifier):
+        from apps.submissions.tasks import release_stale_claims
+
+        old = self._sub(applicant, permit_type)
+        old.assigned_to = verifier
+        old.assigned_at = timezone.now() - timedelta(hours=6)  # well past 4h default
+        old.save(update_fields=["assigned_to", "assigned_at"])
+
+        fresh = self._sub(applicant, permit_type)
+        fresh.assigned_to = verifier
+        fresh.assigned_at = timezone.now()
+        fresh.save(update_fields=["assigned_to", "assigned_at"])
+
+        release_stale_claims()
+        old.refresh_from_db()
+        fresh.refresh_from_db()
+        assert old.assigned_to_id is None  # stale → released
+        assert fresh.assigned_to_id == verifier.id  # recent → kept
+
+    def test_stale_claim_kept_if_acted_after_claim(self, applicant, permit_type, verifier):
+        from apps.submissions.tasks import release_stale_claims
+
+        sub = self._sub(applicant, permit_type)
+        sub.assigned_to = verifier
+        sub.assigned_at = timezone.now() - timedelta(hours=6)
+        sub.last_acted_at = timezone.now()  # acted after claiming → still active
+        sub.save(update_fields=["assigned_to", "assigned_at", "last_acted_at"])
+        release_stale_claims()
+        sub.refresh_from_db()
+        assert sub.assigned_to_id == verifier.id
+
+    def test_audit_exposes_actor_role(self, applicant, permit_type, verifier):
+        sub = self._sub(applicant, permit_type)
+        AuditEntry.objects.create(submission=sub, action="approve", actor=verifier, is_applicant_action=False)
+        AuditEntry.objects.create(submission=sub, action="submit", actor=applicant, is_applicant_action=True)
+        AuditEntry.objects.create(submission=sub, action="generate", actor=None)
+        client = self._admin(verifier)
+        res = client.get(f"/api/v1/submissions/{sub.id}/audit/")
+        roles = {e["action"]: e["actor_role"] for e in res.data}
+        assert roles["approve"] == "staff"
+        assert roles["submit"] == "applicant"
+        assert roles["generate"] == "system"

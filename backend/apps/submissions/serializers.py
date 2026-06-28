@@ -7,6 +7,7 @@ from .models import AuditEntry, SiteVisit, Submission, SubmissionRevisionField
 
 class AuditEntrySerializer(serializers.ModelSerializer):
     actor_name = serializers.SerializerMethodField()
+    actor_role = serializers.SerializerMethodField()
 
     class Meta:
         model = AuditEntry
@@ -14,6 +15,8 @@ class AuditEntrySerializer(serializers.ModelSerializer):
             "id",
             "action",
             "actor_name",
+            "actor_role",
+            "actor_email",
             "is_applicant_action",
             "from_stage_key",
             "to_stage_key",
@@ -23,10 +26,22 @@ class AuditEntrySerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    actor_email = serializers.SerializerMethodField()
+
     def get_actor_name(self, obj):
         if obj.actor:
             return obj.actor.full_name
         return "Sistem"
+
+    def get_actor_email(self, obj):
+        return obj.actor.email if obj.actor_id else None
+
+    def get_actor_role(self, obj):
+        # Clear attribution: who really did this — applicant, a staff verifier,
+        # or an automated system action.
+        if obj.actor_id is None:
+            return "system"
+        return "applicant" if obj.is_applicant_action else "staff"
 
 
 class RevisionFieldSerializer(serializers.ModelSerializer):

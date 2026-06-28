@@ -130,7 +130,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.submissions.tasks.sweep_sla",
         "schedule": crontab(minute="*/30"),
     },
+    "release-stale-claims": {
+        "task": "apps.submissions.tasks.release_stale_claims",
+        "schedule": crontab(minute="*/15"),
+    },
 }
+
+# Auto-release a verifier's claim if held this many hours with no action taken,
+# so an abandoned claim doesn't block teammates.
+STALE_CLAIM_HOURS = env.int("STALE_CLAIM_HOURS", default=4)
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
