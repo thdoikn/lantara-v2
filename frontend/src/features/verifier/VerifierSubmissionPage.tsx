@@ -433,13 +433,6 @@ export default function VerifierSubmissionPage() {
     onError: () => toast.error("Gagal menyimpan tindakan. Silakan coba lagi."),
   });
 
-  const handleAction = useCallback(
-    (type: ActionType, note: string, revisionFields?: RevisionFieldInput[]) => {
-      actMutation.mutate({ action: type, notes: note, revision_fields: revisionFields });
-    },
-    [actMutation]
-  );
-
   // Find the submission that follows this one in any cached verifier queue, so
   // "approve & next" keeps the verifier moving without a trip back to the list.
   const nextQueuedId = useCallback((): string | null => {
@@ -451,6 +444,22 @@ export default function VerifierSubmissionPage() {
     }
     return null;
   }, [qc, id]);
+
+  const handleAction = useCallback(
+    (type: ActionType, note: string, revisionFields?: RevisionFieldInput[]) => {
+      // Revise/reject removes the item from this stage's queue, so flow to the
+      // next queued submission (mirrors "approve & next").
+      const goNext = type === "request_revision" || type === "reject";
+      const next = goNext ? nextQueuedId() : null;
+      actMutation.mutate(
+        { action: type, notes: note, revision_fields: revisionFields },
+        goNext
+          ? { onSuccess: () => navigate(next ? `/verifier/submissions/${next}` : "/verifier/queue") }
+          : undefined,
+      );
+    },
+    [actMutation, nextQueuedId, navigate]
+  );
 
   const approveAndNext = useCallback(() => {
     const next = nextQueuedId();
@@ -643,8 +652,8 @@ export default function VerifierSubmissionPage() {
           </div>
         </div>
 
-        {/* Right: actions + SLA */}
-        <div className="space-y-4">
+        {/* Right: actions + SLA (sticky on desktop so they stay reachable) */}
+        <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           {(() => {
             const stageType =
               submission.schema_snapshot?.stages?.find((s) => s.key === submission.current_stage_key)?.stage_type ??

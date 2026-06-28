@@ -1,10 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format, parseISO, differenceInHours } from "date-fns";
+import { format, parseISO, differenceInHours, formatDistanceToNow, isPast } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Clock, AlertTriangle, CheckCircle2, RefreshCw, Flame, Inbox, BadgeCheck, Search, X, RotateCcw, XCircle } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle2, RefreshCw, Flame, Inbox, BadgeCheck, Search, X, RotateCcw, XCircle, FileText, PenLine } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -74,12 +74,32 @@ const SLA_STYLES: Record<SLALevel, { bar: string; bg: string; text: string; Icon
   ok:       { bar: "bg-khatulistiwa-100", bg: "ring-khatulistiwa-100/60", text: "text-khatulistiwa-500/70", Icon: Clock },
 };
 
+function lsGet(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
 export default function VerifierQueue() {
-  const [activeTab, setActiveTab] = useState(0);
+  const [params] = useSearchParams();
+  // Initial filters come from the URL (dashboard deep-links) then the last
+  // session's saved preferences, so the queue opens where the verifier left off.
+  const [activeTab, setActiveTab] = useState(() => {
+    const t = params.get("tab");
+    if (t !== null && FILTER_TABS[Number(t)]) return Number(t);
+    const saved = lsGet("vq_tab");
+    return saved !== null && FILTER_TABS[Number(saved)] ? Number(saved) : 0;
+  });
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
-  const [slaFilter, setSlaFilter] = useState<"all" | "at_risk" | "breached">("all");
-  const [sortBy, setSortBy] = useState<"sla" | "newest" | "applicant">("sla");
+  const [slaFilter, setSlaFilter] = useState<"all" | "at_risk" | "breached">(() => {
+    const s = params.get("sla");
+    if (s === "at_risk" || s === "breached") return s;
+    const saved = lsGet("vq_sla");
+    return saved === "at_risk" || saved === "breached" ? saved : "all";
+  });
+  const [sortBy, setSortBy] = useState<"sla" | "newest" | "applicant">(() => {
+    const saved = lsGet("vq_sort");
+    return saved === "newest" || saved === "applicant" ? saved : "sla";
+  });
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [bulkType, setBulkType] = useState<BulkAction | null>(null);
   const [bulkNote, setBulkNote] = useState("");
@@ -146,7 +166,22 @@ export default function VerifierQueue() {
     setPicked(new Set());
   }, [activeTab, query, slaFilter, sortBy]);
 
-  useEffect(() => setSlaFilter("all"), [activeTab]);
+  // Reset the SLA filter when the status tab changes — but not on first mount,
+  // so a deep-link / saved SLA filter survives.
+  const firstTabRun = useRef(true);
+  useEffect(() => {
+    if (firstTabRun.current) { firstTabRun.current = false; return; }
+    setSlaFilter("all");
+  }, [activeTab]);
+
+  // Persist filter preferences so the queue reopens where it was left.
+  useEffect(() => {
+    try {
+      localStorage.setItem("vq_tab", String(activeTab));
+      localStorage.setItem("vq_sla", slaFilter);
+      localStorage.setItem("vq_sort", sortBy);
+    } catch { /* ignore */ }
+  }, [activeTab, slaFilter, sortBy]);
 
   function togglePick(id: string) {
     setPicked((prev) => {
@@ -446,6 +481,32 @@ export default function VerifierQueue() {
                           <span className="text-[11px] text-khatulistiwa-600/70 bg-khatulistiwa-50 px-2 py-0.5 rounded-full font-medium">
                             {STATUS_LABEL[sub.status]}
                           </span>
+                          {(sub.required_document_count ?? 0) > 0 && (
+                            <span
+                              className={cn(
+                                "text-[11px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1",
+                                (sub.document_count ?? 0) >= (sub.required_document_count ?? 0)
+                                  ? "text-emerald-700 bg-emerald-50"
+                                  : "text-khatulistiwa-600/70 bg-khatulistiwa-50",
+                              )}
+                            >
+                              <FileText className="h-3 w-3" aria-hidden="true" />
+                              {sub.document_count ?? 0}/{sub.required_document_count} dok
+                            </span>
+                          )}
+                          {sub.status === "revision" && sub.revision_due_at && (
+                            <span
+                              className={cn(
+                                "text-[11px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1",
+                                isPast(parseISO(sub.revision_due_at))
+                                  ? "text-red-600 bg-red-50"
+                                  : "text-amber-700 bg-amber-50",
+                              )}
+                            >
+                              <PenLine className="h-3 w-3" aria-hidden="true" />
+                              Revisi {formatDistanceToNow(parseISO(sub.revision_due_at), { addSuffix: true, locale: localeId })}
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-khatulistiwa-600/70 mt-1">
                           <span className="font-medium text-khatulistiwa-800">{sub.applicant_name}</span>
