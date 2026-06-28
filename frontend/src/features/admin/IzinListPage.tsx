@@ -2,10 +2,10 @@
  * Lists all izin for a sektor; links to the builder for each.
  * Includes Tambah Izin and Edit Izin modals.
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
-import { ChevronRight, Plus, Eye, EyeOff, Edit3, X, Loader2 } from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { ChevronRight, Plus, Eye, EyeOff, Edit3, X, Loader2, Copy, Search, AlertCircle, FilePlus2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import api from "@/lib/api";
 import { toast } from "@/lib/toast";
@@ -21,6 +21,9 @@ interface PermitType {
   product_name: string;
   legal_basis: string[];
   fee_description: string;
+  has_unpublished_changes?: boolean;
+  is_publish_ready?: boolean;
+  readiness_missing?: string[];
 }
 
 // ── Shared modal primitives ───────────────────────────────────────────────────
@@ -268,6 +271,68 @@ function IzinModal({
   );
 }
 
+// ── Clone Modal ───────────────────────────────────────────────────────────────
+
+function CloneModal({
+  open,
+  onClose,
+  source,
+  sektorKey,
+}: {
+  open: boolean;
+  onClose: () => void;
+  source: PermitType;
+  sektorKey: string;
+}) {
+  const navigate = useNavigate();
+  const [name, setName] = useState(`${source.name} (Salinan)`);
+  const [key, setKey] = useState(slugify(`${source.key}-copy`));
+  const [error, setError] = useState<string | null>(null);
+
+  const clone = useMutation({
+    mutationFn: () =>
+      api.post(`/admin/engine/permit-types/${source.key}/clone/`, { new_key: key, new_name: name }),
+    onSuccess: (res) => {
+      toast.success("Izin diduplikat. Buka untuk menyunting salinan.");
+      onClose();
+      navigate(`/admin/engine/${sektorKey}/${res.data.key}`);
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(detail ?? "Gagal menduplikat izin.");
+    },
+  });
+
+  return (
+    <Modal open={open} onClose={onClose} title={`Duplikat: ${source.name}`}>
+      <div className="space-y-4">
+        <p className="text-sm text-ink-muted">
+          Menyalin seluruh tahap, field, dan persyaratan ke izin baru (status draft).
+        </p>
+        <Field label="Nama Izin Baru" required>
+          <input className={inputCls} value={name} onChange={(e) => { setName(e.target.value); setError(null); }} />
+        </Field>
+        <Field label="Key (slug unik)" required error={error ?? undefined}>
+          <input className={inputCls} value={key} onChange={(e) => { setKey(slugify(e.target.value)); setError(null); }} />
+        </Field>
+        <div className="flex justify-end gap-3 pt-2">
+          <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted transition-colors">
+            Batal
+          </button>
+          <button
+            onClick={() => clone.mutate()}
+            disabled={clone.isPending || !name.trim() || !key.trim()}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-royal-700 text-white font-medium hover:bg-royal-800 disabled:opacity-60 transition-colors"
+          >
+            {clone.isPending && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+            {clone.isPending ? "Menduplikat…" : "Duplikat"}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function IzinListPage() {
@@ -275,6 +340,8 @@ export default function IzinListPage() {
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [editIzin, setEditIzin] = useState<PermitType | null>(null);
+  const [cloneIzin, setCloneIzin] = useState<PermitType | null>(null);
+  const [query, setQuery] = useState("");
 
   const { data, isLoading } = useQuery<{ results: PermitType[] }>({
     queryKey: ["admin-izin-list", sektorKey],
@@ -282,6 +349,13 @@ export default function IzinListPage() {
       api.get(`/admin/engine/permit-types/?sektor__key=${sektorKey}&page_size=50`).then((r) => r.data),
     enabled: !!sektorKey,
   });
+
+  const all = useMemo(() => data?.results ?? [], [data]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? all.filter((p) => p.name.toLowerCase().includes(q) || p.key.includes(q)) : all;
+  }, [all, query]);
+  const needsAttention = all.filter((p) => p.has_unpublished_changes || !p.is_publish_ready).length;
 
   const togglePublish = useMutation({
     mutationFn: ({ key, published }: { key: string; published: boolean }) =>
@@ -323,7 +397,14 @@ export default function IzinListPage() {
             <span className="capitalize">{sektorKey}</span>
           </nav>
           <h1 className="font-display text-2xl font-bold capitalize">{sektorKey}</h1>
-          <p className="text-ink-muted text-sm">{data?.results.length ?? 0} jenis izin</p>
+          <p className="text-ink-muted text-sm flex items-center gap-2">
+            {all.length} jenis izin
+            {needsAttention > 0 && (
+              <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full text-xs font-semibold">
+                <AlertCircle className="w-3 h-3" aria-hidden="true" /> {needsAttention} perlu perhatian
+              </span>
+            )}
+          </p>
         </div>
         <button
           onClick={() => setShowAdd(true)}
@@ -334,15 +415,45 @@ export default function IzinListPage() {
         </button>
       </div>
 
+      {all.length > 0 && (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 max-w-sm">
+          <Search className="w-4 h-4 text-ink-faint shrink-0" aria-hidden="true" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari izin…"
+            className="flex-1 bg-transparent text-sm outline-none placeholder-ink-faint"
+            aria-label="Cari izin"
+          />
+          {query && <button onClick={() => setQuery("")} aria-label="Hapus"><X className="w-4 h-4 text-ink-faint hover:text-ink" /></button>}
+        </div>
+      )}
+
       <div className="divide-y divide-border rounded-xl border border-border overflow-hidden">
-        {data?.results.map((pt) => (
+        {filtered.map((pt) => (
           <div key={pt.key} className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 group">
             <Link
               to={`/admin/engine/${sektorKey}/${pt.key}`}
               className="flex-1 flex items-center gap-4 min-w-0"
             >
               <div className="min-w-0">
-                <p className="font-medium text-sm truncate">{pt.name}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-sm truncate">{pt.name}</p>
+                  {pt.has_unpublished_changes && pt.is_published && (
+                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-gold-500/15 text-gold-500">
+                      Perubahan belum terbit
+                    </span>
+                  )}
+                  {pt.is_publish_ready === false && (
+                    <span
+                      title={(pt.readiness_missing ?? []).join("\n")}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700"
+                    >
+                      <AlertCircle className="w-3 h-3" aria-hidden="true" />
+                      Belum siap
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-ink-muted mt-0.5">
                   SLA {pt.sla_days} hari · v{pt.schema_version}
                 </p>
@@ -359,6 +470,13 @@ export default function IzinListPage() {
               >
                 {pt.is_published ? "Diterbitkan" : "Draft"}
               </span>
+              <button
+                onClick={(e) => { e.preventDefault(); setCloneIzin(pt); }}
+                title="Duplikat izin"
+                className="p-1 text-ink-muted hover:text-ink transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
               <button
                 onClick={(e) => { e.preventDefault(); setEditIzin(pt); }}
                 title="Edit izin"
@@ -382,9 +500,23 @@ export default function IzinListPage() {
             </div>
           </div>
         ))}
-        {!data?.results.length && (
+        {all.length > 0 && filtered.length === 0 && (
           <div className="px-5 py-10 text-center text-sm text-ink-muted">
-            Belum ada izin di sektor ini. Klik "Tambah Izin" untuk memulai.
+            Tidak ada izin yang cocok dengan "{query}".
+          </div>
+        )}
+        {all.length === 0 && (
+          <div className="px-5 py-12 text-center space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
+              <FilePlus2 className="w-6 h-6 text-ink-faint" aria-hidden="true" />
+            </div>
+            <p className="text-sm font-semibold text-ink">Belum ada izin di sektor ini</p>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-royal-700 text-white px-4 py-2 text-sm font-medium hover:bg-royal-800 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Buat izin pertama
+            </button>
           </div>
         )}
       </div>
@@ -403,6 +535,15 @@ export default function IzinListPage() {
               onClose={() => setEditIzin(null)}
               sektorKey={sektorKey}
               initial={editIzin}
+            />
+          )}
+          {cloneIzin && (
+            <CloneModal
+              key={`clone-${cloneIzin.key}`}
+              open={true}
+              onClose={() => setCloneIzin(null)}
+              source={cloneIzin}
+              sektorKey={sektorKey}
             />
           )}
         </>
