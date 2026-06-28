@@ -97,6 +97,17 @@ class Submission(TimestampedModel):
     )
     last_acted_at = models.DateTimeField(null=True, blank=True)
 
+    # Workload claim — the verifier currently handling this submission at its
+    # current stage. Cleared automatically when it moves on (act/advance).
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="assigned_submissions",
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -104,6 +115,7 @@ class Submission(TimestampedModel):
             models.Index(fields=["permit_type", "status"]),
             models.Index(fields=["current_stage_key"]),
             models.Index(fields=["sla_due_at"]),
+            models.Index(fields=["assigned_to", "status"]),
         ]
 
     def __str__(self):

@@ -33,7 +33,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Submission.objects.select_related("permit_type__sektor", "applicant").prefetch_related(
+        qs = Submission.objects.select_related(
+            "permit_type__sektor", "applicant", "assigned_to"
+        ).prefetch_related(
             "audit_entries", "revision_fields", "site_visits", "uploaded_documents"
         )
 
@@ -60,6 +62,15 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             statuses = [s.strip() for s in status_param.split(",") if s.strip()]
             if statuses:
                 qs = qs.filter(status__in=statuses)
+
+        # Workload filter: ?assigned=me | unassigned | others
+        assigned_param = self.request.query_params.get("assigned")
+        if assigned_param == "me":
+            qs = qs.filter(assigned_to=user)
+        elif assigned_param == "unassigned":
+            qs = qs.filter(assigned_to__isnull=True)
+        elif assigned_param == "others":
+            qs = qs.filter(assigned_to__isnull=False).exclude(assigned_to=user)
 
         return qs.order_by("-created_at")
 
@@ -223,18 +234,10 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         # Check act permission: superadmin (and sektor admin) can always act;
         # everyone else — including admins — must hold the verifier role with an
         # active VerifierPermitAssignment for this permit type.
-        if not request.user.has_any_role("superadmin") and not request.user.is_sektor_admin:
-            from apps.accounts.models import VerifierPermitAssignment
-
-            has_assignment = VerifierPermitAssignment.objects.filter(
-                user=request.user,
-                permit_type=sub.permit_type,
-                is_active=True,
-            ).exists()
-            if not has_assignment:
-                return Response(
-                    {"detail": "Tidak memiliki penugasan untuk perizinan ini."}, status=403
-                )
+        if not self._verifier_can_act(request.user, sub):
+            return Response(
+                {"detail": "Tidak memiliki penugasan untuk perizinan ini."}, status=403
+            )
 
         act = data["action"]
         notes = data.get("notes", "")
@@ -261,8 +264,52 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
         sub.last_actor = request.user
         sub.last_acted_at = timezone.now()
+        # Acting moves the work on, so release the claim — except scheduling a
+        # site visit, where the same verifier stays on the case.
+        if act != "schedule_site_visit":
+            sub.assigned_to = None
+            sub.assigned_at = None
         sub.save()
         _upsert_index(sub)
+        return Response(SubmissionDetailSerializer(sub).data)
+
+    @staticmethod
+    def _verifier_can_act(user, sub) -> bool:
+        if user.has_any_role("superadmin") or user.is_sektor_admin:
+            return True
+        from apps.accounts.models import VerifierPermitAssignment
+
+        return VerifierPermitAssignment.objects.filter(
+            user=user, permit_type=sub.permit_type, is_active=True
+        ).exists()
+
+    @action(detail=True, methods=["post"])
+    def claim(self, request, pk=None):
+        """Claim this submission so teammates know it's being handled."""
+        sub = self.get_object()
+        if not self._verifier_can_act(request.user, sub):
+            return Response(
+                {"detail": "Tidak memiliki penugasan untuk perizinan ini."}, status=403
+            )
+        if sub.assigned_to_id and sub.assigned_to_id != request.user.id:
+            return Response(
+                {"detail": f"Sudah ditangani oleh {sub.assigned_to.full_name}."}, status=409
+            )
+        sub.assigned_to = request.user
+        sub.assigned_at = timezone.now()
+        sub.save(update_fields=["assigned_to", "assigned_at", "updated_at"])
+        return Response(SubmissionDetailSerializer(sub).data)
+
+    @action(detail=True, methods=["post"])
+    def release(self, request, pk=None):
+        """Release a claim (claim owner, or an admin)."""
+        sub = self.get_object()
+        is_admin = request.user.has_any_role("superadmin") or request.user.is_sektor_admin
+        if sub.assigned_to_id and sub.assigned_to_id != request.user.id and not is_admin:
+            return Response({"detail": "Hanya pemilik klaim yang dapat melepas."}, status=403)
+        sub.assigned_to = None
+        sub.assigned_at = None
+        sub.save(update_fields=["assigned_to", "assigned_at", "updated_at"])
         return Response(SubmissionDetailSerializer(sub).data)
 
     # Maps stage_type → the Submission.Status that applies while IN that stage
@@ -525,6 +572,8 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                 "at_risk": active.filter(is_sla_at_risk=True, is_sla_breached=False).count(),
                 "breached": active.filter(is_sla_breached=True).count(),
                 "in_revision": active.filter(status="revision").count(),
+                "assigned_to_me": active.filter(assigned_to=request.user).count(),
+                "unassigned": active.filter(assigned_to__isnull=True).count(),
                 "processed_today": processed_today,
             }
         )

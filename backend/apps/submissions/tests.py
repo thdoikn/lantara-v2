@@ -814,3 +814,79 @@ class TestVerifierEndpoints:
         res = client.get("/api/v1/submissions/")
         row = res.data["results"][0]
         assert "document_count" in row and "required_document_count" in row
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 9. Workload assignment — claim / release / filter
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestWorkloadAssignment:
+    def _admin(self, user):
+        role, _ = Role.objects.get_or_create(key="superadmin", defaults={"name": "Super Admin"})
+        UserRole.objects.create(user=user, role=role, is_active=True)
+        c = APIClient()
+        c.force_authenticate(user=user)
+        return c
+
+    def _sub(self, applicant, permit_type):
+        first = WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
+        return Submission.objects.create(
+            applicant=applicant, permit_type=permit_type, form_data={"nama_kegiatan": "X"},
+            status=Submission.Status.IN_REVIEW,
+            current_stage_key=first.key, current_stage_order=first.order,
+            submitted_at=timezone.now(), stage_entered_at=timezone.now(),
+        )
+
+    def test_claim_assigns_to_me(self, applicant, permit_type, verifier):
+        sub = self._sub(applicant, permit_type)
+        client = self._admin(verifier)
+        res = client.post(f"/api/v1/submissions/{sub.id}/claim/", {}, format="json")
+        assert res.status_code == 200
+        sub.refresh_from_db()
+        assert sub.assigned_to_id == verifier.id
+        assert sub.assigned_at is not None
+
+    def test_claim_conflict_when_held_by_other(self, applicant, permit_type, verifier):
+        other = User.objects.create_user(email="other@v.id", password="x", full_name="Other V")
+        sub = self._sub(applicant, permit_type)
+        sub.assigned_to = other
+        sub.save(update_fields=["assigned_to"])
+        client = self._admin(verifier)
+        res = client.post(f"/api/v1/submissions/{sub.id}/claim/", {}, format="json")
+        assert res.status_code == 409
+
+    def test_release_clears(self, applicant, permit_type, verifier):
+        sub = self._sub(applicant, permit_type)
+        sub.assigned_to = verifier
+        sub.save(update_fields=["assigned_to"])
+        client = self._admin(verifier)
+        res = client.post(f"/api/v1/submissions/{sub.id}/release/", {}, format="json")
+        assert res.status_code == 200
+        sub.refresh_from_db()
+        assert sub.assigned_to_id is None
+
+    def test_acting_releases_claim(self, applicant, permit_type, verifier):
+        sub = self._sub(applicant, permit_type)
+        sub.assigned_to = verifier
+        sub.save(update_fields=["assigned_to"])
+        client = self._admin(verifier)
+        client.post(
+            f"/api/v1/submissions/{sub.id}/act/",
+            {"action": "request_revision", "notes": "x",
+             "revision_fields": [{"field_key": "nama_kegiatan", "is_doc_requirement": False, "note": "n"}]},
+            format="json",
+        )
+        sub.refresh_from_db()
+        assert sub.assigned_to_id is None  # acting moved it on → claim released
+
+    def test_assigned_me_filter(self, applicant, permit_type, verifier):
+        mine = self._sub(applicant, permit_type)
+        mine.assigned_to = verifier
+        mine.save(update_fields=["assigned_to"])
+        self._sub(applicant, permit_type)  # unassigned
+        client = self._admin(verifier)
+        res = client.get("/api/v1/submissions/?assigned=me")
+        ids = [r["id"] for r in res.data["results"]]
+        assert str(mine.id) in ids and len(ids) == 1

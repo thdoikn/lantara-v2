@@ -67,6 +67,7 @@ class SubmissionListSerializer(serializers.ModelSerializer):
     applicant_name = serializers.CharField(source="applicant.full_name", read_only=True)
     document_count = serializers.SerializerMethodField()
     required_document_count = serializers.SerializerMethodField()
+    assigned_to_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Submission
@@ -86,9 +87,14 @@ class SubmissionListSerializer(serializers.ModelSerializer):
             "revision_due_at",
             "document_count",
             "required_document_count",
+            "assigned_to",
+            "assigned_to_name",
             "submitted_at",
             "created_at",
         ]
+
+    def get_assigned_to_name(self, obj) -> str | None:
+        return obj.assigned_to.full_name if obj.assigned_to_id else None
 
     def get_document_count(self, obj) -> int:
         # uploaded_documents is prefetched in the viewset queryset.
@@ -108,6 +114,7 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
     site_visits = SiteVisitSerializer(many=True, read_only=True)
     issued_permit_id = serializers.SerializerMethodField()
     issued_permit_validation_uuid = serializers.SerializerMethodField()
+    assigned_to_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Submission
@@ -128,6 +135,8 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
             "is_sla_at_risk",
             "stage_sla_due_at",
             "revision_due_at",
+            "assigned_to",
+            "assigned_to_name",
             "submitted_at",
             "rejection_reason",
             "issued_permit_id",
@@ -138,6 +147,9 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
             "revision_fields",
             "site_visits",
         ]
+
+    def get_assigned_to_name(self, obj) -> str | None:
+        return obj.assigned_to.full_name if obj.assigned_to_id else None
 
     def get_issued_permit_id(self, obj):
         try:
