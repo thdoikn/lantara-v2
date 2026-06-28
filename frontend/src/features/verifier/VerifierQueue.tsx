@@ -1,14 +1,15 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, parseISO, differenceInHours, formatDistanceToNow, isPast } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Clock, AlertTriangle, CheckCircle2, RefreshCw, Flame, Inbox, BadgeCheck, Search, X, RotateCcw, XCircle, FileText, PenLine } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle2, RefreshCw, Flame, Inbox, BadgeCheck, Search, X, RotateCcw, XCircle, FileText, PenLine, UserCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
+import { useAuthStore } from "@/lib/auth";
 import { scrollIntoViewOnFocus } from "@/lib/scrollIntoViewOnFocus";
 import Kbd from "@/components/ui/Kbd";
 import type { PaginatedResponse, Submission, SubmissionStatus } from "@/types";
@@ -100,21 +101,46 @@ export default function VerifierQueue() {
     const saved = lsGet("vq_sort");
     return saved === "newest" || saved === "applicant" ? saved : "sla";
   });
+  const [assignedView, setAssignedView] = useState<"all" | "me" | "unassigned">(() => {
+    const a = params.get("assigned");
+    if (a === "me" || a === "unassigned") return a;
+    const saved = lsGet("vq_assigned");
+    return saved === "me" || saved === "unassigned" ? saved : "all";
+  });
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [bulkType, setBulkType] = useState<BulkAction | null>(null);
   const [bulkNote, setBulkNote] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const myId = useAuthStore((s) => s.user?.id);
   const searchRef = useRef<HTMLInputElement>(null);
   const rowRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const { statuses } = FILTER_TABS[activeTab];
 
   const { data, isLoading, refetch, isFetching, dataUpdatedAt } = useQuery<PaginatedResponse<Submission>>({
-    queryKey: ["verifier-queue", statuses],
+    queryKey: ["verifier-queue", statuses, assignedView],
     queryFn: () =>
-      api.get(`/submissions/?status=${statuses.join(",")}&ordering=sla_due_at`).then((r) => r.data),
+      api
+        .get(
+          `/submissions/?status=${statuses.join(",")}&ordering=sla_due_at` +
+            (assignedView !== "all" ? `&assigned=${assignedView}` : ""),
+        )
+        .then((r) => r.data),
     refetchInterval: 60_000,
+  });
+
+  const claimMutation = useMutation({
+    mutationFn: (subId: string) => api.post(`/submissions/${subId}/claim/`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["verifier-queue"] });
+      qc.invalidateQueries({ queryKey: ["verifier-stats"] });
+      toast.success("Permohonan diklaim.");
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(msg ?? "Gagal mengklaim permohonan.");
+    },
   });
 
   const submissions = useMemo(() => data?.results ?? [], [data]);
@@ -164,7 +190,7 @@ export default function VerifierQueue() {
   useEffect(() => {
     setSelected(0);
     setPicked(new Set());
-  }, [activeTab, query, slaFilter, sortBy]);
+  }, [activeTab, query, slaFilter, sortBy, assignedView]);
 
   // Reset the SLA filter when the status tab changes — but not on first mount,
   // so a deep-link / saved SLA filter survives.
@@ -180,8 +206,9 @@ export default function VerifierQueue() {
       localStorage.setItem("vq_tab", String(activeTab));
       localStorage.setItem("vq_sla", slaFilter);
       localStorage.setItem("vq_sort", sortBy);
+      localStorage.setItem("vq_assigned", assignedView);
     } catch { /* ignore */ }
-  }, [activeTab, slaFilter, sortBy]);
+  }, [activeTab, slaFilter, sortBy, assignedView]);
 
   function togglePick(id: string) {
     setPicked((prev) => {
@@ -329,21 +356,45 @@ export default function VerifierQueue() {
       </div>
 
       {/* ── Filter tabs ── */}
-      <div className="flex gap-1 bg-white border border-khatulistiwa-100 shadow-sm rounded-xl p-1">
-        {FILTER_TABS.map(({ label }, i) => (
-          <button
-            key={i}
-            onClick={() => setActiveTab(i)}
-            className={cn(
-              "flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-150",
-              i === activeTab
-                ? "bg-khatulistiwa-800 text-white shadow-sm"
-                : "text-khatulistiwa-600/70 hover:text-khatulistiwa-900 hover:bg-khatulistiwa-50"
-            )}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex gap-1 bg-white border border-khatulistiwa-100 shadow-sm rounded-xl p-1 flex-1">
+          {FILTER_TABS.map(({ label }, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveTab(i)}
+              className={cn(
+                "flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-150",
+                i === activeTab
+                  ? "bg-khatulistiwa-800 text-white shadow-sm"
+                  : "text-khatulistiwa-600/70 hover:text-khatulistiwa-900 hover:bg-khatulistiwa-50"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {/* Workload filter */}
+        <div className="flex gap-1 bg-white border border-khatulistiwa-100 shadow-sm rounded-xl p-1 shrink-0">
+          {([
+            { v: "all", label: "Semua" },
+            { v: "me", label: "Milik Saya" },
+            { v: "unassigned", label: "Belum Diklaim" },
+          ] as const).map(({ v, label }) => (
+            <button
+              key={v}
+              onClick={() => setAssignedView(v)}
+              aria-pressed={assignedView === v}
+              className={cn(
+                "rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-150 whitespace-nowrap",
+                assignedView === v
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-khatulistiwa-600/70 hover:text-khatulistiwa-900 hover:bg-khatulistiwa-50"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Search + keyboard hint ── */}
@@ -513,6 +564,19 @@ export default function VerifierQueue() {
                           {" · "}
                           {sub.reference_number}
                         </p>
+                        {sub.assigned_to && (
+                          <span
+                            className={cn(
+                              "mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full",
+                              sub.assigned_to === myId
+                                ? "text-emerald-700 bg-emerald-50"
+                                : "text-khatulistiwa-600 bg-khatulistiwa-50",
+                            )}
+                          >
+                            <UserCheck className="h-3 w-3" aria-hidden="true" />
+                            {sub.assigned_to === myId ? "Milik Anda" : `Ditangani: ${sub.assigned_to_name}`}
+                          </span>
+                        )}
                       </div>
 
                       {/* SLA indicator */}
@@ -539,9 +603,20 @@ export default function VerifierQueue() {
                           ? format(parseISO(sub.submitted_at), "d MMM yyyy · HH:mm", { locale: localeId })
                           : "—"}
                       </p>
-                      <span className="flex items-center gap-1 text-xs text-khatulistiwa-600 opacity-0 group-hover:opacity-100 transition-opacity font-semibold">
-                        <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
-                        Buka
+                      <span className="flex items-center gap-2">
+                        {!sub.assigned_to && !["approved", "collected", "issued", "rejected"].includes(sub.status) && (
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); claimMutation.mutate(sub.id); }}
+                            disabled={claimMutation.isPending}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-60"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" aria-hidden="true" /> Klaim
+                          </button>
+                        )}
+                        <span className="flex items-center gap-1 text-xs text-khatulistiwa-600 opacity-0 group-hover:opacity-100 transition-opacity font-semibold">
+                          <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                          Buka
+                        </span>
                       </span>
                     </div>
                   </div>

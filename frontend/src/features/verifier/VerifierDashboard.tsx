@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Inbox, Clock, Flame, PenLine, CheckCircle2, ArrowRight } from "lucide-react";
+import { Inbox, Clock, Flame, PenLine, CheckCircle2, ArrowRight, UserCheck, CircleDashed } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -23,7 +23,11 @@ type Card = {
 
 const NEUTRAL = { bg: "bg-white", border: "border-khatulistiwa-100", icon: "text-khatulistiwa-400" };
 const CARDS: Card[] = [
-  { key: "queued", label: "Dalam Antrean", icon: Inbox, to: "/verifier/queue", tone: NEUTRAL },
+  { key: "assigned_to_me", label: "Milik Saya", icon: UserCheck, to: "/verifier/queue?assigned=me",
+    tone: { bg: "bg-emerald-50", border: "border-emerald-200", icon: "text-emerald-600" } },
+  { key: "unassigned", label: "Belum Diklaim", icon: CircleDashed, to: "/verifier/queue?assigned=unassigned",
+    tone: NEUTRAL },
+  { key: "queued", label: "Total Antrean", icon: Inbox, to: "/verifier/queue", tone: NEUTRAL },
   { key: "at_risk", label: "Mendekati SLA", icon: Clock, to: "/verifier/queue?sla=at_risk",
     tone: { bg: "bg-amber-50", border: "border-amber-200", icon: "text-amber-500" } },
   { key: "breached", label: "SLA Terlampaui", icon: Flame, to: "/verifier/queue?sla=breached",
@@ -71,7 +75,7 @@ export default function VerifierDashboard() {
       </motion.div>
 
       {/* Queue health */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {CARDS.map((c, i) => {
           const Icon = c.icon;
           const value = data?.[c.key] ?? 0;

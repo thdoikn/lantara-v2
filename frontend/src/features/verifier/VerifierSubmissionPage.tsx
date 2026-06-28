@@ -3,11 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
 import { format, parseISO, formatDistanceStrict, isPast } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft, AlertTriangle, Clock, ArrowRightCircle, CalendarClock, History, Check } from "lucide-react";
+import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft, AlertTriangle, Clock, ArrowRightCircle, CalendarClock, History, Check, UserCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
+import { useAuthStore } from "@/lib/auth";
 import type { Submission, AuditEntry, DocumentRequirement, PaginatedResponse } from "@/types";
 import DocumentUploadSection from "../applicant/DocumentUploadSection";
 
@@ -422,6 +423,21 @@ export default function VerifierSubmissionPage() {
     onError: () => toast.error("Gagal menyimpan kunjungan."),
   });
 
+  const myId = useAuthStore((s) => s.user?.id);
+  const claimMutation = useMutation({
+    mutationFn: (op: "claim" | "release") => api.post(`/submissions/${id}/${op}/`),
+    onSuccess: (_d, op) => {
+      qc.invalidateQueries({ queryKey: ["submission", id] });
+      qc.invalidateQueries({ queryKey: ["verifier-queue"] });
+      qc.invalidateQueries({ queryKey: ["verifier-stats"] });
+      toast.success(op === "claim" ? "Permohonan diklaim." : "Klaim dilepas.");
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(msg ?? "Gagal memproses klaim.");
+    },
+  });
+
   const actMutation = useMutation({
     mutationFn: ({ action, notes, revision_fields }: { action: string; notes?: string; revision_fields?: RevisionFieldInput[] }) =>
       api.post(`/submissions/${id}/act/`, { action, notes, revision_fields }),
@@ -654,6 +670,43 @@ export default function VerifierSubmissionPage() {
 
         {/* Right: actions + SLA (sticky on desktop so they stay reachable) */}
         <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+          {/* Claim / ownership */}
+          {!["approved", "collected", "rejected"].includes(submission.status) && (
+            submission.assigned_to ? (
+              submission.assigned_to === myId ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-emerald-800 flex items-center gap-1.5">
+                    <UserCheck className="h-4 w-4" aria-hidden="true" /> Anda menangani ini
+                  </p>
+                  <button
+                    onClick={() => claimMutation.mutate("release")}
+                    disabled={claimMutation.isPending}
+                    className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 disabled:opacity-60"
+                  >
+                    Lepas
+                  </button>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-khatulistiwa-200 bg-khatulistiwa-50 p-4">
+                  <p className="text-sm font-semibold text-khatulistiwa-800 flex items-center gap-1.5">
+                    <UserCheck className="h-4 w-4" aria-hidden="true" />
+                    Ditangani oleh {submission.assigned_to_name}
+                  </p>
+                  <p className="text-xs text-khatulistiwa-600/70 mt-0.5">
+                    Verifikator lain sedang menangani permohonan ini.
+                  </p>
+                </div>
+              )
+            ) : (
+              <button
+                onClick={() => claimMutation.mutate("claim")}
+                disabled={claimMutation.isPending}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 px-4 py-3 text-sm font-display font-bold text-emerald-700 transition-colors disabled:opacity-60"
+              >
+                <UserCheck className="h-4 w-4" aria-hidden="true" /> Klaim Permohonan
+              </button>
+            )
+          )}
           {(() => {
             const stageType =
               submission.schema_snapshot?.stages?.find((s) => s.key === submission.current_stage_key)?.stage_type ??

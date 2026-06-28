@@ -213,6 +213,9 @@ export interface Submission {
   // Queue badges (list serializer)
   document_count?: number;
   required_document_count?: number;
+  // Workload claim
+  assigned_to?: string | null;
+  assigned_to_name?: string | null;
 }
 
 export interface SiteVisit {
@@ -232,6 +235,8 @@ export interface VerifierStats {
   at_risk: number;
   breached: number;
   in_revision: number;
+  assigned_to_me: number;
+  unassigned: number;
   processed_today: number;
 }
 
