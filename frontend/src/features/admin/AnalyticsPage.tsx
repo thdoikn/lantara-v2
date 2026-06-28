@@ -1,6 +1,7 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Download, TrendingUp, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Download, TrendingUp, CheckCircle, XCircle, AlertTriangle, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -102,7 +103,18 @@ function StatCard({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+const RANGES = [
+  { days: 7, label: "7 hari" },
+  { days: 30, label: "30 hari" },
+  { days: 90, label: "90 hari" },
+] as const;
+
+type SortCol = "total" | "active" | "approved" | "breached";
+
 export default function AnalyticsPage() {
+  const [days, setDays] = useState(30);
+  const [sort, setSort] = useState<{ col: SortCol; dir: "asc" | "desc" }>({ col: "total", dir: "desc" });
+
   const { data: summary, isLoading: loadingSummary } = useQuery<Summary>({
     queryKey: ["analytics", "summary"],
     queryFn: () => api.get("/analytics/summary/").then((r) => r.data),
@@ -115,11 +127,30 @@ export default function AnalyticsPage() {
     staleTime: 60_000,
   });
 
-  const { data: trend = [], isLoading: loadingTrend } = useQuery<TrendPoint[]>({
-    queryKey: ["analytics", "trend", 30],
-    queryFn: () => api.get("/analytics/trend/?days=30").then((r) => r.data),
+  // Fetch double the window so we can show the chart for the selected period AND
+  // a delta vs the previous equal-length period — in one request.
+  const { data: trendRaw = [], isLoading: loadingTrend } = useQuery<TrendPoint[]>({
+    queryKey: ["analytics", "trend", days],
+    queryFn: () => api.get(`/analytics/trend/?days=${days * 2}`).then((r) => r.data),
     staleTime: 60_000,
   });
+  const trend = useMemo(() => trendRaw.slice(-days), [trendRaw, days]);
+  const { periodTotal, delta } = useMemo(() => {
+    const recent = trendRaw.slice(-days).reduce((s, p) => s + p.count, 0);
+    const prior = trendRaw.slice(0, trendRaw.length - days).reduce((s, p) => s + p.count, 0);
+    return { periodTotal: recent, delta: recent - prior };
+  }, [trendRaw, days]);
+
+  const sortedSektor = useMemo(() => {
+    return [...bySektor].sort((a, b) => {
+      const d = a[sort.col] - b[sort.col];
+      return sort.dir === "asc" ? d : -d;
+    });
+  }, [bySektor, sort]);
+
+  function toggleSort(col: SortCol) {
+    setSort((s) => (s.col === col ? { col, dir: s.dir === "asc" ? "desc" : "asc" } : { col, dir: "desc" }));
+  }
 
   function handleExport() {
     window.open("/api/v1/analytics/export/excel/", "_blank");
@@ -138,14 +169,31 @@ export default function AnalyticsPage() {
           <h1 className="font-display text-2xl font-bold">Analitik</h1>
           <p className="text-sm text-buana mt-0.5">Ringkasan data permohonan secara real-time</p>
         </div>
-        <button
-          onClick={handleExport}
-          className="btn-secondary gap-2 text-sm"
-          aria-label="Export ke Excel"
-        >
-          <Download className="h-4 w-4" aria-hidden="true" />
-          Export Excel
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 bg-white border border-border rounded-lg p-1">
+            {RANGES.map((r) => (
+              <button
+                key={r.days}
+                onClick={() => setDays(r.days)}
+                aria-pressed={days === r.days}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-semibold transition-colors",
+                  days === r.days ? "bg-khatulistiwa-700 text-white" : "text-buana hover:text-ink hover:bg-muted",
+                )}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handleExport}
+            className="btn-secondary gap-2 text-sm"
+            aria-label="Export ke Excel"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export Excel
+          </button>
+        </div>
       </motion.div>
 
       {/* Summary stats */}
@@ -166,7 +214,24 @@ export default function AnalyticsPage() {
 
       {/* Trend chart */}
       <div className="card p-6">
-        <h2 className="font-semibold text-sm mb-5">Tren Permohonan — 30 Hari Terakhir</h2>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-semibold text-sm">Tren Permohonan — {days} Hari Terakhir</h2>
+          {!loadingTrend && (
+            <span className="flex items-center gap-2 text-sm">
+              <span className="font-bold tabular-nums">{periodTotal.toLocaleString("id-ID")}</span>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-0.5 text-xs font-semibold",
+                  delta > 0 ? "text-jagawana" : delta < 0 ? "text-saka" : "text-buana",
+                )}
+                title="dibanding periode sebelumnya"
+              >
+                {delta > 0 ? <ArrowUp className="h-3 w-3" /> : delta < 0 ? <ArrowDown className="h-3 w-3" /> : null}
+                {delta > 0 ? "+" : ""}{delta} vs periode lalu
+              </span>
+            </span>
+          )}
+        </div>
         {loadingTrend ? (
           <div className="skeleton h-48 rounded-xl" />
         ) : (
@@ -257,14 +322,27 @@ export default function AnalyticsPage() {
             <thead>
               <tr className="text-xs text-buana border-b border-border">
                 <th className="text-left py-2 font-medium pb-3">Sektor</th>
-                <th className="text-right py-2 font-medium pb-3">Total</th>
-                <th className="text-right py-2 font-medium pb-3">Aktif</th>
-                <th className="text-right py-2 font-medium pb-3">Setuju</th>
-                <th className="text-right py-2 font-medium pb-3 text-saka">SLA</th>
+                {([
+                  { col: "total", label: "Total", extra: "" },
+                  { col: "active", label: "Aktif", extra: "" },
+                  { col: "approved", label: "Setuju", extra: "" },
+                  { col: "breached", label: "SLA", extra: "text-saka" },
+                ] as const).map(({ col, label, extra }) => (
+                  <th key={col} className={cn("text-right py-2 font-medium pb-3", extra)}>
+                    <button onClick={() => toggleSort(col)} className="inline-flex items-center gap-0.5 hover:text-ink">
+                      {label}
+                      {sort.col === col ? (
+                        sort.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronsUpDown className="h-3 w-3 opacity-40" />
+                      )}
+                    </button>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {bySektor.map((row) => (
+              {sortedSektor.map((row) => (
                 <tr key={row.sektor_key} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
                   <td className="py-2.5 font-medium capitalize">{row.sektor || "—"}</td>
                   <td className="py-2.5 text-right tabular-nums">{row.total}</td>

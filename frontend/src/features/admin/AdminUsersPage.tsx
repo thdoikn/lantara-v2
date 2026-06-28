@@ -449,6 +449,11 @@ export default function AdminUsersPage() {
                       disabled={pending}
                       onChange={() => {
                         if (isAssigned) {
+                          // Revoking access is destructive — confirm first.
+                          if (!window.confirm(
+                            `Cabut peran "${roleLabel(role.key)}" dari ${activeUser.full_name}? ` +
+                            "Pengguna akan kehilangan akses terkait.",
+                          )) return;
                           revokeMutation.mutate(
                             { userId: activeUser.id, roleKey: role.key },
                             { onSuccess: () => setActiveUser((u) => u && { ...u, roles: u.roles.filter((r) => r !== role.key) }) },
