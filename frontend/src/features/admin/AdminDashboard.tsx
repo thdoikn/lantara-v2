@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Settings, FileText, Users, ArrowRight, TrendingUp, Layers } from "lucide-react";
+import { Settings, FileText, ArrowRight, TrendingUp, Layers, AlertCircle, ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
 
@@ -12,15 +12,36 @@ interface Sektor {
   is_active: boolean;
 }
 
+interface AdminIzin {
+  key: string;
+  name: string;
+  sektor_key: string;
+  is_published: boolean;
+  has_unpublished_changes: boolean;
+  is_publish_ready: boolean;
+  readiness_missing: string[];
+}
+
 export default function AdminDashboard() {
   const { data: sektors } = useQuery<{ results: Sektor[] }>({
     queryKey: ["admin-sektors"],
     queryFn: () => api.get("/admin/engine/sektors/").then((r) => r.data),
   });
 
+  // All izin, to surface config that needs attention (drafts / unpublished edits).
+  const { data: izinData } = useQuery<{ results: AdminIzin[] }>({
+    queryKey: ["admin-all-izin"],
+    queryFn: () => api.get("/admin/engine/permit-types/?page_size=200").then((r) => r.data),
+  });
+
   const list = sektors?.results ?? [];
   const totalIzin = list.reduce((sum, s) => sum + s.permit_count, 0);
   const activeCount = list.filter((s) => s.is_active).length;
+
+  const allIzin = izinData?.results ?? [];
+  const attention = allIzin.filter(
+    (z) => (z.is_published && z.has_unpublished_changes) || !z.is_publish_ready,
+  );
 
   const QUICK_STATS: {
     label: string;
@@ -61,13 +82,13 @@ export default function AdminDashboard() {
       cardBorder: "border-amber-200",
     },
     {
-      label: "Versi Engine",
-      value: "v2.0",
-      icon: Users,
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
-      cardBg: "bg-purple-50",
-      cardBorder: "border-purple-200",
+      label: "Perlu Perhatian",
+      value: attention.length,
+      icon: AlertCircle,
+      iconBg: "bg-red-100",
+      iconColor: "text-red-600",
+      cardBg: "bg-red-50",
+      cardBorder: "border-red-200",
     },
   ];
 
@@ -148,6 +169,44 @@ export default function AdminDashboard() {
           <ArrowRight className="h-4 w-4 text-khatulistiwa-400 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
         </Link>
       </div>
+
+      {/* ── Needs attention ── */}
+      {attention.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 space-y-3"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-600" aria-hidden="true" />
+            <h2 className="font-display font-bold text-sm text-amber-900">
+              {attention.length} izin perlu perhatian
+            </h2>
+          </div>
+          <div className="space-y-1.5">
+            {attention.slice(0, 6).map((z) => (
+              <Link
+                key={z.key}
+                to={`/admin/engine/${z.sektor_key}/${z.key}`}
+                className="flex items-center justify-between gap-2 rounded-lg bg-white/70 hover:bg-white px-3 py-2 transition-colors"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-khatulistiwa-900 truncate">{z.name}</span>
+                  <span className="block text-xs text-amber-700/80">
+                    {!z.is_publish_ready
+                      ? `Belum siap diterbitkan — ${z.readiness_missing[0] ?? ""}`
+                      : "Perubahan belum diterbitkan"}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 text-khatulistiwa-300 shrink-0" aria-hidden="true" />
+              </Link>
+            ))}
+          </div>
+          {attention.length > 6 && (
+            <p className="text-xs text-amber-700/70">…dan {attention.length - 6} lainnya.</p>
+          )}
+        </motion.div>
+      )}
 
       {/* ── Sektor cards ── */}
       <div className="space-y-3">
