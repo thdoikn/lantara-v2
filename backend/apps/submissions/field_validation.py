@@ -21,11 +21,7 @@ def _digits(value) -> str:
 
 
 def _option_values(field: dict) -> set:
-    return {
-        str(o.get("value"))
-        for o in (field.get("options_json") or [])
-        if isinstance(o, dict)
-    }
+    return {str(o.get("value")) for o in (field.get("options_json") or []) if isinstance(o, dict)}
 
 
 def validate_field_value(field: dict, value) -> str | None:

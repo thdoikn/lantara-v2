@@ -549,14 +549,18 @@ class TestPublishReadinessSerializer:
         s = stages[0]
         s.actor_role = "verifier"
         s.save(update_fields=["actor_role"])
-        res = admin_client.get(f"/api/v1/admin/engine/permit-types/?sektor__key={permit_type.sektor.key}")
+        res = admin_client.get(
+            f"/api/v1/admin/engine/permit-types/?sektor__key={permit_type.sektor.key}"
+        )
         row = next(r for r in (res.data.get("results", res.data)) if r["key"] == permit_type.key)
         assert row["is_publish_ready"] is True
         assert row["readiness_missing"] == []
 
     def test_list_flags_not_ready(self, admin_client, permit_type):
         # No stages / fields → not ready, with reasons
-        res = admin_client.get(f"/api/v1/admin/engine/permit-types/?sektor__key={permit_type.sektor.key}")
+        res = admin_client.get(
+            f"/api/v1/admin/engine/permit-types/?sektor__key={permit_type.sektor.key}"
+        )
         row = next(r for r in (res.data.get("results", res.data)) if r["key"] == permit_type.key)
         assert row["is_publish_ready"] is False
         assert len(row["readiness_missing"]) >= 1

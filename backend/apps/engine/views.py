@@ -319,13 +319,26 @@ class AdminPermitTypeViewSet(viewsets.ModelViewSet):
                 schema_version=1,
             )
             WorkflowStage.objects.bulk_create(
-                [WorkflowStage(permit_type=dup, **{f: getattr(s, f) for f in _STAGE_RESTORE_FIELDS}) for s in src.stages.all()]
+                [
+                    WorkflowStage(
+                        permit_type=dup, **{f: getattr(s, f) for f in _STAGE_RESTORE_FIELDS}
+                    )
+                    for s in src.stages.all()
+                ]
             )
             FormField.objects.bulk_create(
-                [FormField(permit_type=dup, **{f: getattr(x, f) for f in _FIELD_RESTORE_FIELDS}) for x in src.form_fields.all()]
+                [
+                    FormField(permit_type=dup, **{f: getattr(x, f) for f in _FIELD_RESTORE_FIELDS})
+                    for x in src.form_fields.all()
+                ]
             )
             DocumentRequirement.objects.bulk_create(
-                [DocumentRequirement(permit_type=dup, **{f: getattr(d, f) for f in _DOC_RESTORE_FIELDS}) for d in src.doc_requirements.all()]
+                [
+                    DocumentRequirement(
+                        permit_type=dup, **{f: getattr(d, f) for f in _DOC_RESTORE_FIELDS}
+                    )
+                    for d in src.doc_requirements.all()
+                ]
             )
         return Response(PermitTypeDetailSerializer(dup).data, status=201)
 

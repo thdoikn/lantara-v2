@@ -35,9 +35,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         user = self.request.user
         qs = Submission.objects.select_related(
             "permit_type__sektor", "applicant", "assigned_to"
-        ).prefetch_related(
-            "audit_entries", "revision_fields", "site_visits", "uploaded_documents"
-        )
+        ).prefetch_related("audit_entries", "revision_fields", "site_visits", "uploaded_documents")
 
         if user.has_any_role("superadmin") or user.is_sektor_admin:
             # Superadmin (and sektor admin) see all submissions
@@ -211,15 +209,11 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     def _missing_required_docs(sub) -> list:
         """Keys of required doc requirements (per snapshot) lacking an active upload."""
         snapshot = sub.schema_snapshot or {}
-        required = [
-            d for d in snapshot.get("doc_requirements", []) if d.get("required")
-        ]
+        required = [d for d in snapshot.get("doc_requirements", []) if d.get("required")]
         if not required:
             return []
         uploaded_keys = set(
-            sub.uploaded_documents.filter(is_active=True).values_list(
-                "requirement_key", flat=True
-            )
+            sub.uploaded_documents.filter(is_active=True).values_list("requirement_key", flat=True)
         )
         return [d["key"] for d in required if d.get("key") not in uploaded_keys]
 
@@ -235,9 +229,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         # everyone else — including admins — must hold the verifier role with an
         # active VerifierPermitAssignment for this permit type.
         if not self._verifier_can_act(request.user, sub):
-            return Response(
-                {"detail": "Tidak memiliki penugasan untuk perizinan ini."}, status=403
-            )
+            return Response({"detail": "Tidak memiliki penugasan untuk perizinan ini."}, status=403)
 
         act = data["action"]
         notes = data.get("notes", "")
@@ -288,9 +280,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         """Claim this submission so teammates know it's being handled."""
         sub = self.get_object()
         if not self._verifier_can_act(request.user, sub):
-            return Response(
-                {"detail": "Tidak memiliki penugasan untuk perizinan ini."}, status=403
-            )
+            return Response({"detail": "Tidak memiliki penugasan untuk perizinan ini."}, status=403)
         if sub.assigned_to_id and sub.assigned_to_id != request.user.id:
             return Response(
                 {"detail": f"Sudah ditangani oleh {sub.assigned_to.full_name}."}, status=409
@@ -563,9 +553,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             status__in=["submitted", "in_review", "revision", "publishing", "collection"]
         )
         today = tz.localtime(tz.now()).date()
-        processed_today = (
-            Submission.objects.filter(last_actor=request.user, last_acted_at__date=today).count()
-        )
+        processed_today = Submission.objects.filter(
+            last_actor=request.user, last_acted_at__date=today
+        ).count()
         return Response(
             {
                 "queued": active.count(),

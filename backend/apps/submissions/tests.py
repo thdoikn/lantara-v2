@@ -568,7 +568,12 @@ class TestRevisionClarity:
             applicant=applicant,
             permit_type=permit_type,
             form_data={"nama_kegiatan": "Nilai Awal"},
-            schema_snapshot={"stages": [], "form_fields": [], "doc_requirements": [], "sla_days": 8},
+            schema_snapshot={
+                "stages": [],
+                "form_fields": [],
+                "doc_requirements": [],
+                "sla_days": 8,
+            },
             status=Submission.Status.IN_REVIEW,
             current_stage_key=first.key,
             current_stage_order=first.order,
@@ -576,7 +581,9 @@ class TestRevisionClarity:
             stage_entered_at=timezone.now(),
         )
 
-    def test_revise_captures_original_value_note_and_deadline(self, applicant, permit_type, verifier):
+    def test_revise_captures_original_value_note_and_deadline(
+        self, applicant, permit_type, verifier
+    ):
         self._superadmin(verifier)
         sub = self._in_review_submission(applicant, permit_type)
         client = APIClient()
@@ -588,7 +595,11 @@ class TestRevisionClarity:
                 "action": "request_revision",
                 "notes": "Mohon perbaiki",
                 "revision_fields": [
-                    {"field_key": "nama_kegiatan", "is_doc_requirement": False, "note": "Tidak sesuai akta"}
+                    {
+                        "field_key": "nama_kegiatan",
+                        "is_doc_requirement": False,
+                        "note": "Tidak sesuai akta",
+                    }
                 ],
             },
             format="json",
@@ -697,19 +708,32 @@ class TestFinalizeFieldValidation:
     def _draft_with_nik(self, applicant, permit_type, nik):
         snap = {
             "stages": [
-                {"key": "verifikasi", "order": 1, "name": "V",
-                 "stage_type": "verification", "actor_role": "verifier"}
+                {
+                    "key": "verifikasi",
+                    "order": 1,
+                    "name": "V",
+                    "stage_type": "verification",
+                    "actor_role": "verifier",
+                }
             ],
             "form_fields": [
-                {"key": "nik_ketua", "label": "NIK", "field_type": "nik",
-                 "required": True, "validation_json": {"length": 16}, "options_json": []}
+                {
+                    "key": "nik_ketua",
+                    "label": "NIK",
+                    "field_type": "nik",
+                    "required": True,
+                    "validation_json": {"length": 16},
+                    "options_json": [],
+                }
             ],
             "doc_requirements": [],
             "sla_days": 8,
         }
         return Submission.objects.create(
-            applicant=applicant, permit_type=permit_type,
-            form_data={"nik_ketua": nik}, schema_snapshot=snap,
+            applicant=applicant,
+            permit_type=permit_type,
+            form_data={"nik_ketua": nik},
+            schema_snapshot=snap,
             status=Submission.Status.DRAFT,
         )
 
@@ -755,11 +779,14 @@ class TestVerifierEndpoints:
     def _submission(self, applicant, permit_type, **kw):
         first = WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
         defaults = {
-            "applicant": applicant, "permit_type": permit_type,
+            "applicant": applicant,
+            "permit_type": permit_type,
             "form_data": {"nama_kegiatan": "X"},
             "status": Submission.Status.IN_REVIEW,
-            "current_stage_key": first.key, "current_stage_order": first.order,
-            "submitted_at": timezone.now(), "stage_entered_at": timezone.now(),
+            "current_stage_key": first.key,
+            "current_stage_order": first.order,
+            "submitted_at": timezone.now(),
+            "stage_entered_at": timezone.now(),
         }
         defaults.update(kw)
         return Submission.objects.create(**defaults)
@@ -790,8 +817,10 @@ class TestVerifierEndpoints:
 
         sub = self._submission(applicant, permit_type)
         visit = SiteVisit.objects.create(
-            submission=sub, stage_key=sub.current_stage_key,
-            scheduled_date="2026-07-02", location="Jl. Uji",
+            submission=sub,
+            stage_key=sub.current_stage_key,
+            scheduled_date="2026-07-02",
+            location="Jl. Uji",
         )
         client = self._admin_client(verifier)
         res = client.post(
@@ -807,7 +836,8 @@ class TestVerifierEndpoints:
 
     def test_list_includes_doc_counts(self, applicant, permit_type, verifier):
         self._submission(
-            applicant, permit_type,
+            applicant,
+            permit_type,
             schema_snapshot={"doc_requirements": [{"key": "ktp", "required": True}]},
         )
         client = self._admin_client(verifier)
@@ -833,10 +863,14 @@ class TestWorkloadAssignment:
     def _sub(self, applicant, permit_type):
         first = WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
         return Submission.objects.create(
-            applicant=applicant, permit_type=permit_type, form_data={"nama_kegiatan": "X"},
+            applicant=applicant,
+            permit_type=permit_type,
+            form_data={"nama_kegiatan": "X"},
             status=Submission.Status.IN_REVIEW,
-            current_stage_key=first.key, current_stage_order=first.order,
-            submitted_at=timezone.now(), stage_entered_at=timezone.now(),
+            current_stage_key=first.key,
+            current_stage_order=first.order,
+            submitted_at=timezone.now(),
+            stage_entered_at=timezone.now(),
         )
 
     def test_claim_assigns_to_me(self, applicant, permit_type, verifier):
@@ -874,8 +908,13 @@ class TestWorkloadAssignment:
         client = self._admin(verifier)
         client.post(
             f"/api/v1/submissions/{sub.id}/act/",
-            {"action": "request_revision", "notes": "x",
-             "revision_fields": [{"field_key": "nama_kegiatan", "is_doc_requirement": False, "note": "n"}]},
+            {
+                "action": "request_revision",
+                "notes": "x",
+                "revision_fields": [
+                    {"field_key": "nama_kegiatan", "is_doc_requirement": False, "note": "n"}
+                ],
+            },
             format="json",
         )
         sub.refresh_from_db()
@@ -924,8 +963,12 @@ class TestWorkloadAssignment:
 
     def test_audit_exposes_actor_role(self, applicant, permit_type, verifier):
         sub = self._sub(applicant, permit_type)
-        AuditEntry.objects.create(submission=sub, action="approve", actor=verifier, is_applicant_action=False)
-        AuditEntry.objects.create(submission=sub, action="submit", actor=applicant, is_applicant_action=True)
+        AuditEntry.objects.create(
+            submission=sub, action="approve", actor=verifier, is_applicant_action=False
+        )
+        AuditEntry.objects.create(
+            submission=sub, action="submit", actor=applicant, is_applicant_action=True
+        )
         AuditEntry.objects.create(submission=sub, action="generate", actor=None)
         client = self._admin(verifier)
         res = client.get(f"/api/v1/submissions/{sub.id}/audit/")

@@ -21,9 +21,9 @@ def release_stale_claims():
 
     cutoff = timezone.now() - timedelta(hours=getattr(settings, "STALE_CLAIM_HOURS", 4))
     # Claimed before the cutoff AND not acted on since the claim was made.
-    stale = Submission.objects.filter(
-        assigned_to__isnull=False, assigned_at__lt=cutoff
-    ).filter(Q(last_acted_at__isnull=True) | Q(last_acted_at__lt=F("assigned_at")))
+    stale = Submission.objects.filter(assigned_to__isnull=False, assigned_at__lt=cutoff).filter(
+        Q(last_acted_at__isnull=True) | Q(last_acted_at__lt=F("assigned_at"))
+    )
 
     released = 0
     for sub in stale.select_related("assigned_to"):
