@@ -209,6 +209,30 @@ export interface Submission {
   created_at: string;
   updated_at: string;
   revision_fields: RevisionField[];
+  site_visits?: SiteVisit[];
+  // Queue badges (list serializer)
+  document_count?: number;
+  required_document_count?: number;
+}
+
+export interface SiteVisit {
+  id: string;
+  stage_key: string;
+  scheduled_date: string | null;
+  scheduled_time: string | null;
+  location: string;
+  officers: string;
+  findings: string;
+  is_completed: boolean;
+  completed_at: string | null;
+}
+
+export interface VerifierStats {
+  queued: number;
+  at_risk: number;
+  breached: number;
+  in_revision: number;
+  processed_today: number;
 }
 
 export interface UploadedDocument {

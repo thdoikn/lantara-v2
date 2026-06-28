@@ -30,6 +30,7 @@ const NotificationsPage = lazy(() => import("./features/applicant/NotificationsP
 
 // Verifier workspace
 const VerifierLayout = lazy(() => import("./features/verifier/VerifierLayout"));
+const VerifierDashboard = lazy(() => import("./features/verifier/VerifierDashboard"));
 const VerifierQueue = lazy(() => import("./features/verifier/VerifierQueue"));
 const VerifierSubmissionPage = lazy(() => import("./features/verifier/VerifierSubmissionPage"));
 
@@ -116,8 +117,10 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<VerifierQueue />} />
+          <Route index element={<VerifierDashboard />} />
+          <Route path="queue" element={<VerifierQueue />} />
           <Route path="submissions/:id" element={<VerifierSubmissionPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* ── Admin Engine Builder (Phase 2) ── */}

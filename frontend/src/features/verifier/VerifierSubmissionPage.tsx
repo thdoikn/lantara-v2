@@ -364,11 +364,11 @@ export default function VerifierSubmissionPage() {
     const next = nextQueuedId();
     actMutation.mutate(
       { action: "approve" },
-      { onSuccess: () => navigate(next ? `/verifier/submissions/${next}` : "/verifier") },
+      { onSuccess: () => navigate(next ? `/verifier/submissions/${next}` : "/verifier/queue") },
     );
   }, [actMutation, navigate, nextQueuedId]);
 
-  useKeyboardShortcut("ArrowLeft", () => navigate("/verifier"));
+  useKeyboardShortcut("ArrowLeft", () => navigate("/verifier/queue"));
 
   if (isLoading) {
     return (
@@ -392,7 +392,7 @@ export default function VerifierSubmissionPage() {
     <div className="max-w-5xl mx-auto space-y-5">
       {/* Back */}
       <button
-        onClick={() => navigate("/verifier")}
+        onClick={() => navigate("/verifier/queue")}
         className="flex items-center gap-1.5 text-sm text-khatulistiwa-600/70 hover:text-khatulistiwa-900 transition-colors"
       >
         <ChevronLeft className="h-4 w-4" aria-hidden="true" />
