@@ -13,6 +13,7 @@ import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type { Submission, AuditEntry } from "@/types";
+import ActorRoleBadge from "@/components/ui/ActorRoleBadge";
 import DocumentUploadSection from "./DocumentUploadSection";
 import RevisionFieldInput from "./RevisionFieldInput";
 
@@ -262,9 +263,12 @@ function AuditTimeline({ entries }: { entries: AuditEntry[] }) {
                 )}
               </div>
               {entry.notes && <p className="text-khatulistiwa-400/60 text-xs mt-0.5">{entry.notes}</p>}
-              <p className="text-khatulistiwa-300/50 text-xs mt-1">
+              <div className="flex items-center gap-1.5 mt-1">
+                <ActorRoleBadge role={entry.actor_role} />
+                <span className="text-khatulistiwa-500 text-xs font-medium">{entry.actor_name}</span>
+              </div>
+              <p className="text-khatulistiwa-300/50 text-xs mt-0.5">
                 {format(parseISO(entry.created_at), "d MMM yyyy, HH:mm", { locale: localeId })}
-                {entry.actor_name && ` · ${entry.actor_name}`}
               </p>
             </div>
           </div>

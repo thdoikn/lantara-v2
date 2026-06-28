@@ -9,6 +9,7 @@ import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import { useAuthStore } from "@/lib/auth";
+import ActorRoleBadge from "@/components/ui/ActorRoleBadge";
 import type { Submission, AuditEntry, DocumentRequirement, PaginatedResponse } from "@/types";
 import DocumentUploadSection from "../applicant/DocumentUploadSection";
 
@@ -142,13 +143,18 @@ function ActionPanel({
   onAction,
   onScheduleVisit,
   isPending,
+  myId,
 }: {
   submission: Submission;
   stageType: string;
   onAction: (type: ActionType, note: string, revisionFields?: RevisionFieldInput[]) => void;
   onScheduleVisit: (payload: VisitPayload) => void;
   isPending: boolean;
+  myId?: string;
 }) {
+  // Soft warning: someone else holds the claim on this submission.
+  const otherHolder =
+    submission.assigned_to && submission.assigned_to !== myId ? submission.assigned_to_name : null;
   const [active, setActive] = useState<ActionType | null>(null);
   const [note, setNote] = useState("");
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
@@ -227,6 +233,15 @@ function ActionPanel({
             {actions.find((a) => a.type === active)?.icon}
             {actions.find((a) => a.type === active)?.label}
           </div>
+          {otherHolder && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+              <span>
+                Permohonan ini sedang ditangani oleh <strong>{otherHolder}</strong>. Pastikan
+                koordinasi sebelum melanjutkan.
+              </span>
+            </div>
+          )}
           {/* Field-level revision targeting */}
           {active === "request_revision" && revisionTargets.length > 0 && (
             <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 space-y-2">
@@ -645,9 +660,12 @@ export default function VerifierSubmissionPage() {
                     <p className="font-semibold leading-tight text-khatulistiwa-900">
                       {ACTION_LABEL[entry.action] ?? entry.action}
                     </p>
-                    {entry.actor_name && (
-                      <p className="text-xs text-khatulistiwa-700 mt-0.5">oleh <span className="font-medium">{entry.actor_name}</span></p>
-                    )}
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs font-medium text-khatulistiwa-800" title={entry.actor_email ?? undefined}>
+                        {entry.actor_name}
+                      </span>
+                      <ActorRoleBadge role={entry.actor_role} />
+                    </div>
                     {entry.notes && (
                       <p className="text-xs text-khatulistiwa-600/70 mt-0.5 italic">"{entry.notes}"</p>
                     )}
@@ -735,6 +753,7 @@ export default function VerifierSubmissionPage() {
             onAction={handleAction}
             onScheduleVisit={(p) => scheduleVisit.mutate(p)}
             isPending={actMutation.isPending}
+            myId={myId}
           />
 
           <AnimatePresence>

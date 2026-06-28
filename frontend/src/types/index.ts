@@ -160,6 +160,8 @@ export interface AuditEntry {
   id: string;
   action: string;
   actor_name: string;
+  actor_role?: "applicant" | "staff" | "system";
+  actor_email?: string | null;
   is_applicant_action: boolean;
   from_stage_key: string;
   to_stage_key: string;
