@@ -58,13 +58,21 @@ class DocumentViewSet(viewsets.ViewSet):
             mb = req.max_bytes // (1024 * 1024)
             return Response({"detail": f"Ukuran file melebihi {mb} MB."}, status=400)
 
-        # File type check
+        # File type check (extension)
         ext = file_obj.name.rsplit(".", 1)[-1].lower() if "." in file_obj.name else ""
         if req.allowed_types and ext not in req.allowed_types:
             return Response(
                 {"detail": f"Tipe file tidak diizinkan. Gunakan: {', '.join(req.allowed_types)}"},
                 status=400,
             )
+
+        # Content-based check — confirm the bytes match the declared extension and
+        # are not active/executable content (blocks disguised HTML/SVG/scripts/binaries).
+        from .validators import validate_upload_content
+
+        ok, detected_mime, msg = validate_upload_content(file_obj, ext)
+        if not ok:
+            return Response({"detail": msg}, status=400)
 
         # Deactivate previous upload for this requirement
         UploadedDocument.objects.filter(
@@ -81,7 +89,10 @@ class DocumentViewSet(viewsets.ViewSet):
             requirement_title=req.title,
             uploaded_by=request.user,
             file=file_obj,
-            original_filename=file_obj.name,
+            # Store only a sanitized basename — never let user-controlled path
+            # separators or control chars reach storage/headers/UI.
+            original_filename=_safe_filename(file_obj.name),
+            mime_type=detected_mime,
             file_size=file_obj.size,
             checksum_sha256=sha,
             status=UploadedDocument.Status.PENDING,
@@ -91,6 +102,16 @@ class DocumentViewSet(viewsets.ViewSet):
         _schedule_validation(doc.id)
 
         return Response(UploadedDocumentSerializer(doc).data, status=status.HTTP_201_CREATED)
+
+
+def _safe_filename(name: str) -> str:
+    """Strip directory components and control characters from a client filename."""
+    import os
+    import re
+
+    base = os.path.basename(str(name).replace("\\", "/"))
+    base = re.sub(r"[\x00-\x1f\x7f]", "", base).strip()
+    return base[:255] or "file"
 
 
 def _schedule_validation(doc_id):

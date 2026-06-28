@@ -60,23 +60,25 @@ class OTPVerifyView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
+        invalid = Response(
+            {"detail": "Kode OTP tidak valid atau sudah kadaluarsa."}, status=400
+        )
         try:
             user = User.objects.get(email=data["email"])
         except User.DoesNotExist:
-            return Response({"detail": "Pengguna tidak ditemukan."}, status=404)
+            # Generic response — do not disclose whether the account exists.
+            return invalid
 
         otp = (
-            OTPCode.objects.filter(
-                user=user,
-                purpose=data["purpose"],
-                code=data["code"],
-                is_used=False,
-            )
+            OTPCode.objects.filter(user=user, purpose=data["purpose"], is_used=False)
             .order_by("-created_at")
             .first()
         )
         if not otp or not otp.is_valid():
-            return Response({"detail": "Kode OTP tidak valid atau sudah kadaluarsa."}, status=400)
+            return invalid
+        if otp.code != data["code"]:
+            otp.register_attempt()
+            return invalid
 
         otp.consume()
         if data["purpose"] == OTPCode.Purpose.EMAIL_VERIFY:
@@ -88,6 +90,7 @@ class OTPVerifyView(APIView):
 
 class ResendOTPView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request):
         email = request.data.get("email", "")
@@ -124,23 +127,25 @@ class PasswordResetConfirmView(APIView):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        invalid = Response({"detail": "Kode tidak valid atau sudah kadaluarsa."}, status=400)
         try:
             user = User.objects.get(email=data["email"])
         except User.DoesNotExist:
-            return Response({"detail": "Pengguna tidak ditemukan."}, status=404)
+            # Generic response — do not disclose whether the account exists.
+            return invalid
 
         otp = (
             OTPCode.objects.filter(
-                user=user,
-                purpose=OTPCode.Purpose.PASSWORD_RESET,
-                code=data["code"],
-                is_used=False,
+                user=user, purpose=OTPCode.Purpose.PASSWORD_RESET, is_used=False
             )
             .order_by("-created_at")
             .first()
         )
         if not otp or not otp.is_valid():
-            return Response({"detail": "Kode tidak valid."}, status=400)
+            return invalid
+        if otp.code != data["code"]:
+            otp.register_attempt()
+            return invalid
 
         otp.consume()
         user.set_password(data["new_password"])
@@ -241,8 +246,12 @@ class OIDCCallbackView(APIView):
 
             payload = backend.verify_token(id_token, nonce=None)
             user = backend.get_or_create_user(access_token, id_token, payload)
-        except Exception as exc:
-            return Response({"detail": f"SSO login gagal: {exc}"}, status=400)
+        except Exception:
+            # Do not leak internal error detail / token-exchange internals to the client.
+            import logging
+
+            logging.getLogger(__name__).warning("OIDC callback failed", exc_info=True)
+            return Response({"detail": "SSO login gagal. Silakan coba lagi."}, status=400)
 
         if user is None:
             return Response({"detail": "Pengguna tidak ditemukan."}, status=403)

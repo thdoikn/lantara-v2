@@ -60,7 +60,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.dev}
       DATABASE_URL: postgres://${POSTGRES_USER:-lantara}:${POSTGRES_PASSWORD:-lantara}@db:5432/${POSTGRES_DB:-lantara}
       REDIS_URL: redis://redis:6379/0
       MINIO_ENDPOINT: http://minio:9000
@@ -89,7 +89,7 @@ services:
     command: celery -A config.celery worker -l info -c 4
     env_file: .env
     environment:
-      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.dev}
       DATABASE_URL: postgres://${POSTGRES_USER:-lantara}:${POSTGRES_PASSWORD:-lantara}@db:5432/${POSTGRES_DB:-lantara}
       REDIS_URL: redis://redis:6379/0
       MINIO_ENDPOINT: http://minio:9000
@@ -113,7 +113,7 @@ services:
     command: celery -A config.celery beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     env_file: .env
     environment:
-      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.dev}
       DATABASE_URL: postgres://${POSTGRES_USER:-lantara}:${POSTGRES_PASSWORD:-lantara}@db:5432/${POSTGRES_DB:-lantara}
       REDIS_URL: redis://redis:6379/0
     volumes:

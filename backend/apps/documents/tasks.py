@@ -12,14 +12,30 @@ def validate_document(self, doc_id: str):
     except UploadedDocument.DoesNotExist:
         return
 
+    from .validators import FORBIDDEN_MIME_TYPES, EXTENSION_MIME_MAP
+
     try:
-        # MIME type detection via python-magic
+        # Re-detect MIME from stored bytes (defence in depth: the file is now at
+        # rest in object storage; confirm it still matches what we accepted).
         import magic
 
         doc.file.open("rb")
         mime = magic.from_buffer(doc.file.read(2048), mime=True)
         doc.file.close()
         doc.mime_type = mime
+
+        ext = (
+            doc.original_filename.rsplit(".", 1)[-1].lower()
+            if "." in doc.original_filename
+            else ""
+        )
+        allowed = EXTENSION_MIME_MAP.get(ext, set())
+
+        if mime in FORBIDDEN_MIME_TYPES or mime not in allowed:
+            doc.status = UploadedDocument.Status.INVALID
+            doc.validation_error = "Konten file tidak sesuai atau tidak diizinkan."
+            doc.save(update_fields=["mime_type", "status", "validation_error"])
+            return
 
         # TODO: integrate ClamAV / cloud virus-scan hook here
         doc.status = UploadedDocument.Status.VALID

@@ -134,10 +134,15 @@ class OTPCode(UUIDModel):
         PASSWORD_RESET = "password_reset", "Reset Password"
         WHATSAPP_VERIFY = "whatsapp_verify", "Verifikasi WhatsApp"
 
+    # An OTP is locked after this many wrong guesses, defeating online brute force
+    # of the 6-digit (1e6) keyspace regardless of IP-level throttling.
+    MAX_ATTEMPTS = 5
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="otp_codes")
     purpose = models.CharField(max_length=30, choices=Purpose.choices)
     code = models.CharField(max_length=6)
     is_used = models.BooleanField(default=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
     expires_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -146,9 +151,13 @@ class OTPCode(UUIDModel):
 
     @classmethod
     def create_for(cls, user, purpose, ttl_minutes=10):
-        import random
+        import secrets
 
-        code = f"{random.randint(0, 999999):06d}"
+        # Cryptographically secure code (CWE-330: avoid predictable PRNG for secrets).
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        # Invalidate any still-active codes for the same purpose so only the
+        # newest one works — prevents accumulation of guessable live codes.
+        cls.objects.filter(user=user, purpose=purpose, is_used=False).update(is_used=True)
         return cls.objects.create(
             user=user,
             purpose=purpose,
@@ -157,7 +166,17 @@ class OTPCode(UUIDModel):
         )
 
     def is_valid(self):
-        return not self.is_used and timezone.now() < self.expires_at
+        return (
+            not self.is_used
+            and self.attempts < self.MAX_ATTEMPTS
+            and timezone.now() < self.expires_at
+        )
+
+    def register_attempt(self):
+        """Count a failed verification; lock the code once the limit is reached."""
+        self.attempts = models.F("attempts") + 1
+        self.save(update_fields=["attempts"])
+        self.refresh_from_db(fields=["attempts"])
 
     def consume(self):
         self.is_used = True
