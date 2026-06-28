@@ -488,3 +488,75 @@ class TestDynamicEngine:
 
         assert WorkflowStage.objects.filter(permit_type=pt_a).count() == 1
         assert WorkflowStage.objects.filter(permit_type=pt_b).count() == 2
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Admin: clone + publish readiness
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def admin_client(db):
+    from rest_framework.test import APIClient
+
+    from apps.accounts.models import User
+
+    admin = User.objects.create_user(
+        email="admin@engine.test", password="x", full_name="Engine Admin", is_staff=True
+    )
+    c = APIClient()
+    c.force_authenticate(user=admin)
+    return c
+
+
+@pytest.mark.django_db
+class TestAdminClone:
+    def test_clone_copies_config_and_children(self, admin_client, permit_type, stages, form_fields):
+        res = admin_client.post(
+            f"/api/v1/admin/engine/permit-types/{permit_type.key}/clone/",
+            {"new_key": "izin-kegiatan-sosial-copy", "new_name": "Izin Kegiatan Sosial (Salinan)"},
+            format="json",
+        )
+        assert res.status_code == 201
+        dup = PermitType.objects.get(key="izin-kegiatan-sosial-copy")
+        assert dup.is_published is False
+        assert dup.schema_version == 1
+        assert dup.sla_days == permit_type.sla_days
+        assert dup.stages.count() == permit_type.stages.count()
+        assert dup.form_fields.count() == permit_type.form_fields.count()
+
+    def test_clone_rejects_duplicate_key(self, admin_client, permit_type):
+        res = admin_client.post(
+            f"/api/v1/admin/engine/permit-types/{permit_type.key}/clone/",
+            {"new_key": permit_type.key, "new_name": "Dup"},
+            format="json",
+        )
+        assert res.status_code == 409
+
+    def test_clone_requires_key_and_name(self, admin_client, permit_type):
+        res = admin_client.post(
+            f"/api/v1/admin/engine/permit-types/{permit_type.key}/clone/",
+            {"new_key": "", "new_name": ""},
+            format="json",
+        )
+        assert res.status_code == 400
+
+
+@pytest.mark.django_db
+class TestPublishReadinessSerializer:
+    def test_list_exposes_readiness(self, admin_client, permit_type, stages, form_fields):
+        # The verification stage needs a non-applicant actor to be publish-ready.
+        s = stages[0]
+        s.actor_role = "verifier"
+        s.save(update_fields=["actor_role"])
+        res = admin_client.get(f"/api/v1/admin/engine/permit-types/?sektor__key={permit_type.sektor.key}")
+        row = next(r for r in (res.data.get("results", res.data)) if r["key"] == permit_type.key)
+        assert row["is_publish_ready"] is True
+        assert row["readiness_missing"] == []
+
+    def test_list_flags_not_ready(self, admin_client, permit_type):
+        # No stages / fields → not ready, with reasons
+        res = admin_client.get(f"/api/v1/admin/engine/permit-types/?sektor__key={permit_type.sektor.key}")
+        row = next(r for r in (res.data.get("results", res.data)) if r["key"] == permit_type.key)
+        assert row["is_publish_ready"] is False
+        assert len(row["readiness_missing"]) >= 1

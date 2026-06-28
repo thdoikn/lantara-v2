@@ -82,6 +82,8 @@ class DocumentRequirementSerializer(serializers.ModelSerializer):
 class PermitTypeListSerializer(serializers.ModelSerializer):
     sektor_name = serializers.CharField(source="sektor.name", read_only=True)
     sektor_key = serializers.CharField(source="sektor.key", read_only=True)
+    is_publish_ready = serializers.SerializerMethodField()
+    readiness_missing = serializers.SerializerMethodField()
 
     class Meta:
         model = PermitType
@@ -100,7 +102,24 @@ class PermitTypeListSerializer(serializers.ModelSerializer):
             "schema_version",
             "published_schema_version",
             "has_unpublished_changes",
+            "is_publish_ready",
+            "readiness_missing",
         ]
+
+    def _readiness(self, obj) -> dict:
+        from .readiness import publish_readiness_errors
+
+        cache = getattr(obj, "_readiness_cache", None)
+        if cache is None:
+            cache = publish_readiness_errors(obj)
+            obj._readiness_cache = cache
+        return cache
+
+    def get_is_publish_ready(self, obj) -> bool:
+        return not self._readiness(obj)
+
+    def get_readiness_missing(self, obj) -> list:
+        return list(self._readiness(obj).values())
 
 
 class PermitTypeVersionSerializer(serializers.ModelSerializer):

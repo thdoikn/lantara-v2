@@ -82,12 +82,6 @@ class PermitTypeViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 # Stage types that legitimately end a workflow.
-_TERMINAL_STAGE_TYPES = {
-    WorkflowStage.StageType.PUBLISH,
-    WorkflowStage.StageType.COLLECTION,
-}
-
-
 # During a reorder, targeted rows are shifted into a temporary high band so no
 # intermediate write collides with the unique (permit_type, order), which Postgres
 # enforces per-statement (not deferred). `order` is a PositiveSmallIntegerField
@@ -220,37 +214,9 @@ def _restore_from_snapshot(pt: PermitType, snapshot: dict) -> None:
         )
 
 
-def _publish_readiness_errors(pt: PermitType) -> dict:
-    """Validate an izin is operable before it can be published (F3).
-
-    A published izin that citizens submit into must be able to progress to a
-    terminal state — otherwise submissions get stuck or (pre-F1) silently
-    auto-approve. Returns a {field: message} dict; empty == ready.
-    """
-    errors: dict = {}
-
-    stages = list(pt.stages.all())
-    if not stages:
-        errors["stages"] = "Tambahkan minimal satu tahap alur kerja."
-    else:
-        has_terminal = any(s.is_terminal or s.stage_type in _TERMINAL_STAGE_TYPES for s in stages)
-        if not has_terminal:
-            errors["stages_terminal"] = (
-                "Alur kerja harus punya tahap akhir (penerbitan/pengambilan "
-                "atau ditandai sebagai tahap terminal)."
-            )
-        if not any(s.actor_role and s.actor_role != "applicant" for s in stages):
-            errors["stages_actor"] = (
-                "Minimal satu tahap harus memiliki aktor verifikator (actor_role)."
-            )
-
-    if not pt.sla_days or pt.sla_days <= 0:
-        errors["sla_days"] = "Jangka waktu pelayanan (sla_days) harus lebih dari 0."
-
-    if not pt.form_fields.exists():
-        errors["form_fields"] = "Tambahkan minimal satu field formulir."
-
-    return errors
+# Publish-readiness now lives in apps.engine.readiness so the list serializer can
+# reuse it for the "not ready" badge.
+from .readiness import publish_readiness_errors as _publish_readiness_errors  # noqa: E402
 
 
 class AdminSektorViewSet(viewsets.ModelViewSet):
@@ -320,6 +286,48 @@ class AdminPermitTypeViewSet(viewsets.ModelViewSet):
         pt.is_published = False
         pt.save(update_fields=["is_published"])
         return Response(PermitTypeListSerializer(pt).data)
+
+    @action(detail=True, methods=["post"], url_path="clone")
+    def clone(self, request, key=None):
+        """Duplicate an izin (config + stages/fields/docs) as a new draft.
+
+        The slowest admin task is rebuilding a similar permit by hand — cloning
+        copies everything as unpublished so they can tweak and publish.
+        """
+        src = self.get_object()
+        new_key = (request.data.get("new_key") or "").strip()
+        new_name = (request.data.get("new_name") or "").strip()
+        if not new_key or not new_name:
+            return Response({"detail": "Nama dan key wajib diisi."}, status=400)
+        if PermitType.objects.filter(key=new_key).exists():
+            return Response({"detail": f"Key '{new_key}' sudah digunakan."}, status=409)
+
+        with transaction.atomic():
+            dup = PermitType.objects.create(
+                sektor=src.sektor,
+                key=new_key,
+                name=new_name,
+                description=src.description,
+                sla_days=src.sla_days,
+                product_name=src.product_name,
+                legal_basis=src.legal_basis,
+                fee_description=src.fee_description,
+                complaint_info=src.complaint_info,
+                is_berusaha=src.is_berusaha,
+                oss_covered=src.oss_covered,
+                is_published=False,
+                schema_version=1,
+            )
+            WorkflowStage.objects.bulk_create(
+                [WorkflowStage(permit_type=dup, **{f: getattr(s, f) for f in _STAGE_RESTORE_FIELDS}) for s in src.stages.all()]
+            )
+            FormField.objects.bulk_create(
+                [FormField(permit_type=dup, **{f: getattr(x, f) for f in _FIELD_RESTORE_FIELDS}) for x in src.form_fields.all()]
+            )
+            DocumentRequirement.objects.bulk_create(
+                [DocumentRequirement(permit_type=dup, **{f: getattr(d, f) for f in _DOC_RESTORE_FIELDS}) for d in src.doc_requirements.all()]
+            )
+        return Response(PermitTypeDetailSerializer(dup).data, status=201)
 
     @action(detail=True, methods=["get"], url_path="versions")
     def versions(self, request, key=None):
