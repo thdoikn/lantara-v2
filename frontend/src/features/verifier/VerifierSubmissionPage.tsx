@@ -1,9 +1,9 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, formatDistanceStrict, isPast } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft, AlertTriangle, Clock, ArrowRightCircle } from "lucide-react";
+import { CheckCircle2, XCircle, RotateCcw, MapPin, ChevronLeft, AlertTriangle, Clock, ArrowRightCircle, CalendarClock, History, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -128,21 +128,31 @@ function stageLabel(key: string) {
   return STAGE_LABELS[key] ?? key.replace(/-/g, " ");
 }
 
+interface VisitPayload {
+  scheduled_date: string;
+  scheduled_time: string;
+  location: string;
+  officers: string;
+}
+
 function ActionPanel({
   submission,
   stageType,
   onAction,
+  onScheduleVisit,
   isPending,
 }: {
   submission: Submission;
   stageType: string;
   onAction: (type: ActionType, note: string, revisionFields?: RevisionFieldInput[]) => void;
+  onScheduleVisit: (payload: VisitPayload) => void;
   isPending: boolean;
 }) {
   const [active, setActive] = useState<ActionType | null>(null);
   const [note, setNote] = useState("");
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [fieldNotes, setFieldNotes] = useState<Record<string, string>>({});
+  const [visit, setVisit] = useState<VisitPayload>({ scheduled_date: "", scheduled_time: "", location: "", officers: "" });
 
   const allowedTypes = ACTIONS_FOR_STAGE[stageType] ?? ACTIONS_FOR_STAGE.verification;
   const actions = ALL_ACTIONS.filter((a) => allowedTypes.includes(a.type)).map((a) =>
@@ -170,6 +180,12 @@ function ActionPanel({
 
   function handleConfirm() {
     if (!active) return;
+    if (active === "schedule_site_visit") {
+      onScheduleVisit(visit);
+      setActive(null);
+      setVisit({ scheduled_date: "", scheduled_time: "", location: "", officers: "" });
+      return;
+    }
     const revisionFields =
       active === "request_revision"
         ? revisionTargets
@@ -182,6 +198,12 @@ function ActionPanel({
     setFlagged(new Set());
     setFieldNotes({});
   }
+
+  const confirmDisabled =
+    isPending ||
+    (active === "schedule_site_visit"
+      ? !visit.scheduled_date
+      : Boolean(actions.find((a) => a.type === active)?.requiresNote && !note.trim()));
 
   if (isTerminal) {
     return (
@@ -243,7 +265,52 @@ function ActionPanel({
               )}
             </div>
           )}
-          {actions.find((a) => a.type === active)?.requiresNote && (
+          {/* Structured site-visit scheduling */}
+          {active === "schedule_site_visit" && (
+            <div className="space-y-2.5 rounded-xl border border-khatulistiwa-200 bg-khatulistiwa-50/50 p-3">
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-xs font-semibold text-khatulistiwa-700">
+                  Tanggal
+                  <input
+                    type="date"
+                    value={visit.scheduled_date}
+                    onChange={(e) => setVisit((v) => ({ ...v, scheduled_date: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-khatulistiwa-200 bg-white px-2.5 py-1.5 text-sm text-khatulistiwa-900 outline-none focus:border-khatulistiwa-400"
+                  />
+                </label>
+                <label className="text-xs font-semibold text-khatulistiwa-700">
+                  Waktu
+                  <input
+                    type="time"
+                    value={visit.scheduled_time}
+                    onChange={(e) => setVisit((v) => ({ ...v, scheduled_time: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-khatulistiwa-200 bg-white px-2.5 py-1.5 text-sm text-khatulistiwa-900 outline-none focus:border-khatulistiwa-400"
+                  />
+                </label>
+              </div>
+              <label className="block text-xs font-semibold text-khatulistiwa-700">
+                Lokasi
+                <input
+                  type="text"
+                  value={visit.location}
+                  onChange={(e) => setVisit((v) => ({ ...v, location: e.target.value }))}
+                  placeholder="Alamat / titik kunjungan"
+                  className="mt-1 w-full rounded-lg border border-khatulistiwa-200 bg-white px-2.5 py-1.5 text-sm text-khatulistiwa-900 placeholder-khatulistiwa-300 outline-none focus:border-khatulistiwa-400"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-khatulistiwa-700">
+                Petugas
+                <input
+                  type="text"
+                  value={visit.officers}
+                  onChange={(e) => setVisit((v) => ({ ...v, officers: e.target.value }))}
+                  placeholder="Nama petugas (pisahkan dengan koma)"
+                  className="mt-1 w-full rounded-lg border border-khatulistiwa-200 bg-white px-2.5 py-1.5 text-sm text-khatulistiwa-900 placeholder-khatulistiwa-300 outline-none focus:border-khatulistiwa-400"
+                />
+              </label>
+            </div>
+          )}
+          {active !== "schedule_site_visit" && actions.find((a) => a.type === active)?.requiresNote && (
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -262,10 +329,7 @@ function ActionPanel({
             </button>
             <button
               onClick={handleConfirm}
-              disabled={
-                isPending ||
-                Boolean(actions.find((a) => a.type === active)?.requiresNote && !note.trim())
-              }
+              disabled={confirmDisabled}
               className={cn(
                 "flex-1 rounded-xl py-2 text-sm font-semibold transition-all duration-150 disabled:opacity-60",
                 actions.find((a) => a.type === active)?.confirmVariant
@@ -328,6 +392,34 @@ export default function VerifierSubmissionPage() {
     queryKey: ["submission", id, "audit"],
     queryFn: () => api.get(`/submissions/${id}/audit/`).then((r) => r.data.results ?? r.data),
     enabled: !!id,
+  });
+
+  // Repeat-applicant context: this applicant's other submissions.
+  const { data: applicantHistory = [] } = useQuery<Submission[]>({
+    queryKey: ["submission", id, "applicant-history"],
+    queryFn: () => api.get(`/submissions/${id}/applicant-history/`).then((r) => r.data),
+    enabled: !!id,
+  });
+
+  const scheduleVisit = useMutation({
+    mutationFn: (payload: VisitPayload) => api.post(`/submissions/${id}/site-visit/`, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["submission", id] });
+      qc.invalidateQueries({ queryKey: ["submission", id, "audit"] });
+      toast.success("Kunjungan lapangan dijadwalkan.");
+    },
+    onError: () => toast.error("Gagal menjadwalkan kunjungan."),
+  });
+
+  const completeVisit = useMutation({
+    mutationFn: ({ visitId, findings }: { visitId: string; findings: string }) =>
+      api.post(`/submissions/${id}/site-visit/${visitId}/complete/`, { findings }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["submission", id] });
+      qc.invalidateQueries({ queryKey: ["submission", id, "audit"] });
+      toast.success("Kunjungan ditandai selesai.");
+    },
+    onError: () => toast.error("Gagal menyimpan kunjungan."),
   });
 
   const actMutation = useMutation({
@@ -512,7 +604,14 @@ export default function VerifierSubmissionPage() {
               <p className="text-xs text-khatulistiwa-600/70">Belum ada aktivitas tercatat.</p>
             ) : (
               <ol className="relative border-l border-khatulistiwa-100 ml-2 space-y-5">
-                {auditEntries.map((entry) => (
+                {auditEntries.map((entry, idx) => {
+                  const next = auditEntries[idx + 1];
+                  const gap = next
+                    ? formatDistanceStrict(parseISO(next.created_at), parseISO(entry.created_at), {
+                        locale: localeId,
+                      })
+                    : null;
+                  return (
                   <li key={entry.id} className="ml-4 text-sm">
                     <span className={cn(
                       "absolute -left-[7px] w-3.5 h-3.5 rounded-full border-2 border-white",
@@ -533,8 +632,12 @@ export default function VerifierSubmissionPage() {
                         <span className="ml-1">· → {stageLabel(entry.to_stage_key)}</span>
                       )}
                     </p>
+                    {gap && (
+                      <p className="text-[11px] text-khatulistiwa-400/60 mt-1">↳ {gap} kemudian</p>
+                    )}
                   </li>
-                ))}
+                  );
+                })}
               </ol>
             )}
           </div>
@@ -568,6 +671,7 @@ export default function VerifierSubmissionPage() {
               )?.stage_type ?? "verification"
             }
             onAction={handleAction}
+            onScheduleVisit={(p) => scheduleVisit.mutate(p)}
             isPending={actMutation.isPending}
           />
 
@@ -610,6 +714,32 @@ export default function VerifierSubmissionPage() {
                   {format(parseISO(submission.sla_due_at), "d MMM yyyy", { locale: localeId })}
                 </span>
               </div>
+              {submission.stage_sla_due_at && (
+                <div className="flex justify-between items-center">
+                  <span className="text-khatulistiwa-600/70">SLA Tahap Ini</span>
+                  <span className={cn(
+                    "font-semibold",
+                    isPast(parseISO(submission.stage_sla_due_at)) ? "text-red-600" : "text-khatulistiwa-900",
+                  )}>
+                    {formatDistanceStrict(parseISO(submission.stage_sla_due_at), new Date(), {
+                      addSuffix: true, locale: localeId,
+                    })}
+                  </span>
+                </div>
+              )}
+              {submission.revision_due_at && submission.status === "revision" && (
+                <div className="flex justify-between items-center">
+                  <span className="text-khatulistiwa-600/70">Batas Revisi Pemohon</span>
+                  <span className={cn(
+                    "font-semibold",
+                    isPast(parseISO(submission.revision_due_at)) ? "text-red-600" : "text-amber-700",
+                  )}>
+                    {formatDistanceStrict(parseISO(submission.revision_due_at), new Date(), {
+                      addSuffix: true, locale: localeId,
+                    })}
+                  </span>
+                </div>
+              )}
               {submission.is_sla_breached && (
                 <div className="flex items-center gap-1.5 text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                   <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
@@ -624,8 +754,129 @@ export default function VerifierSubmissionPage() {
               )}
             </div>
           )}
+
+          {/* Site visits */}
+          <SiteVisitsCard
+            visits={submission.site_visits ?? []}
+            onComplete={(visitId, findings) => completeVisit.mutate({ visitId, findings })}
+            isPending={completeVisit.isPending}
+          />
+
+          {/* Applicant history */}
+          <ApplicantHistoryCard history={applicantHistory} name={submission.applicant_name} />
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Site visits card ──────────────────────────────────────────────────────────
+
+function SiteVisitsCard({
+  visits,
+  onComplete,
+  isPending,
+}: {
+  visits: import("@/types").SiteVisit[];
+  onComplete: (visitId: string, findings: string) => void;
+  isPending: boolean;
+}) {
+  const [findings, setFindings] = useState<Record<string, string>>({});
+  if (visits.length === 0) return null;
+  return (
+    <div className="bg-white border border-khatulistiwa-100 rounded-2xl p-5 space-y-3">
+      <h2 className="font-display font-bold text-sm text-khatulistiwa-900 flex items-center gap-1.5">
+        <CalendarClock className="h-4 w-4 text-khatulistiwa-500" aria-hidden="true" />
+        Kunjungan Lapangan
+      </h2>
+      {visits.map((v) => (
+        <div key={v.id} className="rounded-xl border border-khatulistiwa-100 p-3 text-sm">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-semibold text-khatulistiwa-900">
+              {v.scheduled_date ?? "—"}
+              {v.scheduled_time ? ` · ${v.scheduled_time.slice(0, 5)}` : ""}
+            </p>
+            {v.is_completed ? (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <Check className="h-3 w-3" aria-hidden="true" /> Selesai
+              </span>
+            ) : (
+              <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                Dijadwalkan
+              </span>
+            )}
+          </div>
+          {v.location && <p className="text-xs text-khatulistiwa-600/70 mt-1">📍 {v.location}</p>}
+          {v.officers && <p className="text-xs text-khatulistiwa-600/70 mt-0.5">Petugas: {v.officers}</p>}
+          {v.is_completed ? (
+            v.findings && <p className="text-xs text-khatulistiwa-700 mt-1.5 italic">"{v.findings}"</p>
+          ) : (
+            <div className="mt-2 space-y-2">
+              <textarea
+                value={findings[v.id] ?? ""}
+                onChange={(e) => setFindings((p) => ({ ...p, [v.id]: e.target.value }))}
+                rows={2}
+                placeholder="Catatan hasil kunjungan…"
+                className="w-full rounded-lg border border-khatulistiwa-200 bg-khatulistiwa-50/50 px-2.5 py-1.5 text-xs text-khatulistiwa-900 placeholder-khatulistiwa-300 outline-none resize-none focus:bg-white focus:border-khatulistiwa-400"
+              />
+              <button
+                onClick={() => onComplete(v.id, findings[v.id] ?? "")}
+                disabled={isPending}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-60"
+              >
+                <Check className="h-3.5 w-3.5" aria-hidden="true" /> Tandai Selesai
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Applicant history card ────────────────────────────────────────────────────
+
+const HIST_STATUS_LABEL: Record<string, string> = {
+  draft: "Draf", submitted: "Diajukan", in_review: "Ditinjau", revision: "Revisi",
+  approved: "Disetujui", rejected: "Ditolak", publishing: "Penerbitan",
+  collection: "Siap Diambil", collected: "Selesai", issued: "Diterbitkan",
+};
+
+function ApplicantHistoryCard({ history, name }: { history: Submission[]; name: string }) {
+  if (history.length === 0) return null;
+  const approved = history.filter((s) => ["approved", "issued", "collected"].includes(s.status)).length;
+  const rejected = history.filter((s) => s.status === "rejected").length;
+  return (
+    <div className="bg-white border border-khatulistiwa-100 rounded-2xl p-5 space-y-3">
+      <h2 className="font-display font-bold text-sm text-khatulistiwa-900 flex items-center gap-1.5">
+        <History className="h-4 w-4 text-khatulistiwa-500" aria-hidden="true" />
+        Riwayat Pemohon
+      </h2>
+      <p className="text-xs text-khatulistiwa-600/70">
+        {name} memiliki {history.length} permohonan lain
+        {(approved > 0 || rejected > 0) && (
+          <> · <span className="text-emerald-700 font-medium">{approved} disetujui</span>
+          {rejected > 0 && <>, <span className="text-red-600 font-medium">{rejected} ditolak</span></>}</>
+        )}
+      </p>
+      <ul className="space-y-1.5 max-h-48 overflow-y-auto">
+        {history.map((s) => (
+          <li key={s.id}>
+            <Link
+              to={`/verifier/submissions/${s.id}`}
+              className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-khatulistiwa-50 transition-colors"
+            >
+              <span className="min-w-0">
+                <span className="block text-xs font-medium text-khatulistiwa-900 truncate">{s.permit_type_name}</span>
+                <span className="block text-[11px] text-khatulistiwa-400/70 font-mono">{s.reference_number}</span>
+              </span>
+              <span className="shrink-0 text-[11px] font-semibold text-khatulistiwa-600">
+                {HIST_STATUS_LABEL[s.status] ?? s.status}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
