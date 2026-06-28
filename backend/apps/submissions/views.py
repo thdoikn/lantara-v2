@@ -13,7 +13,7 @@ from apps.engine.models import PermitType, WorkflowStage
 from apps.engine.serializers import PermitTypeDetailSerializer
 
 from .field_validation import validate_form_data
-from .models import AuditEntry, Submission, SubmissionIndex, SubmissionRevisionField
+from .models import AuditEntry, SiteVisit, Submission, SubmissionIndex, SubmissionRevisionField
 from .serializers import (
     AuditEntrySerializer,
     SiteVisitSerializer,
@@ -34,7 +34,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         qs = Submission.objects.select_related("permit_type__sektor", "applicant").prefetch_related(
-            "audit_entries", "revision_fields", "site_visits"
+            "audit_entries", "revision_fields", "site_visits", "uploaded_documents"
         )
 
         if user.has_any_role("superadmin") or user.is_sektor_admin:
@@ -192,6 +192,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
         _upsert_index(sub)
         _notify_submission(sub)
+        _notify_verifiers_new(sub)
 
         return Response(SubmissionDetailSerializer(sub).data)
 
@@ -332,6 +333,13 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             notes=notes,
         )
         _notify_stage_advance(sub, actor)
+        # Advanced into another active stage → alert that stage's verifiers.
+        if sub.status not in (
+            Submission.Status.APPROVED,
+            Submission.Status.COLLECTED,
+            Submission.Status.REJECTED,
+        ):
+            _notify_verifiers_new(sub)
 
     # Working-days the applicant is given to return a requested revision.
     REVISION_GRACE_DAYS = 5
@@ -437,12 +445,16 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         serializer = SiteVisitSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         visit = serializer.save(submission=sub, stage_key=sub.current_stage_key)
+        when = f"{visit.scheduled_date}{f' {visit.scheduled_time}' if visit.scheduled_time else ''}"
         AuditEntry.objects.create(
             submission=sub,
             action=AuditEntry.ActionType.VISIT_SCHEDULED,
             actor=request.user,
-            notes=f"Dijadwalkan: {visit.scheduled_date}",
+            notes=f"Kunjungan dijadwalkan: {when}"
+            + (f" di {visit.location}" if visit.location else ""),
         )
+        # Tell the applicant a visit is scheduled.
+        _notify_visit_scheduled(sub, visit)
         # Send WA visit ticket (no-op if FEATURE_WHATSAPP_ENABLED is false)
         try:
             from django.utils.dateparse import parse_datetime
@@ -455,11 +467,67 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                     submission=sub,
                     scheduled_by=request.user,
                     scheduled_at=scheduled_at,
-                    location_notes=request.data.get("location_notes", ""),
+                    location_notes=visit.location or request.data.get("location_notes", ""),
                 )
         except Exception:
             pass  # WA ticket is best-effort
         return Response(SiteVisitSerializer(visit).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"], url_path="site-visit/(?P<visit_id>[^/.]+)/complete")
+    def complete_site_visit(self, request, pk=None, visit_id=None):
+        """Mark a scheduled site visit complete and record findings."""
+        sub = self.get_object()
+        try:
+            visit = sub.site_visits.get(id=visit_id)
+        except SiteVisit.DoesNotExist:
+            return Response({"detail": "Kunjungan tidak ditemukan."}, status=404)
+        visit.findings = request.data.get("findings", visit.findings)
+        visit.is_completed = True
+        visit.completed_at = timezone.now()
+        visit.save(update_fields=["findings", "is_completed", "completed_at", "updated_at"])
+        AuditEntry.objects.create(
+            submission=sub,
+            action=AuditEntry.ActionType.VISIT_COMPLETED,
+            actor=request.user,
+            notes=visit.findings,
+        )
+        return Response(SiteVisitSerializer(visit).data)
+
+    @action(detail=True, methods=["get"], url_path="applicant-history")
+    def applicant_history(self, request, pk=None):
+        """Other submissions by the same applicant (within the verifier's access),
+        for repeat-applicant context. Excludes the current submission."""
+        sub = self.get_object()
+        others = (
+            self.get_queryset()
+            .filter(applicant=sub.applicant)
+            .exclude(id=sub.id)
+            .order_by("-created_at")[:25]
+        )
+        return Response(SubmissionListSerializer(others, many=True).data)
+
+    @action(detail=False, methods=["get"], url_path="verifier-stats")
+    def verifier_stats(self, request):
+        """Queue health + personal throughput for the verifier home screen."""
+        from django.utils import timezone as tz
+
+        base = self.get_queryset()
+        active = base.filter(
+            status__in=["submitted", "in_review", "revision", "publishing", "collection"]
+        )
+        today = tz.localtime(tz.now()).date()
+        processed_today = (
+            Submission.objects.filter(last_actor=request.user, last_acted_at__date=today).count()
+        )
+        return Response(
+            {
+                "queued": active.count(),
+                "at_risk": active.filter(is_sla_at_risk=True, is_sla_breached=False).count(),
+                "breached": active.filter(is_sla_breached=True).count(),
+                "in_revision": active.filter(status="revision").count(),
+                "processed_today": processed_today,
+            }
+        )
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -496,6 +564,45 @@ def _notify_submission(sub: Submission) -> None:
         notif_type=Notification.NotifType.SUBMISSION_SUBMITTED,
         title="Pengajuan Diterima",
         body=f"Pengajuan {sub.reference_number} berhasil dikirim dan sedang diproses.",
+        submission_id=sub.id,
+        action_url=f"/portal/submissions/{sub.id}",
+        send_whatsapp=True,
+    )
+
+
+def _notify_verifiers_new(sub: Submission) -> None:
+    """In-app alert to every verifier assigned to this permit type that a new
+    submission is waiting in their queue (no email — avoids inbox spam)."""
+    from apps.accounts.models import VerifierPermitAssignment
+    from apps.notifications.models import Notification
+    from apps.notifications.utils import send_notification
+
+    assignments = VerifierPermitAssignment.objects.filter(
+        permit_type=sub.permit_type, is_active=True
+    ).select_related("user")
+    for a in assignments:
+        if a.user_id == sub.applicant_id:
+            continue
+        send_notification(
+            recipient=a.user,
+            notif_type=Notification.NotifType.GENERAL,
+            title="Permohonan baru di antrean",
+            body=f"{sub.reference_number} menunggu verifikasi.",
+            submission_id=sub.id,
+            action_url=f"/verifier/submissions/{sub.id}",
+            send_email=False,
+        )
+
+
+def _notify_visit_scheduled(sub: Submission, visit) -> None:
+    from apps.notifications.models import Notification
+    from apps.notifications.utils import send_notification
+
+    send_notification(
+        recipient=sub.applicant,
+        notif_type=Notification.NotifType.VISIT_SCHEDULED,
+        title="Kunjungan Lapangan Dijadwalkan",
+        body=f"Kunjungan untuk {sub.reference_number} dijadwalkan {visit.scheduled_date}.",
         submission_id=sub.id,
         action_url=f"/portal/submissions/{sub.id}",
         send_whatsapp=True,

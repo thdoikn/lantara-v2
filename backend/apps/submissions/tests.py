@@ -736,3 +736,81 @@ class TestFinalizeFieldValidation:
         sub.refresh_from_db()
         assert sub.status == Submission.Status.IN_REVIEW
         assert sub.submitted_at is not None
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 8. Verifier portal endpoints — stats, applicant history, site-visit completion
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestVerifierEndpoints:
+    def _admin_client(self, verifier):
+        role = Role.objects.create(key="superadmin", name="Super Admin")
+        UserRole.objects.create(user=verifier, role=role, is_active=True)
+        c = APIClient()
+        c.force_authenticate(user=verifier)
+        return c
+
+    def _submission(self, applicant, permit_type, **kw):
+        first = WorkflowStage.objects.filter(permit_type=permit_type).order_by("order").first()
+        defaults = {
+            "applicant": applicant, "permit_type": permit_type,
+            "form_data": {"nama_kegiatan": "X"},
+            "status": Submission.Status.IN_REVIEW,
+            "current_stage_key": first.key, "current_stage_order": first.order,
+            "submitted_at": timezone.now(), "stage_entered_at": timezone.now(),
+        }
+        defaults.update(kw)
+        return Submission.objects.create(**defaults)
+
+    def test_verifier_stats_shape(self, applicant, permit_type, verifier):
+        self._submission(applicant, permit_type)
+        self._submission(applicant, permit_type, is_sla_breached=True)
+        client = self._admin_client(verifier)
+        res = client.get("/api/v1/submissions/verifier-stats/")
+        assert res.status_code == 200
+        for k in ("queued", "at_risk", "breached", "in_revision", "processed_today"):
+            assert k in res.data
+        assert res.data["queued"] >= 2
+        assert res.data["breached"] >= 1
+
+    def test_applicant_history_excludes_current(self, applicant, permit_type, verifier):
+        a = self._submission(applicant, permit_type)
+        self._submission(applicant, permit_type)
+        client = self._admin_client(verifier)
+        res = client.get(f"/api/v1/submissions/{a.id}/applicant-history/")
+        assert res.status_code == 200
+        ids = [r["id"] for r in res.data]
+        assert str(a.id) not in ids
+        assert len(res.data) >= 1
+
+    def test_complete_site_visit(self, applicant, permit_type, verifier):
+        from apps.submissions.models import SiteVisit
+
+        sub = self._submission(applicant, permit_type)
+        visit = SiteVisit.objects.create(
+            submission=sub, stage_key=sub.current_stage_key,
+            scheduled_date="2026-07-02", location="Jl. Uji",
+        )
+        client = self._admin_client(verifier)
+        res = client.post(
+            f"/api/v1/submissions/{sub.id}/site-visit/{visit.id}/complete/",
+            {"findings": "Sesuai standar."},
+            format="json",
+        )
+        assert res.status_code == 200
+        visit.refresh_from_db()
+        assert visit.is_completed is True
+        assert visit.findings == "Sesuai standar."
+        assert sub.audit_entries.filter(action="visit_completed").exists()
+
+    def test_list_includes_doc_counts(self, applicant, permit_type, verifier):
+        self._submission(
+            applicant, permit_type,
+            schema_snapshot={"doc_requirements": [{"key": "ktp", "required": True}]},
+        )
+        client = self._admin_client(verifier)
+        res = client.get("/api/v1/submissions/")
+        row = res.data["results"][0]
+        assert "document_count" in row and "required_document_count" in row

@@ -51,6 +51,7 @@ class SiteVisitSerializer(serializers.ModelSerializer):
             "stage_key",
             "scheduled_date",
             "scheduled_time",
+            "location",
             "officers",
             "findings",
             "is_completed",
@@ -64,6 +65,8 @@ class SubmissionListSerializer(serializers.ModelSerializer):
     sektor_name = serializers.CharField(source="permit_type.sektor.name", read_only=True)
     sektor_key = serializers.CharField(source="permit_type.sektor.key", read_only=True)
     applicant_name = serializers.CharField(source="applicant.full_name", read_only=True)
+    document_count = serializers.SerializerMethodField()
+    required_document_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Submission
@@ -80,9 +83,20 @@ class SubmissionListSerializer(serializers.ModelSerializer):
             "sla_due_at",
             "is_sla_breached",
             "is_sla_at_risk",
+            "revision_due_at",
+            "document_count",
+            "required_document_count",
             "submitted_at",
             "created_at",
         ]
+
+    def get_document_count(self, obj) -> int:
+        # uploaded_documents is prefetched in the viewset queryset.
+        return sum(1 for d in obj.uploaded_documents.all() if d.is_active)
+
+    def get_required_document_count(self, obj) -> int:
+        snap = obj.schema_snapshot or {}
+        return sum(1 for d in snap.get("doc_requirements", []) if d.get("required"))
 
 
 class SubmissionDetailSerializer(serializers.ModelSerializer):

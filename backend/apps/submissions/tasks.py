@@ -43,11 +43,32 @@ def sweep_sla():
     return f"SLA sweep: {at_risk_count} at risk, {breached_count} breached."
 
 
+def _notify_assigned_verifiers(sub, notif_type, title, body):
+    """In-app SLA alert to every active verifier for this permit type."""
+    from apps.accounts.models import VerifierPermitAssignment
+    from apps.notifications.utils import send_notification
+
+    assignments = VerifierPermitAssignment.objects.filter(
+        permit_type=sub.permit_type, is_active=True
+    ).select_related("user")
+    for a in assignments:
+        if a.user_id == sub.applicant_id:
+            continue
+        send_notification(
+            recipient=a.user,
+            notif_type=notif_type,
+            title=title,
+            body=body,
+            submission_id=sub.id,
+            action_url=f"/verifier/submissions/{sub.id}",
+            send_email=False,
+        )
+
+
 def _notify_sla_breached(sub):
     from apps.notifications.models import Notification
     from apps.notifications.utils import send_notification
 
-    # Notify assigned verifiers + the applicant
     send_notification(
         recipient=sub.applicant,
         notif_type=Notification.NotifType.SLA_BREACHED,
@@ -55,6 +76,12 @@ def _notify_sla_breached(sub):
         body=f"Pengajuan {sub.reference_number} telah melampaui batas waktu SLA.",
         submission_id=sub.id,
         action_url=f"/portal/submissions/{sub.id}",
+    )
+    _notify_assigned_verifiers(
+        sub,
+        Notification.NotifType.SLA_BREACHED,
+        "SLA Terlampaui",
+        f"{sub.reference_number} telah melampaui batas SLA dan menunggu tindakan.",
     )
 
 
@@ -69,4 +96,10 @@ def _notify_sla_at_risk(sub):
         body=f"Pengajuan {sub.reference_number} mendekati batas waktu SLA (< 24 jam).",
         submission_id=sub.id,
         action_url=f"/portal/submissions/{sub.id}",
+    )
+    _notify_assigned_verifiers(
+        sub,
+        Notification.NotifType.SLA_AT_RISK,
+        "SLA Mendekati Batas",
+        f"{sub.reference_number} mendekati batas SLA (< 24 jam).",
     )

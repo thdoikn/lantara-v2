@@ -186,6 +186,7 @@ class SiteVisit(TimestampedModel):
     stage_key = models.CharField(max_length=120)
     scheduled_date = models.DateField(null=True, blank=True)
     scheduled_time = models.TimeField(null=True, blank=True)
+    location = models.CharField(max_length=300, blank=True)
     officers = models.TextField(blank=True, help_text="Comma-separated officer names/NIPs")
     findings = models.TextField(blank=True)
     is_completed = models.BooleanField(default=False)
