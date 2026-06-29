@@ -8,28 +8,22 @@
     "pengampu": "Direktorat Pelayanan Dasar (Dit. Yandas)"
   },
   "permit_type": {
-    "key": "izin-pendirian-sma",
-    "name": "Izin Pendirian Sekolah Menengah Atas (SMA)",
-    "description": "Izin pendirian satuan pendidikan Sekolah Menengah Atas (SMA) di Ibu Kota Nusantara.",
+    "key": "izin-lkp-pkbm-pnf",
+    "name": "Izin Pendirian LKP/SKB/PKBM/Satuan PNF Sejenis",
+    "description": "Izin pendirian Lembaga Kursus dan Pelatihan (LKP), Sanggar Kelompok Belajar (SKB), Pusat Kegiatan Belajar Masyarakat (PKBM), atau Satuan Pendidikan Nonformal (PNF) sejenis di Ibu Kota Nusantara.",
     "is_berusaha": false,
     "oss_covered": false,
-    "sla_days": 10,
-    "product_name": "Izin Pendirian Sekolah Menengah Atas (SMA)",
+    "sla_days": 15,
+    "product_name": "Izin Pendirian Lembaga Kursus dan Pelatihan (LKP)/Sanggar Kelompok Belajar (SKB)/Pusat Kegiatan Belajar Masyarakat (PKBM)/Satuan PNF Sejenis",
     "legal_basis": [
       "Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional",
       "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik",
-      "Undang-Undang Nomor 21 Tahun 2023 tentang Perubahan Atas Undang-Undang Nomor 3 Tahun 2022 tentang Ibu Kota Negara",
-      "Peraturan Pemerintah Nomor 57 Tahun 2021 tentang Standar Nasional Pendidikan",
+      "Undang-Undang Nomor 3 Tahun 2022 tentang Ibu Kota Negara sebagaimana telah diubah dengan Undang-Undang Nomor 21 Tahun 2023",
       "Peraturan Pemerintah Nomor 12 Tahun 2023 tentang Pemberian Perizinan Berusaha, Kemudahan Berusaha dan Fasilitas Penanaman Modal Bagi Pelaku Usaha di Ibu Kota Nusantara",
       "Peraturan Pemerintah Nomor 27 Tahun 2023 tentang Kewenangan Khusus Otorita Ibu Kota Nusantara",
-      "Peraturan Menteri Pendidikan dan Kebudayaan Nomor 36 Tahun 2014 tentang Pedoman Pendirian, Perubahan dan Penutupan Satuan Pendidikan Dasar dan Menengah",
-      "Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 32 Tahun 2022 tentang Standar Teknis Pelayanan Minimal Pendidikan",
-      "Peraturan Menteri Pendidikan dan Kebudayaan Nomor 22 Tahun 2023 tentang Standar Sarana dan Prasarana Pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar dan Jenjang Pendidikan Menengah",
-      "Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 47 Tahun 2023 tentang Standar Pengelolaan pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah",
-      "Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 1 Tahun 2026 tentang Standar Proses pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar dan Jenjang Pendidikan Menengah",
+      "Peraturan Menteri Pendidikan dan Kebudayaan Nomor 81 Tahun 2013 tentang Pendirian Satuan Pendidikan Non Formal",
       "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2022 tentang Organisasi dan Tata Kerja Otorita Ibu Kota Nusantara",
-      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 2 Tahun 2024 tentang Penyelenggaraan Pelayanan Perizinan di Ibu Kota Nusantara",
-      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2026 tentang Tata Cara Pengawasan Perizinan di Ibu Kota Nusantara"
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 2 Tahun 2024 tentang Penyelenggaraan Pelayanan Perizinan di Ibu Kota Nusantara"
     ],
     "fee_description": "Rp0,00 (nol rupiah) sampai dengan tahun 2035",
     "complaint_info": "Pengaduan, saran, dan masukan disampaikan langsung ke petugas pengaduan atau melalui: Website ikn.go.id; Email ditp5@ikn.go.id; WhatsApp +62 811 5000 5555; Instagram @pp_ikn; SP4N Lapor! www.lapor.go.id. Surat Izin atau Surat Penolakan disampaikan melalui WhatsApp, sistem online lainnya, atau secara manual.",
@@ -53,7 +47,7 @@
         "name": "Verifikasi Berkas (Bidang Perizinan)",
         "stage_type": "verification",
         "actor_role": "Bidang Perizinan / Deputi Bidang Pengendalian Pembangunan",
-        "sla_hours": 20,
+        "sla_hours": 30,
         "requires_site_visit": false,
         "allowed_actions": ["approve", "revise", "reject"],
         "is_terminal": false,
@@ -65,7 +59,7 @@
         "name": "Verifikasi Data & Teknis (Bidang Pelayanan Dasar)",
         "stage_type": "verification",
         "actor_role": "Bidang Pelayanan Dasar / Direktorat Pelayanan Dasar",
-        "sla_hours": 36,
+        "sla_hours": 54,
         "requires_site_visit": true,
         "allowed_actions": ["approve", "revise", "reject", "schedule_site_visit"],
         "is_terminal": false,
@@ -77,7 +71,7 @@
         "name": "Penerbitan oleh Kepala Otorita",
         "stage_type": "publish",
         "actor_role": "Kepala Otorita IKN",
-        "sla_hours": 16,
+        "sla_hours": 28,
         "requires_site_visit": false,
         "allowed_actions": ["sign", "generate"],
         "is_terminal": false,
@@ -115,8 +109,7 @@
         "order": 2,
         "required": true,
         "validation_json": {"length": 16},
-        "prefill_from_profile": true,
-        "help_text": "16 digit Nomor Induk Kependudukan"
+        "prefill_from_profile": true
       },
       {
         "key": "nomor_telepon",
@@ -129,21 +122,22 @@
         "placeholder": "+62..."
       },
       {
-        "key": "jenis_pemohon",
-        "label": "Jenis Pemohon",
+        "key": "jenis_satuan",
+        "label": "Jenis Satuan PNF",
         "field_type": "select",
-        "section": "Identitas Pemohon",
+        "section": "Data Lembaga",
         "order": 4,
         "required": true,
         "options_json": [
-          {"value": "swasta", "label": "Badan Hukum / Swasta (Nirlaba)"},
-          {"value": "pemerintah", "label": "Pemerintah / Pemerintah Daerah"}
-        ],
-        "help_text": "Pendirian oleh masyarakat wajib melalui badan penyelenggara berbadan hukum berprinsip nirlaba."
+          {"value": "lkp", "label": "Lembaga Kursus dan Pelatihan (LKP)"},
+          {"value": "skb", "label": "Sanggar Kelompok Belajar (SKB)"},
+          {"value": "pkbm", "label": "Pusat Kegiatan Belajar Masyarakat (PKBM)"},
+          {"value": "pnf_sejenis", "label": "Satuan PNF Sejenis"}
+        ]
       },
       {
-        "key": "nama_satuan_pendidikan",
-        "label": "Nama Satuan Pendidikan",
+        "key": "nama_lembaga",
+        "label": "Nama Lembaga",
         "field_type": "text",
         "section": "Data Lembaga",
         "order": 5,
@@ -152,7 +146,7 @@
       },
       {
         "key": "nama_badan_penyelenggara",
-        "label": "Nama Badan Penyelenggara / Yayasan",
+        "label": "Nama Badan Hukum / Penyelenggara",
         "field_type": "text",
         "section": "Data Lembaga",
         "order": 6,
@@ -199,13 +193,11 @@
       {
         "key": "nib",
         "title": "Nomor Induk Berusaha (NIB)",
-        "description": "NIB bagi pemohon swasta.",
+        "description": "Nomor Induk Berusaha (NIB).",
         "allowed_types": ["pdf", "jpg", "jpeg", "png"],
         "max_bytes": 5242880,
-        "required": false,
-        "order": 4,
-        "conditional_field_key": "jenis_pemohon",
-        "conditional_field_value": "swasta"
+        "required": true,
+        "order": 4
       },
       {
         "key": "imb_pbg",
@@ -237,38 +229,20 @@
       {
         "key": "dokumen_tanah_bangunan",
         "title": "Dokumen Hak Atas Tanah dan Bangunan",
-        "description": "Fotokopi/hasil pindai dokumen hak milik, sewa, atau pinjam pakai atas tanah dan bangunan untuk penyelenggaraan SMA yang sah atas nama pendiri, serta data status kepemilikan atas nama Pemerintah, pemerintah daerah, atau badan penyelenggara.",
+        "description": "Fotokopi/hasil pindai dokumen hak milik, sewa, atau pinjam pakai atas tanah dan bangunan untuk penyelenggaraan LKP/SKB/PKBM/Satuan PNF Sejenis yang sah atas nama pendiri.",
         "allowed_types": ["pdf"],
         "max_bytes": 10485760,
         "required": true,
         "order": 8
       },
       {
-        "key": "persyaratan_teknis_pendirian",
-        "title": "Dokumen Persyaratan Teknis Pendirian",
-        "description": "Memuat isi pendidikan; jumlah dan kualifikasi pendidik dan tenaga kependidikan; sarana dan prasarana; pembiayaan; sistem evaluasi dan sertifikasi; manajemen dan proses pendidikan; serta pembentukan badan penyelenggara berbadan hukum nirlaba.",
+        "key": "rencana_pengembangan",
+        "title": "Rencana Pengembangan Satuan Pendidikan",
+        "description": "Dokumen Rencana Pengembangan Satuan Pendidikan dengan mengacu pada Standar Nasional Pendidikan, paling sedikit memuat: visi dan misi; kurikulum; peserta didik; pendidik dan tenaga kependidikan; sarana dan prasarana; pendanaan; organisasi; manajemen satuan pendidikan; dan peran serta masyarakat.",
         "allowed_types": ["pdf"],
         "max_bytes": 10485760,
         "required": true,
         "order": 9
-      },
-      {
-        "key": "studi_kelayakan",
-        "title": "Hasil Studi Kelayakan",
-        "description": "Hasil studi kelayakan prospek pendirian dari segi tata ruang, geografis, ekologis; prospek pendaftar, keuangan, sosial dan budaya; data perimbangan jumlah satuan pendidikan dengan penduduk usia sekolah; perkiraan jarak dan kapasitas daya tampung; serta perkiraan pembiayaan minimal 1 tahun akademik berikutnya dan pemenuhan Standar Pelayanan Minimal.",
-        "allowed_types": ["pdf"],
-        "max_bytes": 10485760,
-        "required": true,
-        "order": 10
-      },
-      {
-        "key": "rips",
-        "title": "Rencana Induk Pengembangan Satuan Pendidikan (RIPS)",
-        "description": "RIPS memuat visi dan misi; kurikulum; peserta didik; pendidik dan tenaga kependidikan; sarana dan prasarana; pendanaan; organisasi; manajemen satuan pendidikan; dan peran serta masyarakat.",
-        "allowed_types": ["pdf"],
-        "max_bytes": 10485760,
-        "required": true,
-        "order": 11
       }
     ]
   }

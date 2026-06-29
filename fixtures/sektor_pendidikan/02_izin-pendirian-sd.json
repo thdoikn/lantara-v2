@@ -10,18 +10,28 @@
   "permit_type": {
     "key": "izin-pendirian-sd",
     "name": "Izin Pendirian Sekolah Dasar (SD)",
-    "description": "Izin mendirikan Sekolah Dasar negeri/swasta di wilayah IKN.",
+    "description": "Izin pendirian satuan pendidikan Sekolah Dasar (SD) di Ibu Kota Nusantara.",
     "is_berusaha": false,
     "oss_covered": false,
-    "sla_days": 14,
-    "product_name": "Izin Pendirian SD",
+    "sla_days": 15,
+    "product_name": "Izin Pendirian Sekolah Dasar (SD)",
     "legal_basis": [
       "Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional",
-      "Peraturan Pemerintah Nomor 17 Tahun 2010 tentang Pengelolaan dan Penyelenggaraan Pendidikan",
-      "Peraturan Menteri Pendidikan dan Kebudayaan Nomor 36 Tahun 2014 tentang Pedoman Pendirian, Perubahan, dan Penutupan Satuan Pendidikan Dasar dan Menengah"
+      "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik",
+      "Undang-Undang Nomor 3 Tahun 2022 tentang Ibu Kota Negara sebagaimana telah diubah dengan Undang-Undang Nomor 21 Tahun 2023",
+      "Peraturan Pemerintah Nomor 12 Tahun 2023 tentang Pemberian Perizinan Berusaha, Kemudahan Berusaha dan Fasilitas Penanaman Modal Bagi Pelaku Usaha di Ibu Kota Nusantara",
+      "Peraturan Pemerintah Nomor 27 Tahun 2023 tentang Kewenangan Khusus Otorita Ibu Kota Nusantara",
+      "Peraturan Menteri Pendidikan dan Kebudayaan Nomor 36 Tahun 2014 tentang Pedoman Pendirian, Perubahan dan Penutupan Satuan Pendidikan Dasar dan Menengah",
+      "Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 32 Tahun 2022 tentang Standar Teknis Pelayanan Minimal Pendidikan",
+      "Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 47 Tahun 2023 tentang Standar Pengelolaan pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah",
+      "Peraturan Menteri Pendidikan dan Kebudayaan Nomor 22 Tahun 2023 tentang Standar Sarana dan Prasarana Pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah",
+      "Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 1 Tahun 2026 tentang Standar Proses pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar dan Jenjang Pendidikan Menengah",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2022 tentang Organisasi dan Tata Kerja Otorita Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 2 Tahun 2024 tentang Penyelenggaraan Pelayanan Perizinan di Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2026 tentang Tata Cara Pengawasan Perizinan di Ibu Kota Nusantara"
     ],
-    "fee_description": "Rp0 (gratis) s/d 2035",
-    "complaint_info": "Pengaduan dapat disampaikan melalui WhatsApp Satu Nomor Otorita IKN atau portal layanan.",
+    "fee_description": "Rp0,00 (nol rupiah) sampai dengan tahun 2035",
+    "complaint_info": "Pengaduan, saran, dan masukan disampaikan langsung ke petugas pengaduan atau melalui: Website ikn.go.id; Email ditp5@ikn.go.id; WhatsApp +62 811 5000 5555; Instagram @pp_ikn; SP4N Lapor! www.lapor.go.id. Surat Izin atau Surat Penolakan disampaikan melalui WhatsApp, sistem online lainnya, atau secara manual.",
     "is_published": true,
     "stages": [
       {
@@ -32,74 +42,69 @@
         "actor_role": "applicant",
         "sla_hours": 0,
         "requires_site_visit": false,
-        "allowed_actions": [
-          "submit"
-        ],
+        "allowed_actions": ["submit"],
         "is_terminal": false,
-        "instructions": "Pemohon melengkapi formulir dan mengunggah dokumen persyaratan."
+        "instructions": "Pemohon mendaftar pada situs perizinan LANTARA, mengisi formulir, dan mengunggah dokumen persyaratan."
       },
       {
-        "key": "tim-teknis-verifikasi",
+        "key": "verifikasi-berkas",
         "order": 2,
-        "name": "Verifikasi Tim Teknis",
+        "name": "Verifikasi Berkas (Bidang Perizinan)",
         "stage_type": "verification",
-        "actor_role": "verifier",
-        "sla_hours": 48,
-        "requires_site_visit": true,
-        "allowed_actions": [
-          "approve",
-          "revise",
-          "reject",
-          "schedule_site_visit"
-        ],
+        "actor_role": "Bidang Perizinan / Deputi Bidang Pengendalian Pembangunan",
+        "sla_hours": 30,
+        "requires_site_visit": false,
+        "allowed_actions": ["approve", "revise", "reject"],
         "is_terminal": false,
-        "instructions": "Tim teknis memverifikasi kelengkapan dan kesesuaian dokumen."
+        "instructions": "Deputi Bidang Pengendalian Pembangunan memeriksa kelengkapan isian formulir dan berkas permohonan."
+      },
+      {
+        "key": "verifikasi-data",
+        "order": 3,
+        "name": "Verifikasi Data & Teknis (Bidang Pelayanan Dasar)",
+        "stage_type": "verification",
+        "actor_role": "Bidang Pelayanan Dasar / Direktorat Pelayanan Dasar",
+        "sla_hours": 54,
+        "requires_site_visit": true,
+        "allowed_actions": ["approve", "revise", "reject", "schedule_site_visit"],
+        "is_terminal": false,
+        "instructions": "Deputi Bidang Sosial Budaya dan Pemberdayaan Masyarakat melalui Direktorat Pelayanan Dasar melakukan verifikasi administrasi dan verifikasi lapangan terhadap kesesuaian dokumen dengan Standar Teknis (NSPK), kemudian mengeluarkan rekomendasi diterima atau penolakan."
       },
       {
         "key": "penerbitan",
-        "order": 3,
-        "name": "Penerbitan Izin oleh Kepala Otorita",
+        "order": 4,
+        "name": "Penerbitan oleh Kepala Otorita",
         "stage_type": "publish",
-        "actor_role": "approver",
-        "sla_hours": 24,
+        "actor_role": "Kepala Otorita IKN",
+        "sla_hours": 28,
         "requires_site_visit": false,
-        "allowed_actions": [
-          "approve",
-          "reject"
-        ],
+        "allowed_actions": ["sign", "generate"],
         "is_terminal": false,
-        "instructions": "Kepala Otorita menandatangani dan menerbitkan izin."
+        "instructions": "Deputi Bidang Pengendalian Pembangunan mengelola administrasi penerbitan dan Kepala Otorita Ibu Kota Nusantara menandatangani serta menerbitkan izin."
       },
       {
-        "key": "penyerahan",
-        "order": 4,
-        "name": "Penyerahan ke Pemohon",
+        "key": "pengambilan",
+        "order": 5,
+        "name": "Pengambilan / Penyerahan",
         "stage_type": "collection",
-        "actor_role": "staff",
+        "actor_role": "Petugas Loket / WhatsApp",
         "sla_hours": 8,
         "requires_site_visit": false,
-        "allowed_actions": [
-          "approve"
-        ],
+        "allowed_actions": ["collect"],
         "is_terminal": true,
-        "instructions": "Izin diserahkan ke pemohon melalui WhatsApp / portal online."
+        "instructions": "Pemohon menerima Surat Izin atau Surat Penolakan melalui WhatsApp, sistem online lainnya, atau secara manual. Dokumen izin dapat diunduh di sistem."
       }
     ],
     "form_fields": [
       {
         "key": "nama_pemohon",
-        "label": "Nama Pemohon / Lembaga",
+        "label": "Nama Pemohon / Pendiri",
         "field_type": "text",
         "section": "Identitas Pemohon",
         "order": 1,
         "required": true,
-        "validation_json": {
-          "minLength": 3
-        },
-        "options_json": [],
-        "prefill_from_profile": true,
-        "help_text": "",
-        "placeholder": ""
+        "validation_json": {"minLength": 3},
+        "prefill_from_profile": true
       },
       {
         "key": "nik_pemohon",
@@ -108,11 +113,9 @@
         "section": "Identitas Pemohon",
         "order": 2,
         "required": true,
-        "validation_json": {},
-        "options_json": [],
+        "validation_json": {"length": 16},
         "prefill_from_profile": true,
-        "help_text": "16 digit Nomor Induk Kependudukan",
-        "placeholder": ""
+        "help_text": "16 digit Nomor Induk Kependudukan"
       },
       {
         "key": "nomor_telepon",
@@ -121,26 +124,21 @@
         "section": "Identitas Pemohon",
         "order": 3,
         "required": true,
-        "validation_json": {},
-        "options_json": [],
         "prefill_from_profile": true,
-        "help_text": "",
         "placeholder": "+62..."
       },
       {
-        "key": "alamat_lengkap",
-        "label": "Alamat Lengkap",
-        "field_type": "textarea",
+        "key": "jenis_pemohon",
+        "label": "Jenis Pemohon",
+        "field_type": "select",
         "section": "Identitas Pemohon",
         "order": 4,
         "required": true,
-        "validation_json": {
-          "minLength": 10
-        },
-        "options_json": [],
-        "prefill_from_profile": false,
-        "help_text": "",
-        "placeholder": ""
+        "options_json": [
+          {"value": "swasta", "label": "Badan Hukum / Swasta (Nirlaba)"},
+          {"value": "pemerintah", "label": "Pemerintah / Pemerintah Daerah"}
+        ],
+        "help_text": "Pendirian oleh masyarakat wajib melalui badan penyelenggara berbadan hukum berprinsip nirlaba."
       },
       {
         "key": "nama_satuan_pendidikan",
@@ -149,13 +147,7 @@
         "section": "Data Lembaga",
         "order": 5,
         "required": true,
-        "validation_json": {
-          "minLength": 5
-        },
-        "options_json": [],
-        "prefill_from_profile": false,
-        "help_text": "",
-        "placeholder": ""
+        "validation_json": {"minLength": 3}
       },
       {
         "key": "nama_badan_penyelenggara",
@@ -163,132 +155,119 @@
         "field_type": "text",
         "section": "Data Lembaga",
         "order": 6,
-        "required": true,
-        "validation_json": {
-          "minLength": 5
-        },
-        "options_json": [],
-        "prefill_from_profile": false,
-        "help_text": "",
-        "placeholder": ""
+        "required": true
       },
       {
-        "key": "jenjang_pendidikan",
-        "label": "Jenjang Pendidikan",
-        "field_type": "select",
-        "section": "Data Lembaga",
+        "key": "alamat_lokasi",
+        "label": "Alamat Lokasi Penyelenggaraan",
+        "field_type": "textarea",
+        "section": "Lokasi",
         "order": 7,
         "required": true,
-        "validation_json": {},
-        "options_json": [
-          {
-            "value": "paud",
-            "label": "PAUD/TK"
-          },
-          {
-            "value": "sd",
-            "label": "SD"
-          },
-          {
-            "value": "smp",
-            "label": "SMP"
-          },
-          {
-            "value": "sma",
-            "label": "SMA"
-          },
-          {
-            "value": "smk",
-            "label": "SMK"
-          },
-          {
-            "value": "slb",
-            "label": "SLB"
-          },
-          {
-            "value": "non_formal",
-            "label": "Non-Formal"
-          }
-        ],
-        "prefill_from_profile": false,
-        "help_text": "",
-        "placeholder": ""
-      },
-      {
-        "key": "kapasitas_siswa",
-        "label": "Rencana Kapasitas Siswa",
-        "field_type": "number",
-        "section": "Data Lembaga",
-        "order": 8,
-        "required": true,
-        "validation_json": {
-          "min": 1,
-          "max": 1000
-        },
-        "options_json": [],
-        "prefill_from_profile": false,
-        "help_text": "Jumlah siswa yang direncanakan diterima",
-        "placeholder": ""
+        "validation_json": {"minLength": 10}
       }
     ],
     "doc_requirements": [
       {
-        "key": "ktp",
-        "title": "KTP Pemohon",
-        "description": "Kartu Tanda Penduduk yang masih berlaku",
-        "allowed_types": [
-          "pdf",
-          "jpg",
-          "jpeg",
-          "png"
-        ],
+        "key": "surat_permohonan",
+        "title": "Surat Permohonan Bermeterai",
+        "description": "Surat permohonan yang di dalamnya terdapat pernyataan kebenaran dan keabsahan dokumen dan data di atas meterai, ditujukan kepada Kepala Otorita Ibu Kota Nusantara c.q. Deputi Bidang Pengendalian Pembangunan.",
+        "allowed_types": ["pdf"],
         "max_bytes": 5242880,
         "required": true,
         "order": 1
       },
       {
-        "key": "surat_permohonan",
-        "title": "Surat Permohonan",
-        "description": "Surat permohonan yang ditujukan kepada Kepala Otorita IKN",
-        "allowed_types": [
-          "pdf"
-        ],
+        "key": "ktp_pendiri",
+        "title": "KTP / Identitas Resmi Pendiri",
+        "description": "Fotokopi/hasil pindai KTP atau dokumen identitas resmi pendiri yang tercantum dalam Akta Pendirian Badan Hukum.",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
         "max_bytes": 5242880,
         "required": true,
         "order": 2
       },
       {
-        "key": "surat_pernyataan_yayasan",
-        "title": "Surat Pernyataan Yayasan / Badan Penyelenggara",
-        "description": "Surat pernyataan kesanggupan badan penyelenggara",
-        "allowed_types": [
-          "pdf"
-        ],
+        "key": "susunan_pengurus",
+        "title": "Susunan Pengurus dan Rincian Tugas Badan Hukum",
+        "description": "Susunan pengurus dan rincian tugas Badan Hukum.",
+        "allowed_types": ["pdf"],
         "max_bytes": 5242880,
         "required": true,
         "order": 3
       },
       {
-        "key": "rencana_induk_pengembangan",
-        "title": "Rencana Induk Pengembangan Sekolah",
-        "description": "Dokumen rencana pengembangan satuan pendidikan 5 tahun",
-        "allowed_types": [
-          "pdf"
-        ],
-        "max_bytes": 10485760,
-        "required": true,
-        "order": 4
+        "key": "nib",
+        "title": "Nomor Induk Berusaha (NIB)",
+        "description": "NIB bagi pemohon swasta.",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
+        "max_bytes": 5242880,
+        "required": false,
+        "order": 4,
+        "conditional_field_key": "jenis_pemohon",
+        "conditional_field_value": "swasta"
       },
       {
-        "key": "data_pendidik",
-        "title": "Daftar Riwayat Hidup Pendidik dan Tenaga Kependidikan",
-        "description": "CV lengkap calon guru dan staf pendidikan",
-        "allowed_types": [
-          "pdf"
-        ],
-        "max_bytes": 5242880,
+        "key": "imb_pbg",
+        "title": "IMB atau PBG",
+        "description": "Fotokopi/hasil pindai Izin Mendirikan Bangunan (IMB) atau Persetujuan Bangunan Gedung (PBG).",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
         "required": true,
         "order": 5
+      },
+      {
+        "key": "akta_pendirian",
+        "title": "Akta Pendirian Badan Hukum",
+        "description": "Fotokopi/hasil pindai Akta Pendirian Badan Hukum.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 6
+      },
+      {
+        "key": "npwp_badan",
+        "title": "NPWP Badan Hukum",
+        "description": "Fotokopi/hasil pindai NPWP Badan Hukum.",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 7
+      },
+      {
+        "key": "dokumen_tanah_bangunan",
+        "title": "Dokumen Hak Atas Tanah dan Bangunan",
+        "description": "Fotokopi/hasil pindai dokumen hak milik, sewa, atau pinjam pakai atas tanah dan bangunan untuk penyelenggaraan SD yang sah atas nama pendiri, serta data status kepemilikan atas nama Pemerintah, pemerintah daerah, atau badan penyelenggara.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 8
+      },
+      {
+        "key": "persyaratan_teknis_pendirian",
+        "title": "Dokumen Persyaratan Teknis Pendirian",
+        "description": "Memuat isi pendidikan; jumlah dan kualifikasi pendidik dan tenaga kependidikan; sarana dan prasarana; pembiayaan; sistem evaluasi dan sertifikasi; manajemen dan proses pendidikan; serta pembentukan badan penyelenggara berbadan hukum nirlaba.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 9
+      },
+      {
+        "key": "studi_kelayakan",
+        "title": "Hasil Studi Kelayakan",
+        "description": "Hasil studi kelayakan prospek pendirian dari segi tata ruang, geografis, ekologis; prospek pendaftar, keuangan, sosial dan budaya; data perimbangan jumlah satuan pendidikan dengan penduduk usia sekolah; perkiraan jarak dan kapasitas daya tampung; serta perkiraan pembiayaan minimal 1 tahun akademik berikutnya dan pemenuhan Standar Pelayanan Minimal.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 10
+      },
+      {
+        "key": "rips",
+        "title": "Rencana Induk Pengembangan Satuan Pendidikan (RIPS)",
+        "description": "RIPS memuat visi dan misi; kurikulum; peserta didik; pendidik dan tenaga kependidikan; sarana dan prasarana; pendanaan; organisasi; manajemen satuan pendidikan; dan peran serta masyarakat.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 11
       }
     ]
   }

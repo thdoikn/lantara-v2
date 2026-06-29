@@ -8,26 +8,21 @@
     "pengampu": "Direktorat Pelayanan Dasar (Dit. Yandas)"
   },
   "permit_type": {
-    "key": "izin-pendirian-sma",
-    "name": "Izin Pendirian Sekolah Menengah Atas (SMA)",
-    "description": "Izin pendirian satuan pendidikan Sekolah Menengah Atas (SMA) di Ibu Kota Nusantara.",
+    "key": "izin-psdku",
+    "name": "Izin Pembukaan Program Studi Diluar Kampus Utama (PSDKU)",
+    "description": "Izin pembukaan Program Studi Diluar Kampus Utama (PSDKU) bagi perguruan tinggi di Ibu Kota Nusantara.",
     "is_berusaha": false,
     "oss_covered": false,
-    "sla_days": 10,
-    "product_name": "Izin Pendirian Sekolah Menengah Atas (SMA)",
+    "sla_days": 15,
+    "product_name": "Izin Pembukaan Program Studi Diluar Kampus Utama (PSDKU)",
     "legal_basis": [
-      "Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional",
       "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik",
+      "Undang-Undang Nomor 12 Tahun 2012 tentang Pendidikan Tinggi",
       "Undang-Undang Nomor 21 Tahun 2023 tentang Perubahan Atas Undang-Undang Nomor 3 Tahun 2022 tentang Ibu Kota Negara",
-      "Peraturan Pemerintah Nomor 57 Tahun 2021 tentang Standar Nasional Pendidikan",
       "Peraturan Pemerintah Nomor 12 Tahun 2023 tentang Pemberian Perizinan Berusaha, Kemudahan Berusaha dan Fasilitas Penanaman Modal Bagi Pelaku Usaha di Ibu Kota Nusantara",
       "Peraturan Pemerintah Nomor 27 Tahun 2023 tentang Kewenangan Khusus Otorita Ibu Kota Nusantara",
-      "Peraturan Menteri Pendidikan dan Kebudayaan Nomor 36 Tahun 2014 tentang Pedoman Pendirian, Perubahan dan Penutupan Satuan Pendidikan Dasar dan Menengah",
-      "Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 32 Tahun 2022 tentang Standar Teknis Pelayanan Minimal Pendidikan",
-      "Peraturan Menteri Pendidikan dan Kebudayaan Nomor 22 Tahun 2023 tentang Standar Sarana dan Prasarana Pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar dan Jenjang Pendidikan Menengah",
-      "Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 47 Tahun 2023 tentang Standar Pengelolaan pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah",
-      "Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 1 Tahun 2026 tentang Standar Proses pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar dan Jenjang Pendidikan Menengah",
-      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2022 tentang Organisasi dan Tata Kerja Otorita Ibu Kota Nusantara",
+      "Peraturan Menteri Pendidikan dan Kebudayaan Nomor 7 Tahun 2020 tentang Pendirian, Perubahan, Pembubaran Perguruan Tinggi Negeri, dan Pendirian, Perubahan, Pencabutan Izin Perguruan Tinggi Swasta",
+      "Peraturan Menteri Pendidikan Tinggi, Sains, dan Teknologi Nomor 39 Tahun 2025 tentang Penjaminan Mutu Pendidikan Tinggi",
       "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 2 Tahun 2024 tentang Penyelenggaraan Pelayanan Perizinan di Ibu Kota Nusantara",
       "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2026 tentang Tata Cara Pengawasan Perizinan di Ibu Kota Nusantara"
     ],
@@ -53,7 +48,7 @@
         "name": "Verifikasi Berkas (Bidang Perizinan)",
         "stage_type": "verification",
         "actor_role": "Bidang Perizinan / Deputi Bidang Pengendalian Pembangunan",
-        "sla_hours": 20,
+        "sla_hours": 30,
         "requires_site_visit": false,
         "allowed_actions": ["approve", "revise", "reject"],
         "is_terminal": false,
@@ -65,7 +60,7 @@
         "name": "Verifikasi Data & Teknis (Bidang Pelayanan Dasar)",
         "stage_type": "verification",
         "actor_role": "Bidang Pelayanan Dasar / Direktorat Pelayanan Dasar",
-        "sla_hours": 36,
+        "sla_hours": 54,
         "requires_site_visit": true,
         "allowed_actions": ["approve", "revise", "reject", "schedule_site_visit"],
         "is_terminal": false,
@@ -77,7 +72,7 @@
         "name": "Penerbitan oleh Kepala Otorita",
         "stage_type": "publish",
         "actor_role": "Kepala Otorita IKN",
-        "sla_hours": 16,
+        "sla_hours": 28,
         "requires_site_visit": false,
         "allowed_actions": ["sign", "generate"],
         "is_terminal": false,
@@ -99,7 +94,7 @@
     "form_fields": [
       {
         "key": "nama_pemohon",
-        "label": "Nama Pemohon / Pendiri",
+        "label": "Nama Pemohon / Penanggung Jawab",
         "field_type": "text",
         "section": "Identitas Pemohon",
         "order": 1,
@@ -115,8 +110,7 @@
         "order": 2,
         "required": true,
         "validation_json": {"length": 16},
-        "prefill_from_profile": true,
-        "help_text": "16 digit Nomor Induk Kependudukan"
+        "prefill_from_profile": true
       },
       {
         "key": "nomor_telepon",
@@ -129,41 +123,53 @@
         "placeholder": "+62..."
       },
       {
-        "key": "jenis_pemohon",
-        "label": "Jenis Pemohon",
-        "field_type": "select",
-        "section": "Identitas Pemohon",
+        "key": "nama_perguruan_tinggi",
+        "label": "Nama Perguruan Tinggi (Kampus Utama)",
+        "field_type": "text",
+        "section": "Data Perguruan Tinggi",
         "order": 4,
-        "required": true,
-        "options_json": [
-          {"value": "swasta", "label": "Badan Hukum / Swasta (Nirlaba)"},
-          {"value": "pemerintah", "label": "Pemerintah / Pemerintah Daerah"}
-        ],
-        "help_text": "Pendirian oleh masyarakat wajib melalui badan penyelenggara berbadan hukum berprinsip nirlaba."
+        "required": true
       },
       {
-        "key": "nama_satuan_pendidikan",
-        "label": "Nama Satuan Pendidikan",
-        "field_type": "text",
-        "section": "Data Lembaga",
+        "key": "status_pt",
+        "label": "Status Perguruan Tinggi",
+        "field_type": "select",
+        "section": "Data Perguruan Tinggi",
         "order": 5,
         "required": true,
-        "validation_json": {"minLength": 3}
+        "options_json": [
+          {"value": "ptn", "label": "Perguruan Tinggi Negeri (PTN)"},
+          {"value": "pts", "label": "Perguruan Tinggi Swasta (PTS)"}
+        ]
       },
       {
-        "key": "nama_badan_penyelenggara",
-        "label": "Nama Badan Penyelenggara / Yayasan",
+        "key": "nama_program_studi",
+        "label": "Nama Program Studi yang Akan Dibuka",
         "field_type": "text",
-        "section": "Data Lembaga",
+        "section": "Data Program Studi",
         "order": 6,
         "required": true
       },
       {
-        "key": "alamat_lokasi",
-        "label": "Alamat Lokasi Penyelenggaraan",
+        "key": "jenjang_program",
+        "label": "Jenjang Program Studi",
+        "field_type": "select",
+        "section": "Data Program Studi",
+        "order": 7,
+        "required": true,
+        "options_json": [
+          {"value": "diploma", "label": "Diploma"},
+          {"value": "sarjana", "label": "Sarjana/Sarjana Terapan"},
+          {"value": "magister", "label": "Magister/Magister Terapan"},
+          {"value": "doktor", "label": "Doktor/Doktor Terapan"}
+        ]
+      },
+      {
+        "key": "lokasi_psdku",
+        "label": "Lokasi Penyelenggaraan PSDKU",
         "field_type": "textarea",
         "section": "Lokasi",
-        "order": 7,
+        "order": 8,
         "required": true,
         "validation_json": {"minLength": 10}
       }
@@ -199,13 +205,11 @@
       {
         "key": "nib",
         "title": "Nomor Induk Berusaha (NIB)",
-        "description": "NIB bagi pemohon swasta.",
+        "description": "Nomor Induk Berusaha (NIB).",
         "allowed_types": ["pdf", "jpg", "jpeg", "png"],
         "max_bytes": 5242880,
-        "required": false,
-        "order": 4,
-        "conditional_field_key": "jenis_pemohon",
-        "conditional_field_value": "swasta"
+        "required": true,
+        "order": 4
       },
       {
         "key": "imb_pbg",
@@ -237,34 +241,34 @@
       {
         "key": "dokumen_tanah_bangunan",
         "title": "Dokumen Hak Atas Tanah dan Bangunan",
-        "description": "Fotokopi/hasil pindai dokumen hak milik, sewa, atau pinjam pakai atas tanah dan bangunan untuk penyelenggaraan SMA yang sah atas nama pendiri, serta data status kepemilikan atas nama Pemerintah, pemerintah daerah, atau badan penyelenggara.",
+        "description": "Fotokopi/hasil pindai dokumen hak milik, sewa, atau pinjam pakai atas tanah dan bangunan untuk penyelenggaraan PSDKU yang sah, serta data status kepemilikan. Bagi PTS yang belum memenuhi, dapat melampirkan perjanjian sewa-menyewa lahan/sarpras paling lama 10 tahun dengan hak opsi di hadapan notaris.",
         "allowed_types": ["pdf"],
         "max_bytes": 10485760,
         "required": true,
         "order": 8
       },
       {
-        "key": "persyaratan_teknis_pendirian",
-        "title": "Dokumen Persyaratan Teknis Pendirian",
-        "description": "Memuat isi pendidikan; jumlah dan kualifikasi pendidik dan tenaga kependidikan; sarana dan prasarana; pembiayaan; sistem evaluasi dan sertifikasi; manajemen dan proses pendidikan; serta pembentukan badan penyelenggara berbadan hukum nirlaba.",
+        "key": "syarat_minimum_akreditasi",
+        "title": "Pemenuhan Syarat Minimum Akreditasi PSDKU (SN Dikti)",
+        "description": "Memuat kurikulum berdasarkan kompetensi lulusan; dosen paling sedikit 5 orang (3 dari kampus utama, 2 dari kampus utama/universitas di lokasi PSDKU) memenuhi EWMP 37,5 jam/minggu; persetujuan badan penyelenggara; serta pengelolaan oleh unit pengelola program studi.",
         "allowed_types": ["pdf"],
         "max_bytes": 10485760,
         "required": true,
         "order": 9
       },
       {
-        "key": "studi_kelayakan",
-        "title": "Hasil Studi Kelayakan",
-        "description": "Hasil studi kelayakan prospek pendirian dari segi tata ruang, geografis, ekologis; prospek pendaftar, keuangan, sosial dan budaya; data perimbangan jumlah satuan pendidikan dengan penduduk usia sekolah; perkiraan jarak dan kapasitas daya tampung; serta perkiraan pembiayaan minimal 1 tahun akademik berikutnya dan pemenuhan Standar Pelayanan Minimal.",
+        "key": "syarat_tambahan_pendirian",
+        "title": "Syarat Tambahan Pendirian PSDKU",
+        "description": "Program studi sama di Kampus Utama terakreditasi Unggul; kerja sama dengan PTN/PTS terakreditasi di provinsi lokasi (lintas provinsi); kurikulum sama dengan kampus utama; hak atas lahan; serta sarana prasarana minimal (ruang kuliah, ruang dosen, perpustakaan ≥200 m², ≥200 judul buku, jurnal, laboratorium).",
         "allowed_types": ["pdf"],
         "max_bytes": 10485760,
         "required": true,
         "order": 10
       },
       {
-        "key": "rips",
-        "title": "Rencana Induk Pengembangan Satuan Pendidikan (RIPS)",
-        "description": "RIPS memuat visi dan misi; kurikulum; peserta didik; pendidik dan tenaga kependidikan; sarana dan prasarana; pendanaan; organisasi; manajemen satuan pendidikan; dan peran serta masyarakat.",
+        "key": "dokumen_pembukaan_psdku",
+        "title": "Dokumen Pembukaan PSDKU",
+        "description": "Usul pembukaan PSDKU; pertimbangan senat; persetujuan Badan Penyelenggara (PTS); Peraturan/Keputusan izin pendirian PT; Keputusan Menteri izin prodi di Kampus Utama; status & peringkat akreditasi prodi; rencana strategis; instrumen akreditasi minimum dari BAN-PT/LAM; rekomendasi OIKN; dan rekomendasi LLDIKTI.",
         "allowed_types": ["pdf"],
         "max_bytes": 10485760,
         "required": true,
