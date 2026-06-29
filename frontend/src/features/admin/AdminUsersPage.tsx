@@ -66,6 +66,8 @@ interface Assignment {
   permit_type_key: string;
   permit_type_name: string;
   sektor_name: string;
+  stage_key: string;
+  stage_name: string;
   is_active: boolean;
 }
 
@@ -76,6 +78,12 @@ interface PermitTypeLite {
   sektor_name: string;
 }
 
+interface PermitStageLite {
+  key: string;
+  name: string;
+  order: number;
+}
+
 // ── Verifier permit-assignment manager ──────────────────────────────────────────
 // Controls which permit types a verifier may process. A verifier with no
 // assignment has an empty queue (superadmin sees all regardless, so this is
@@ -84,6 +92,9 @@ interface PermitTypeLite {
 function AssignmentManager({ userId }: { userId: string }) {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  // The permit chosen from the candidate list, awaiting a stage-scope choice.
+  const [pending, setPending] = useState<PermitTypeLite | null>(null);
+  const [stageKey, setStageKey] = useState("");
 
   const { data: assignments = [] } = useQuery<Assignment[]>({
     queryKey: ["user-assignments", userId],
@@ -96,27 +107,44 @@ function AssignmentManager({ userId }: { userId: string }) {
   });
   const permits = Array.isArray(permitsData) ? permitsData : permitsData?.results ?? [];
 
+  // Stages of the pending permit — fetched only while choosing a scope.
+  const { data: pendingStages = [] } = useQuery<PermitStageLite[]>({
+    queryKey: ["permit-stages", pending?.key],
+    queryFn: () =>
+      api.get(`/permit-types/${pending!.key}/`).then((r) => r.data.stages ?? []),
+    enabled: !!pending,
+  });
+  // Stages a verifier can act on (skip the applicant submit stage).
+  const scopableStages = pendingStages.filter((s) => s.key !== "submit");
+
   const active = assignments.filter((a) => a.is_active);
-  const assignedKeys = new Set(active.map((a) => a.permit_type_key));
+  // A blank-stage (all-stages) assignment fully covers a permit — hide it from
+  // candidates. Permits with only stage-scoped assignments stay addable.
+  const fullyAssigned = new Set(active.filter((a) => !a.stage_key).map((a) => a.permit_type_key));
   const needle = q.trim().toLowerCase();
   const candidates = permits.filter(
     (p) =>
-      !assignedKeys.has(p.key) &&
+      !fullyAssigned.has(p.key) &&
       (!needle || `${p.name} ${p.sektor_name}`.toLowerCase().includes(needle)),
   );
 
   const add = useMutation({
-    mutationFn: (permit_type_id: string) =>
-      api.post(`/auth/users/${userId}/assignments/`, { permit_type_id }),
+    mutationFn: (vars: { permit_type_id: string; stage_key: string }) =>
+      api.post(`/auth/users/${userId}/assignments/`, vars),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["user-assignments", userId] });
+      setPending(null);
+      setStageKey("");
       toast.success("Penugasan ditambahkan.");
     },
     onError: () => toast.error("Gagal menambahkan penugasan."),
   });
 
   const remove = useMutation({
-    mutationFn: (key: string) => api.delete(`/auth/users/${userId}/assignments/${key}/`),
+    mutationFn: (a: Assignment) =>
+      api.delete(`/auth/users/${userId}/assignments/${a.permit_type_key}/`, {
+        params: { stage: a.stage_key },
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["user-assignments", userId] });
       toast.success("Penugasan dicabut.");
@@ -133,10 +161,12 @@ function AssignmentManager({ userId }: { userId: string }) {
           <FileCheck2 className="w-3.5 h-3.5" aria-hidden="true" />
           Penugasan Perizinan
         </p>
-        <span className="text-[11px] text-khatulistiwa-400">{active.length} izin</span>
+        <span className="text-[11px] text-khatulistiwa-400">{active.length} penugasan</span>
       </div>
       <p className="text-xs text-khatulistiwa-500/70 leading-relaxed">
-        Verifikator hanya dapat memproses izin yang ditugaskan. Tanpa penugasan, antreannya kosong.
+        Verifikator hanya dapat memproses izin (dan tahap) yang ditugaskan. Pilih
+        <span className="font-medium text-khatulistiwa-600"> Semua tahap</span> untuk akses penuh,
+        atau satu tahap untuk pemisahan tugas antar-bidang.
       </p>
 
       {/* Current assignments */}
@@ -147,12 +177,15 @@ function AssignmentManager({ userId }: { userId: string }) {
               key={a.id}
               className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-semibold pl-2.5 pr-1 py-1 rounded-full"
             >
-              {a.permit_type_name}
+              <span>
+                {a.permit_type_name}
+                <span className="font-normal text-emerald-600/70"> · {a.stage_name || "Semua tahap"}</span>
+              </span>
               <button
-                onClick={() => remove.mutate(a.permit_type_key)}
+                onClick={() => remove.mutate(a)}
                 disabled={busy}
                 className="rounded-full hover:bg-emerald-200/60 p-0.5 transition-colors disabled:opacity-50"
-                aria-label={`Cabut penugasan ${a.permit_type_name}`}
+                aria-label={`Cabut penugasan ${a.permit_type_name} (${a.stage_name || "Semua tahap"})`}
               >
                 <X className="w-3 h-3" aria-hidden="true" />
               </button>
@@ -161,38 +194,79 @@ function AssignmentManager({ userId }: { userId: string }) {
         </div>
       )}
 
-      {/* Add assignment */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-khatulistiwa-300" aria-hidden="true" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Tambah izin… cari nama atau sektor"
-          className="w-full bg-white border border-khatulistiwa-100 rounded-lg pl-9 pr-3 py-2 text-sm text-khatulistiwa-900 placeholder-khatulistiwa-300 outline-none focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/15 transition-all"
-        />
-      </div>
-      <div className="max-h-44 overflow-y-auto rounded-lg border border-khatulistiwa-100 divide-y divide-khatulistiwa-50">
-        {candidates.length === 0 ? (
-          <p className="text-xs text-khatulistiwa-400 px-3 py-3 text-center">
-            {permits.length === 0 ? "Memuat daftar izin…" : "Semua izin yang cocok sudah ditugaskan."}
-          </p>
-        ) : (
-          candidates.slice(0, 50).map((p) => (
+      {/* Stage-scope chooser for the pending permit */}
+      {pending ? (
+        <div className="rounded-lg border border-khatulistiwa-200 bg-khatulistiwa-50/50 p-3 space-y-2.5">
+          <div className="flex items-start justify-between gap-2">
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-khatulistiwa-900 truncate">{pending.name}</span>
+              <span className="block text-[11px] text-khatulistiwa-400">{pending.sektor_name}</span>
+            </span>
             <button
-              key={p.id}
-              onClick={() => add.mutate(p.id)}
-              disabled={busy}
-              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-khatulistiwa-50/60 transition-colors disabled:opacity-50"
+              onClick={() => { setPending(null); setStageKey(""); }}
+              className="text-khatulistiwa-400 hover:text-khatulistiwa-700 p-0.5"
+              aria-label="Batal pilih izin"
             >
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm text-khatulistiwa-900 truncate">{p.name}</span>
-                <span className="block text-[11px] text-khatulistiwa-400">{p.sektor_name}</span>
-              </span>
-              <Plus className="w-4 h-4 text-khatulistiwa-500 shrink-0" aria-hidden="true" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
-          ))
-        )}
-      </div>
+          </div>
+          <label className="block text-[11px] font-semibold text-khatulistiwa-700">
+            Lingkup tahap
+            <select
+              value={stageKey}
+              onChange={(e) => setStageKey(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-khatulistiwa-200 bg-white px-2.5 py-1.5 text-sm text-khatulistiwa-900 outline-none focus:border-khatulistiwa-400"
+            >
+              <option value="">Semua tahap (akses penuh)</option>
+              {scopableStages.map((s) => (
+                <option key={s.key} value={s.key}>{s.name}</option>
+              ))}
+            </select>
+          </label>
+          <button
+            onClick={() => add.mutate({ permit_type_id: pending.id, stage_key: stageKey })}
+            disabled={busy}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-khatulistiwa-600 hover:bg-khatulistiwa-500 text-white text-sm font-semibold py-2 transition-colors disabled:opacity-50"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" /> Tugaskan
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Add assignment — pick a permit first */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-khatulistiwa-300" aria-hidden="true" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tambah izin… cari nama atau sektor"
+              className="w-full bg-white border border-khatulistiwa-100 rounded-lg pl-9 pr-3 py-2 text-sm text-khatulistiwa-900 placeholder-khatulistiwa-300 outline-none focus:border-khatulistiwa-400 focus:ring-2 focus:ring-khatulistiwa-400/15 transition-all"
+            />
+          </div>
+          <div className="max-h-44 overflow-y-auto rounded-lg border border-khatulistiwa-100 divide-y divide-khatulistiwa-50">
+            {candidates.length === 0 ? (
+              <p className="text-xs text-khatulistiwa-400 px-3 py-3 text-center">
+                {permits.length === 0 ? "Memuat daftar izin…" : "Semua izin yang cocok sudah ditugaskan."}
+              </p>
+            ) : (
+              candidates.slice(0, 50).map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => { setPending(p); setStageKey(""); }}
+                  disabled={busy}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-khatulistiwa-50/60 transition-colors disabled:opacity-50"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm text-khatulistiwa-900 truncate">{p.name}</span>
+                    <span className="block text-[11px] text-khatulistiwa-400">{p.sektor_name}</span>
+                  </span>
+                  <Plus className="w-4 h-4 text-khatulistiwa-500 shrink-0" aria-hidden="true" />
+                </button>
+              ))
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

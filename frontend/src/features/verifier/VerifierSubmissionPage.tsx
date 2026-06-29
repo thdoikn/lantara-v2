@@ -9,6 +9,7 @@ import api from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import { useAuthStore } from "@/lib/auth";
+import { stageLabel } from "@/lib/labels";
 import ActorRoleBadge from "@/components/ui/ActorRoleBadge";
 import type { Submission, AuditEntry, DocumentRequirement, PaginatedResponse } from "@/types";
 import DocumentUploadSection from "../applicant/DocumentUploadSection";
@@ -114,21 +115,6 @@ const AUDIT_DOT: Record<string, string> = {
   publish: "bg-emerald-500",
   collect: "bg-emerald-500",
 };
-
-const STAGE_LABELS: Record<string, string> = {
-  "submit":                "Pengajuan",
-  "pengajuan":              "Pengajuan Pemohon",
-  "verifikasi":             "Verifikasi Tim Teknis",
-  "verifikasi-teknis":      "Verifikasi Tim Teknis",
-  "tim-teknis-verifikasi":  "Verifikasi Tim Teknis",
-  "kunjungan-lapangan":     "Kunjungan Lapangan",
-  "penerbitan":             "Penerbitan Izin",
-  "penyerahan":             "Penyerahan ke Pemohon",
-};
-
-function stageLabel(key: string) {
-  return STAGE_LABELS[key] ?? key.replace(/-/g, " ");
-}
 
 interface VisitPayload {
   scheduled_date: string;

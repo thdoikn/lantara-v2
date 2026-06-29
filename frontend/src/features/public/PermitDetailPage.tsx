@@ -13,6 +13,7 @@ import BatangBanyu from "@/components/BatangBanyu";
 import LantaraLoader from "@/components/LantaraLoader";
 import { useAuthStore } from "@/lib/auth";
 import { CONTACT_CHANNELS, type ContactChannelKey } from "@/lib/contact";
+import { formatActorRole } from "@/lib/labels";
 import api from "@/lib/api";
 import type { PermitType } from "@/types";
 
@@ -23,17 +24,6 @@ const CONTACT_ICONS: Record<ContactChannelKey, LucideIcon> = {
   instagram: Instagram,
   sp4n: Megaphone,
 };
-
-// Role label translations (Bahasa Indonesia)
-const ROLE_LABELS: Record<string, string> = {
-  applicant: "Pemohon",
-  verifier:  "Tim Verifikator Teknis",
-  approver:  "Kepala Otorita IKN",
-  staff:     "Petugas Loket / WhatsApp",
-};
-function formatRole(role: string): string {
-  return ROLE_LABELS[role] ?? role.charAt(0).toUpperCase() + role.slice(1).replace(/_/g, " ");
-}
 
 // Treat empty / "gratis" / "Rp 0" fee descriptions as free; otherwise the izin
 // actually charges and we must show the real fee instead of a hardcoded Rp 0.
@@ -425,7 +415,7 @@ export default function PermitDetailPage() {
 
                               {stage.actor_role && (
                                 <p className={`text-xs mt-0.5 font-medium ${isFirst ? "text-terakota-300/80" : "text-khatulistiwa-400/60"}`}>
-                                  {formatRole(stage.actor_role)}
+                                  {formatActorRole(stage.actor_role)}
                                 </p>
                               )}
 
