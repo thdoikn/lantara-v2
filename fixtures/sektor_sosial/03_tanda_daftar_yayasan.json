@@ -5,22 +5,32 @@
     "description": "Layanan perizinan sektor sosial di Ibu Kota Nusantara",
     "icon": "heart-handshake",
     "order": 10,
-    "pengampu": "Direktorat P5 / Deputi Pengendalian Pembangunan"
+    "pengampu": "Direktorat Pelayanan Dasar / Deputi Bidang Pengendalian Pembangunan"
   },
   "permit_type": {
     "key": "tanda-daftar-yayasan",
     "name": "Tanda Daftar Yayasan",
-    "description": "Tanda daftar yayasan yang beroperasi di wilayah Ibu Kota Nusantara",
+    "description": "Penerbitan Tanda Daftar Yayasan di wilayah Ibu Kota Nusantara.",
     "is_berusaha": false,
     "oss_covered": false,
     "sla_days": 5,
     "product_name": "Tanda Daftar Yayasan",
     "legal_basis": [
-      "Undang-Undang Nomor 16 Tahun 2001 tentang Yayasan sebagaimana diubah dengan UU No. 28 Tahun 2004",
-      "Undang-Undang Nomor 11 Tahun 2009 tentang Kesejahteraan Sosial"
+      "Undang-Undang Nomor 16 Tahun 2001 tentang Yayasan sebagaimana telah diubah dengan Undang-Undang Nomor 28 Tahun 2004",
+      "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik",
+      "Undang-Undang Nomor 11 Tahun 2009 tentang Kesejahteraan Sosial",
+      "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah",
+      "Undang-Undang Nomor 3 Tahun 2022 tentang Ibu Kota Negara sebagaimana telah diubah dengan Undang-Undang Nomor 21 Tahun 2023",
+      "Peraturan Pemerintah Nomor 27 Tahun 2023 tentang Kewenangan Khusus Otorita Ibu Kota Nusantara",
+      "Peraturan Pemerintah Nomor 12 Tahun 2023 tentang Pemberian Perizinan Berusaha, Kemudahan Berusaha, dan Fasilitas Penanaman Modal Bagi Pelaku Usaha di Ibu Kota Nusantara",
+      "Peraturan Presiden Nomor 62 Tahun 2022 tentang Otorita Ibu Kota Nusantara",
+      "Peraturan Menteri Sosial Nomor 5 Tahun 2024 tentang Lembaga Kesejahteraan Sosial",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2022 tentang Organisasi dan Tata Kerja Otorita Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 2 Tahun 2024 tentang Penyelenggaraan Pelayanan Perizinan di Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2026 tentang Tata Cara Pengawasan Perizinan di Ibu Kota Nusantara"
     ],
-    "fee_description": "Rp0 (gratis) s/d 2035",
-    "complaint_info": "Direktorat P5 Otorita IKN — Satu Nomor Layanan Publik IKN",
+    "fee_description": "Rp0,00 (nol rupiah) sampai dengan tahun 2035",
+    "complaint_info": "Pengaduan, saran, dan masukan disampaikan langsung ke petugas pengaduan atau melalui: Website ikn.go.id; Email ditp5@ikn.go.id; WhatsApp +62 811 5000 5555; Instagram @pp_ikn; SP4N Lapor! www.lapor.go.id. Surat Izin atau Surat Penolakan disampaikan melalui WhatsApp, sistem online lainnya, atau secara manual.",
     "is_published": true,
     "stages": [
       {
@@ -28,28 +38,40 @@
         "order": 1,
         "name": "Pengajuan Pemohon",
         "stage_type": "verification",
-        "actor_role": "Pemohon",
+        "actor_role": "applicant",
         "sla_hours": 0,
         "requires_site_visit": false,
         "allowed_actions": ["submit"],
         "is_terminal": false,
-        "instructions": "Pemohon mengisi formulir dan mengunggah dokumen persyaratan"
+        "instructions": "Pemohon menyampaikan dokumen persyaratan kepada Deputi Bidang Pengendalian Pembangunan melalui sistem perizinan LANTARA."
       },
       {
-        "key": "tim-teknis-verifikasi",
+        "key": "verifikasi-berkas",
         "order": 2,
-        "name": "Verifikasi Tim Teknis",
+        "name": "Verifikasi Berkas (Bidang Perizinan)",
         "stage_type": "verification",
-        "actor_role": "Tim Teknis Sosial — Direktorat P5",
-        "sla_hours": 24,
-        "requires_site_visit": true,
+        "actor_role": "Bidang Perizinan / Deputi Bidang Pengendalian Pembangunan",
+        "sla_hours": 10,
+        "requires_site_visit": false,
         "allowed_actions": ["approve", "revise", "reject"],
         "is_terminal": false,
-        "instructions": "Tim teknis melakukan verifikasi dokumen"
+        "instructions": "Deputi Bidang Pengendalian Pembangunan memeriksa kelengkapan isian formulir dan berkas permohonan."
+      },
+      {
+        "key": "verifikasi-data",
+        "order": 3,
+        "name": "Verifikasi Data & Kunjungan Lapangan (Bidang Pelayanan Dasar)",
+        "stage_type": "verification",
+        "actor_role": "Tim Teknis / Bidang Pelayanan Dasar",
+        "sla_hours": 16,
+        "requires_site_visit": true,
+        "allowed_actions": ["approve", "revise", "reject", "schedule_site_visit"],
+        "is_terminal": false,
+        "instructions": "Tim teknis melakukan verifikasi terhadap dokumen permohonan dan kunjungan lapangan, kemudian mengeluarkan rekomendasi persetujuan atau penolakan."
       },
       {
         "key": "penerbitan",
-        "order": 3,
+        "order": 4,
         "name": "Penerbitan oleh Kepala Otorita",
         "stage_type": "publish",
         "actor_role": "Kepala Otorita IKN",
@@ -57,19 +79,19 @@
         "requires_site_visit": false,
         "allowed_actions": ["sign", "generate"],
         "is_terminal": false,
-        "instructions": "Kepala Otorita IKN menandatangani dan menerbitkan Tanda Daftar Yayasan"
+        "instructions": "Kepala Otorita Ibu Kota Nusantara menandatangani dan menerbitkan Tanda Daftar Yayasan."
       },
       {
-        "key": "penyerahan",
-        "order": 4,
-        "name": "Penyerahan ke Pemohon",
+        "key": "pengambilan",
+        "order": 5,
+        "name": "Pengambilan / Penyerahan",
         "stage_type": "collection",
         "actor_role": "Petugas Loket / WhatsApp",
-        "sla_hours": 8,
+        "sla_hours": 6,
         "requires_site_visit": false,
         "allowed_actions": ["collect"],
         "is_terminal": true,
-        "instructions": "Tanda daftar dikirim ke pemohon"
+        "instructions": "Pemohon menerima Tanda Daftar Yayasan atau Surat Penolakan melalui WhatsApp, sistem online lainnya, atau secara manual."
       }
     ],
     "form_fields": [
@@ -79,19 +101,21 @@
         "field_type": "text",
         "section": "Data Yayasan",
         "order": 1,
-        "required": true
+        "required": true,
+        "validation_json": {"minLength": 3}
       },
       {
-        "key": "nama_ketua_pembina",
-        "label": "Nama Ketua Pembina",
+        "key": "nama_penanggung_jawab",
+        "label": "Nama Pemohon / Penanggung Jawab",
         "field_type": "text",
         "section": "Data Yayasan",
         "order": 2,
-        "required": true
+        "required": true,
+        "prefill_from_profile": true
       },
       {
-        "key": "nik_ketua_pembina",
-        "label": "NIK Ketua Pembina",
+        "key": "nik_penanggung_jawab",
+        "label": "NIK Penanggung Jawab",
         "field_type": "nik",
         "section": "Data Yayasan",
         "order": 3,
@@ -99,117 +123,142 @@
         "validation_json": {"length": 16}
       },
       {
-        "key": "bidang_yayasan",
-        "label": "Bidang / Tujuan Yayasan",
-        "field_type": "select",
+        "key": "npwp_yayasan",
+        "label": "NPWP Yayasan",
+        "field_type": "npwp",
         "section": "Data Yayasan",
         "order": 4,
+        "required": true
+      },
+      {
+        "key": "dikuasakan",
+        "label": "Permohonan Dikuasakan?",
+        "field_type": "select",
+        "section": "Data Yayasan",
+        "order": 5,
         "required": true,
         "options_json": [
-          {"value": "sosial", "label": "Sosial"},
-          {"value": "kemanusiaan", "label": "Kemanusiaan"},
-          {"value": "keagamaan", "label": "Keagamaan"},
-          {"value": "pendidikan", "label": "Pendidikan"},
-          {"value": "kesehatan", "label": "Kesehatan"},
-          {"value": "lingkungan", "label": "Lingkungan"},
-          {"value": "lainnya", "label": "Lainnya"}
+          {"value": "tidak", "label": "Tidak"},
+          {"value": "ya", "label": "Ya, dikuasakan"}
         ]
       },
       {
-        "key": "nomor_akta_notaris",
-        "label": "Nomor Akta Notaris Pendirian",
-        "field_type": "text",
-        "section": "Legalitas",
-        "order": 5,
-        "required": true
-      },
-      {
-        "key": "tanggal_akta",
-        "label": "Tanggal Akta",
-        "field_type": "date",
-        "section": "Legalitas",
+        "key": "status_kepemilikan_tanah",
+        "label": "Status Kepemilikan Tanah/Bangunan",
+        "field_type": "select",
+        "section": "Lokasi",
         "order": 6,
-        "required": true
-      },
-      {
-        "key": "nomor_sk_kemenhukham",
-        "label": "Nomor SK Pengesahan Kemenkumham",
-        "field_type": "text",
-        "section": "Legalitas",
-        "order": 7,
-        "required": true
+        "required": true,
+        "options_json": [
+          {"value": "milik_pribadi", "label": "Milik Pribadi"},
+          {"value": "sewa", "label": "Sewa / Pinjam Pakai"}
+        ]
       },
       {
         "key": "alamat_yayasan",
-        "label": "Alamat Kantor Yayasan",
+        "label": "Alamat Lengkap Yayasan",
         "field_type": "textarea",
         "section": "Lokasi",
-        "order": 8,
-        "required": true
-      },
-      {
-        "key": "nomor_telepon",
-        "label": "Nomor Telepon",
-        "field_type": "phone",
-        "section": "Kontak",
-        "order": 9,
+        "order": 7,
         "required": true
       }
     ],
     "doc_requirements": [
       {
-        "key": "surat_permohonan",
-        "title": "Surat Permohonan",
-        "description": "Surat permohonan bermaterai",
-        "allowed_types": ["pdf"],
+        "key": "identitas_pemohon",
+        "title": "Identitas Pemohon / Penanggung Jawab",
+        "description": "Scan asli Kartu Tanda Penduduk (KTP) pemohon/penanggung jawab.",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
         "max_bytes": 5242880,
         "required": true,
         "order": 1
       },
       {
-        "key": "akta_notaris",
-        "title": "Akta Pendirian Yayasan",
-        "description": "Salinan akta pendirian yayasan dari notaris",
+        "key": "akta_pendirian_perubahan",
+        "title": "Akta Pendirian dan Perubahan",
+        "description": "Akta pendirian dan perubahan Kantor Pusat dan Kantor Cabang (bila ada).",
         "allowed_types": ["pdf"],
         "max_bytes": 10485760,
         "required": true,
         "order": 2
       },
       {
-        "key": "sk_kemenhukham",
-        "title": "SK Pengesahan Kemenkumham",
-        "description": "Salinan SK pengesahan yayasan dari Kemenkumham",
+        "key": "sk_pengesahan_kemenkumham",
+        "title": "SK Pengesahan Pendirian dan Perubahan (Kemenkumham)",
+        "description": "Surat keputusan pengesahan pendirian dan perubahan yang dikeluarkan oleh kementerian hukum.",
         "allowed_types": ["pdf"],
         "max_bytes": 10485760,
         "required": true,
         "order": 3
       },
       {
-        "key": "ktp_pengurus",
-        "title": "KTP Pengurus Yayasan",
-        "description": "KTP seluruh pengurus (Pembina, Pengurus, Pengawas)",
-        "allowed_types": ["pdf"],
-        "max_bytes": 10485760,
+        "key": "npwp_yayasan_dok",
+        "title": "NPWP Yayasan",
+        "description": "Nomor Pokok Wajib Pajak (NPWP) yayasan.",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
+        "max_bytes": 5242880,
         "required": true,
         "order": 4
       },
       {
-        "key": "npwp_yayasan",
-        "title": "NPWP Yayasan",
-        "description": "NPWP yayasan yang telah terdaftar",
-        "allowed_types": ["pdf", "jpg", "jpeg"],
-        "max_bytes": 2097152,
+        "key": "surat_kuasa",
+        "title": "Surat Kuasa dan KTP Penerima Kuasa",
+        "description": "Jika dikuasakan: scan asli surat kuasa di atas kertas bermeterai sesuai ketentuan dan KTP elektronik orang yang diberi kuasa.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
         "required": false,
-        "order": 5
+        "order": 5,
+        "conditional_field_key": "dikuasakan",
+        "conditional_field_value": "ya"
       },
       {
-        "key": "surat_domisili",
-        "title": "Surat Keterangan Domisili",
-        "description": "Surat keterangan domisili yayasan",
+        "key": "ad_art",
+        "title": "Anggaran Dasar dan Anggaran Rumah Tangga (AD/ART)",
+        "description": "Anggaran dasar dan anggaran rumah tangga yayasan.",
         "allowed_types": ["pdf"],
-        "max_bytes": 2097152,
+        "max_bytes": 5242880,
         "required": true,
         "order": 6
+      },
+      {
+        "key": "proposal_teknis",
+        "title": "Proposal Teknis",
+        "description": "Proposal teknis dilengkapi: profil yayasan; program kerja tahunan bermaterai/stempel; susunan pengurus dan uraian tugas; daftar jenis unit pelayanan sosial dan rencana jumlah warga binaan; pas foto berwarna pimpinan 4x6; daftar pekerja sosial tersertifikasi (apabila ada); dan scan asli KTP elektronik pengurus.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 7
+      },
+      {
+        "key": "bukti_kepemilikan_tanah",
+        "title": "Bukti Kepemilikan Tanah (Milik Pribadi)",
+        "description": "Scan asli sertifikat tanah/akta waris/akta hibah/akta jual beli (AJB). Bila bukan atas nama pemohon, lampirkan data pendukung.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": false,
+        "order": 8,
+        "conditional_field_key": "status_kepemilikan_tanah",
+        "conditional_field_value": "milik_pribadi"
+      },
+      {
+        "key": "bukti_sewa_tanah",
+        "title": "Dokumen Sewa Tanah/Bangunan",
+        "description": "Jika tanah atau bangunan disewa (scan asli): perjanjian sewa menyewa; surat pernyataan bermeterai dari pemilik tanah/bangunan yang menyatakan tidak keberatan digunakan; dan KTP pemilik tanah/bangunan.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": false,
+        "order": 9,
+        "conditional_field_key": "status_kepemilikan_tanah",
+        "conditional_field_value": "sewa"
+      },
+      {
+        "key": "tanda_daftar_terdahulu",
+        "title": "Tanda Daftar Yayasan Terdahulu",
+        "description": "Tanda Daftar Yayasan terdahulu (untuk perpanjangan/perubahan, apabila ada).",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": false,
+        "order": 10
       }
     ]
   }

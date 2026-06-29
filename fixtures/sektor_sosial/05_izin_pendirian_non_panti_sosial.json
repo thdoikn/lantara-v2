@@ -5,22 +5,33 @@
     "description": "Layanan perizinan sektor sosial di Ibu Kota Nusantara",
     "icon": "heart-handshake",
     "order": 10,
-    "pengampu": "Direktorat P5 / Deputi Pengendalian Pembangunan"
+    "pengampu": "Direktorat Pelayanan Dasar / Deputi Bidang Pengendalian Pembangunan"
   },
   "permit_type": {
     "key": "izin-pendirian-non-panti-sosial",
     "name": "Izin Pendirian Non Panti Sosial",
-    "description": "Izin pendirian lembaga kesejahteraan sosial non-panti (layanan sosial berbasis komunitas) di wilayah IKN",
+    "description": "Izin pendirian Non Panti Sosial di wilayah Ibu Kota Nusantara.",
     "is_berusaha": false,
     "oss_covered": false,
     "sla_days": 8,
     "product_name": "Izin Pendirian Non Panti Sosial",
     "legal_basis": [
+      "Undang-Undang Nomor 16 Tahun 2001 tentang Yayasan sebagaimana telah diubah dengan Undang-Undang Nomor 28 Tahun 2004",
+      "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik",
       "Undang-Undang Nomor 11 Tahun 2009 tentang Kesejahteraan Sosial",
-      "Peraturan Pemerintah Nomor 39 Tahun 2012 tentang Penyelenggaraan Kesejahteraan Sosial"
+      "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah",
+      "Undang-Undang Nomor 3 Tahun 2022 tentang Ibu Kota Negara sebagaimana telah diubah dengan Undang-Undang Nomor 21 Tahun 2023",
+      "Peraturan Pemerintah Nomor 39 Tahun 2012 tentang Penyelenggaraan Kesejahteraan Sosial",
+      "Peraturan Pemerintah Nomor 27 Tahun 2023 tentang Kewenangan Khusus Otorita Ibu Kota Nusantara",
+      "Peraturan Pemerintah Nomor 12 Tahun 2023 tentang Pemberian Perizinan Berusaha, Kemudahan Berusaha, dan Fasilitas Penanaman Modal Bagi Pelaku Usaha di Ibu Kota Nusantara",
+      "Peraturan Presiden Nomor 62 Tahun 2022 tentang Otorita Ibu Kota Nusantara",
+      "Peraturan Presiden Nomor 63 Tahun 2022 tentang Perincian Rencana Induk Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2022 tentang Organisasi dan Tata Kerja Otorita Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 2 Tahun 2024 tentang Penyelenggaraan Pelayanan Perizinan di Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2026 tentang Tata Cara Pengawasan Perizinan di Ibu Kota Nusantara"
     ],
-    "fee_description": "Rp0 (gratis) s/d 2035",
-    "complaint_info": "Direktorat P5 Otorita IKN — Satu Nomor Layanan Publik IKN",
+    "fee_description": "Rp0,00 (nol rupiah) sampai dengan tahun 2035",
+    "complaint_info": "Pengaduan, saran, dan masukan disampaikan langsung ke petugas pengaduan atau melalui: Website ikn.go.id; Email ditp5@ikn.go.id; WhatsApp +62 811 5000 5555; Instagram @pp_ikn; SP4N Lapor! www.lapor.go.id. Surat Izin atau Surat Penolakan disampaikan melalui WhatsApp, sistem online lainnya, atau secara manual.",
     "is_published": true,
     "stages": [
       {
@@ -28,171 +39,244 @@
         "order": 1,
         "name": "Pengajuan Pemohon",
         "stage_type": "verification",
-        "actor_role": "Pemohon",
+        "actor_role": "applicant",
         "sla_hours": 0,
         "requires_site_visit": false,
         "allowed_actions": ["submit"],
         "is_terminal": false,
-        "instructions": "Pemohon mengisi formulir dan mengunggah dokumen persyaratan"
+        "instructions": "Pemohon menyampaikan dokumen persyaratan kepada Deputi Bidang Pengendalian Pembangunan melalui sistem perizinan LANTARA."
       },
       {
-        "key": "tim-teknis-verifikasi",
+        "key": "verifikasi-berkas",
         "order": 2,
-        "name": "Verifikasi Tim Teknis + Kunjungan Lapangan",
+        "name": "Verifikasi Berkas (Bidang Perizinan)",
         "stage_type": "verification",
-        "actor_role": "Tim Teknis Sosial — Direktorat P5",
-        "sla_hours": 40,
-        "requires_site_visit": true,
+        "actor_role": "Bidang Perizinan / Deputi Bidang Pengendalian Pembangunan",
+        "sla_hours": 16,
+        "requires_site_visit": false,
         "allowed_actions": ["approve", "revise", "reject"],
         "is_terminal": false,
-        "instructions": "Tim teknis melakukan verifikasi dokumen dan kunjungan lapangan"
+        "instructions": "Deputi Bidang Pengendalian Pembangunan memeriksa kelengkapan isian formulir dan berkas permohonan."
+      },
+      {
+        "key": "verifikasi-data",
+        "order": 3,
+        "name": "Verifikasi Data & Kunjungan Lapangan (Bidang Pelayanan Dasar)",
+        "stage_type": "verification",
+        "actor_role": "Tim Teknis / Bidang Pelayanan Dasar",
+        "sla_hours": 28,
+        "requires_site_visit": true,
+        "allowed_actions": ["approve", "revise", "reject", "schedule_site_visit"],
+        "is_terminal": false,
+        "instructions": "Tim teknis melakukan verifikasi terhadap dokumen permohonan dan kunjungan lapangan, kemudian mengeluarkan rekomendasi persetujuan atau penolakan."
       },
       {
         "key": "penerbitan",
-        "order": 3,
-        "name": "Penerbitan Izin oleh Kepala Otorita",
+        "order": 4,
+        "name": "Penerbitan oleh Kepala Otorita",
         "stage_type": "publish",
         "actor_role": "Kepala Otorita IKN",
-        "sla_hours": 16,
+        "sla_hours": 12,
         "requires_site_visit": false,
         "allowed_actions": ["sign", "generate"],
         "is_terminal": false,
-        "instructions": "Kepala Otorita IKN menandatangani dan menerbitkan izin"
+        "instructions": "Kepala Otorita Ibu Kota Nusantara menandatangani dan menerbitkan Izin Pendirian Non Panti Sosial."
       },
       {
-        "key": "penyerahan",
-        "order": 4,
-        "name": "Penyerahan ke Pemohon",
+        "key": "pengambilan",
+        "order": 5,
+        "name": "Pengambilan / Penyerahan",
         "stage_type": "collection",
         "actor_role": "Petugas Loket / WhatsApp",
         "sla_hours": 8,
         "requires_site_visit": false,
         "allowed_actions": ["collect"],
         "is_terminal": true,
-        "instructions": "Izin dikirim ke pemohon"
+        "instructions": "Pemohon menerima Surat Izin atau Surat Penolakan melalui WhatsApp, sistem online lainnya, atau secara manual."
       }
     ],
     "form_fields": [
       {
         "key": "nama_lembaga",
-        "label": "Nama Lembaga",
+        "label": "Nama Lembaga Non Panti Sosial",
         "field_type": "text",
         "section": "Data Lembaga",
         "order": 1,
-        "required": true
+        "required": true,
+        "validation_json": {"minLength": 3}
       },
       {
-        "key": "jenis_layanan",
-        "label": "Jenis Layanan Non-Panti",
-        "field_type": "select",
-        "section": "Data Lembaga",
+        "key": "nama_pemohon",
+        "label": "Nama Pemohon / Penanggung Jawab",
+        "field_type": "text",
+        "section": "Identitas Pemohon",
         "order": 2,
         "required": true,
-        "options_json": [
-          {"value": "pusat_rehabilitasi", "label": "Pusat Rehabilitasi Berbasis Komunitas"},
-          {"value": "layanan_home_care", "label": "Layanan Home Care Sosial"},
-          {"value": "daycare_lansia", "label": "Day Care Lansia"},
-          {"value": "lksa_berbasis_keluarga", "label": "LKSA Berbasis Keluarga"},
-          {"value": "lainnya", "label": "Lainnya"}
-        ]
+        "prefill_from_profile": true
       },
       {
-        "key": "nama_pengelola",
-        "label": "Nama Pengelola",
-        "field_type": "text",
-        "section": "Data Lembaga",
-        "order": 3,
-        "required": true
-      },
-      {
-        "key": "nik_pengelola",
-        "label": "NIK Pengelola",
+        "key": "nik_pemohon",
+        "label": "NIK Pemohon",
         "field_type": "nik",
-        "section": "Data Lembaga",
-        "order": 4,
+        "section": "Identitas Pemohon",
+        "order": 3,
         "required": true,
         "validation_json": {"length": 16}
       },
       {
-        "key": "jumlah_penerima_manfaat",
-        "label": "Estimasi Jumlah Penerima Manfaat per Tahun",
-        "field_type": "number",
-        "section": "Data Lembaga",
-        "order": 5,
+        "key": "dikuasakan",
+        "label": "Permohonan Dikuasakan?",
+        "field_type": "select",
+        "section": "Identitas Pemohon",
+        "order": 4,
         "required": true,
-        "validation_json": {"min": 1}
+        "options_json": [
+          {"value": "tidak", "label": "Tidak"},
+          {"value": "ya", "label": "Ya, dikuasakan"}
+        ]
       },
       {
-        "key": "alamat_operasional",
-        "label": "Alamat Operasional",
+        "key": "status_kepemilikan_tanah",
+        "label": "Status Kepemilikan Tanah/Bangunan",
+        "field_type": "select",
+        "section": "Lokasi",
+        "order": 5,
+        "required": true,
+        "options_json": [
+          {"value": "milik", "label": "Milik Sendiri"},
+          {"value": "sewa", "label": "Sewa"}
+        ]
+      },
+      {
+        "key": "alamat_lembaga",
+        "label": "Alamat Lengkap Lembaga",
         "field_type": "textarea",
         "section": "Lokasi",
         "order": 6,
-        "required": true
-      },
-      {
-        "key": "nomor_telepon",
-        "label": "Nomor Telepon",
-        "field_type": "phone",
-        "section": "Kontak",
-        "order": 7,
         "required": true
       }
     ],
     "doc_requirements": [
       {
         "key": "surat_permohonan",
-        "title": "Surat Permohonan",
-        "description": "Surat permohonan bermaterai",
+        "title": "Surat Permohonan Tertulis",
+        "description": "Surat permohonan tertulis ditujukan kepada Kepala Otorita Ibu Kota Nusantara.",
         "allowed_types": ["pdf"],
         "max_bytes": 5242880,
         "required": true,
         "order": 1
       },
       {
-        "key": "legalitas_lembaga",
-        "title": "Dokumen Legalitas Lembaga",
-        "description": "Akta notaris, SK Kemenkumham, atau dokumen legalitas pendirian",
+        "key": "surat_pernyataan_keabsahan",
+        "title": "Surat Pernyataan Kebenaran dan Keabsahan Dokumen",
+        "description": "Surat pernyataan kebenaran dan keabsahan dokumen dan data di atas kertas bermeterai sesuai ketentuan.",
         "allowed_types": ["pdf"],
-        "max_bytes": 10485760,
+        "max_bytes": 5242880,
         "required": true,
         "order": 2
       },
       {
-        "key": "ktp_pengelola",
-        "title": "KTP Pengelola",
-        "description": "KTP pengelola/penanggung jawab",
+        "key": "ktp_kk_pemohon",
+        "title": "KTP dan Kartu Keluarga Pemohon",
+        "description": "Fotokopi identitas pemohon/penanggung jawab: Kartu Tanda Penduduk (KTP) dan Kartu Keluarga (KK).",
         "allowed_types": ["pdf", "jpg", "jpeg", "png"],
-        "max_bytes": 2097152,
+        "max_bytes": 5242880,
         "required": true,
         "order": 3
       },
       {
-        "key": "proposal_program",
-        "title": "Proposal Program Kegiatan",
-        "description": "Proposal program kegiatan sosial yang akan dilaksanakan",
+        "key": "akta_pendirian",
+        "title": "Akta Pendirian dan Perubahan",
+        "description": "Fotokopi akta pendirian dan perubahan (kantor pusat dan kantor cabang, jika ada). Badan hukum berupa Yayasan.",
         "allowed_types": ["pdf"],
         "max_bytes": 10485760,
         "required": true,
         "order": 4
       },
       {
-        "key": "surat_domisili",
-        "title": "Surat Keterangan Domisili",
-        "description": "Surat keterangan domisili operasional",
+        "key": "pengesahan_kemenkumham",
+        "title": "Pengesahan Pendirian dan Perubahan (Kemenkumham)",
+        "description": "Fotokopi pengesahan pendirian dan perubahan yang dikeluarkan oleh Kementerian Hukum.",
         "allowed_types": ["pdf"],
-        "max_bytes": 2097152,
+        "max_bytes": 10485760,
         "required": true,
         "order": 5
       },
       {
-        "key": "daftar_sdm",
-        "title": "Daftar SDM / Tenaga Pendamping",
-        "description": "Daftar SDM beserta kualifikasi",
-        "allowed_types": ["pdf"],
+        "key": "npwp_badan",
+        "title": "NPWP Badan Hukum",
+        "description": "Fotokopi Nomor Pokok Wajib Pajak (NPWP) Badan Hukum.",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
         "max_bytes": 5242880,
         "required": true,
         "order": 6
+      },
+      {
+        "key": "surat_kuasa",
+        "title": "Surat Kuasa dan KTP Penerima Kuasa",
+        "description": "Jika dikuasakan: surat kuasa di atas kertas bermeterai sesuai ketentuan dan KTP orang yang diberi kuasa.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": false,
+        "order": 7,
+        "conditional_field_key": "dikuasakan",
+        "conditional_field_value": "ya"
+      },
+      {
+        "key": "imb_pbg",
+        "title": "IMB / PBG",
+        "description": "Fotokopi Izin Mendirikan Bangunan (IMB) atau Persetujuan Bangunan Gedung (PBG).",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 8
+      },
+      {
+        "key": "tanda_daftar_yayasan",
+        "title": "Tanda Daftar Yayasan (TDY)",
+        "description": "Fotokopi Tanda Daftar Yayasan (TDY).",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 9
+      },
+      {
+        "key": "pernyataan_bebas_sengketa",
+        "title": "Surat Pernyataan Kepemilikan Bebas Sengketa",
+        "description": "Surat pernyataan di atas kertas bermeterai sesuai ketentuan dari pemilik yayasan yang menyatakan kepemilikan yayasan bebas dari sengketa hukum.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 10
+      },
+      {
+        "key": "proposal_teknis",
+        "title": "Proposal Teknis",
+        "description": "Proposal teknis ditandatangani pengurus inti dan distempel, dilengkapi: susunan pengurus (minimal salah satu bertempat tinggal dan ber-KTP Ibu Kota Nusantara/Penajam Paser Utara/Kutai Kartanegara); pasfoto pimpinan 4x6; program kerja non panti sosial; usulan kegiatan 1 tahun terakhir; foto dokumentasi kegiatan; data dan foto warga binaan sosial; daftar inventaris sarana dan prasarana; serta kualifikasi atau SKK di bidang terkait.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 11
+      },
+      {
+        "key": "dokumen_sewa",
+        "title": "Dokumen Sewa Tanah/Bangunan",
+        "description": "Jika menyewa: perjanjian sewa-menyewa; surat pernyataan bermeterai dari pemilik yang menyatakan tidak keberatan digunakan; dan KTP pemilik tanah atau bangunan.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": false,
+        "order": 12,
+        "conditional_field_key": "status_kepemilikan_tanah",
+        "conditional_field_value": "sewa"
+      },
+      {
+        "key": "ad_art",
+        "title": "Anggaran Dasar dan Anggaran Rumah Tangga (AD/ART)",
+        "description": "Anggaran dasar dan anggaran rumah tangga.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 13
       }
     ]
   }

@@ -5,23 +5,33 @@
     "description": "Layanan perizinan sektor sosial di Ibu Kota Nusantara",
     "icon": "heart-handshake",
     "order": 10,
-    "pengampu": "Direktorat P5 / Deputi Pengendalian Pembangunan"
+    "pengampu": "Direktorat Pelayanan Dasar / Deputi Bidang Pengendalian Pembangunan"
   },
   "permit_type": {
     "key": "izin-pub",
-    "name": "Izin Penyelenggaraan Pengumpulan Uang atau Barang (PUB)",
-    "description": "Izin penyelenggaraan kegiatan pengumpulan uang atau barang (donasi/sumbangan) untuk kepentingan sosial di wilayah IKN",
+    "name": "Izin Pengumpulan Sumbangan (PUB)",
+    "description": "Penerbitan Izin Penyelenggaraan Pengumpulan Uang atau Barang (Pengumpulan Sumbangan) di wilayah Ibu Kota Nusantara.",
     "is_berusaha": false,
     "oss_covered": false,
     "sla_days": 3,
-    "product_name": "Izin Penyelenggaraan PUB",
+    "product_name": "Penerbitan Izin Pengumpulan Sumbangan",
     "legal_basis": [
-      "Undang-Undang Nomor 9 Tahun 1961 tentang Pengumpulan Uang atau Barang",
-      "Peraturan Pemerintah Nomor 29 Tahun 1980 tentang Pelaksanaan Pengumpulan Sumbangan",
-      "Peraturan Menteri Sosial Nomor 8 Tahun 2021 tentang Penyelenggaraan Pengumpulan Uang atau Barang"
+      "Undang-Undang Nomor 16 Tahun 2001 tentang Yayasan sebagaimana telah diubah dengan Undang-Undang Nomor 28 Tahun 2004",
+      "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik",
+      "Undang-Undang Nomor 11 Tahun 2009 tentang Kesejahteraan Sosial",
+      "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah",
+      "Undang-Undang Nomor 3 Tahun 2022 tentang Ibu Kota Negara sebagaimana telah diubah dengan Undang-Undang Nomor 21 Tahun 2023",
+      "Peraturan Pemerintah Nomor 27 Tahun 2023 tentang Kewenangan Khusus Otorita Ibu Kota Nusantara",
+      "Peraturan Pemerintah Nomor 12 Tahun 2023 tentang Pemberian Perizinan Berusaha, Kemudahan Berusaha, dan Fasilitas Penanaman Modal Bagi Pelaku Usaha di Ibu Kota Nusantara",
+      "Peraturan Presiden Nomor 62 Tahun 2022 tentang Otorita Ibu Kota Nusantara",
+      "Peraturan Presiden Nomor 63 Tahun 2022 tentang Perincian Rencana Induk Ibu Kota Nusantara",
+      "Peraturan Menteri Sosial Nomor 8 Tahun 2024 tentang Perubahan atas Peraturan Menteri Sosial Nomor 8 Tahun 2021 tentang Penyelenggaraan Pengumpulan Uang atau Barang",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2022 tentang Organisasi dan Tata Kerja Otorita Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 2 Tahun 2024 tentang Penyelenggaraan Pelayanan Perizinan di Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2026 tentang Tata Cara Pengawasan Perizinan di Ibu Kota Nusantara"
     ],
-    "fee_description": "Rp0 (gratis) s/d 2035",
-    "complaint_info": "Direktorat P5 Otorita IKN — Satu Nomor Layanan Publik IKN",
+    "fee_description": "Rp0,00 (nol rupiah) sampai dengan tahun 2035",
+    "complaint_info": "Pengaduan, saran, dan masukan disampaikan langsung ke petugas pengaduan atau melalui: Website ikn.go.id; Email ditp5@ikn.go.id; WhatsApp +62 811 5000 5555; Instagram @pp_ikn; SP4N Lapor! www.lapor.go.id. Surat Izin atau Surat Penolakan disampaikan melalui WhatsApp, sistem online lainnya, atau secara manual.",
     "is_published": true,
     "stages": [
       {
@@ -29,199 +39,242 @@
         "order": 1,
         "name": "Pengajuan Pemohon",
         "stage_type": "verification",
-        "actor_role": "Pemohon",
+        "actor_role": "applicant",
         "sla_hours": 0,
         "requires_site_visit": false,
         "allowed_actions": ["submit"],
         "is_terminal": false,
-        "instructions": "Pemohon mengisi formulir lengkap beserta rencana kegiatan PUB"
+        "instructions": "Pemohon menyampaikan dokumen persyaratan kepada Deputi Bidang Pengendalian Pembangunan melalui sistem perizinan LANTARA."
       },
       {
-        "key": "tim-teknis-verifikasi",
+        "key": "verifikasi-berkas",
         "order": 2,
-        "name": "Verifikasi Tim Teknis",
+        "name": "Verifikasi Berkas (Bidang Perizinan)",
         "stage_type": "verification",
-        "actor_role": "Tim Teknis Sosial — Direktorat P5",
-        "sla_hours": 16,
+        "actor_role": "Bidang Perizinan / Deputi Bidang Pengendalian Pembangunan",
+        "sla_hours": 6,
         "requires_site_visit": false,
         "allowed_actions": ["approve", "revise", "reject"],
         "is_terminal": false,
-        "instructions": "Tim teknis memverifikasi kelengkapan dan kelayakan rencana PUB"
+        "instructions": "Deputi Bidang Pengendalian Pembangunan memeriksa kelengkapan isian formulir dan berkas permohonan."
+      },
+      {
+        "key": "verifikasi-data",
+        "order": 3,
+        "name": "Verifikasi Data & Kunjungan Lapangan (Bidang Pelayanan Dasar)",
+        "stage_type": "verification",
+        "actor_role": "Tim Teknis / Bidang Pelayanan Dasar",
+        "sla_hours": 10,
+        "requires_site_visit": true,
+        "allowed_actions": ["approve", "revise", "reject", "schedule_site_visit"],
+        "is_terminal": false,
+        "instructions": "Tim teknis melakukan verifikasi terhadap dokumen permohonan dan kunjungan lapangan, kemudian mengeluarkan rekomendasi persetujuan atau penolakan."
       },
       {
         "key": "penerbitan",
-        "order": 3,
-        "name": "Penerbitan Izin oleh Kepala Otorita",
+        "order": 4,
+        "name": "Penerbitan oleh Kepala Otorita",
         "stage_type": "publish",
         "actor_role": "Kepala Otorita IKN",
-        "sla_hours": 8,
+        "sla_hours": 5,
         "requires_site_visit": false,
         "allowed_actions": ["sign", "generate"],
         "is_terminal": false,
-        "instructions": "Kepala Otorita IKN menerbitkan izin PUB"
+        "instructions": "Kepala Otorita Ibu Kota Nusantara menandatangani dan menerbitkan Izin Pengumpulan Sumbangan."
       },
       {
-        "key": "penyerahan",
-        "order": 4,
-        "name": "Penyerahan ke Pemohon",
+        "key": "pengambilan",
+        "order": 5,
+        "name": "Pengambilan / Penyerahan",
         "stage_type": "collection",
         "actor_role": "Petugas Loket / WhatsApp",
-        "sla_hours": 0,
+        "sla_hours": 3,
         "requires_site_visit": false,
         "allowed_actions": ["collect"],
         "is_terminal": true,
-        "instructions": "Izin PUB dikirim ke pemohon via WA atau email"
+        "instructions": "Pemohon menerima Surat Izin atau Surat Penolakan melalui WhatsApp, sistem online lainnya, atau secara manual."
       }
     ],
     "form_fields": [
       {
-        "key": "nama_penyelenggara",
-        "label": "Nama Lembaga / Penyelenggara",
+        "key": "nama_organisasi",
+        "label": "Nama Organisasi / Lembaga",
         "field_type": "text",
-        "section": "Data Penyelenggara",
+        "section": "Data Organisasi",
         "order": 1,
-        "required": true
+        "required": true,
+        "validation_json": {"minLength": 3}
       },
       {
-        "key": "nama_penanggung_jawab",
-        "label": "Nama Penanggung Jawab",
+        "key": "nama_ketua",
+        "label": "Nama Direktur / Ketua",
         "field_type": "text",
-        "section": "Data Penyelenggara",
+        "section": "Data Organisasi",
         "order": 2,
         "required": true,
         "prefill_from_profile": true
       },
       {
-        "key": "nik_penanggung_jawab",
-        "label": "NIK Penanggung Jawab",
+        "key": "nik_ketua",
+        "label": "NIK Direktur / Ketua",
         "field_type": "nik",
-        "section": "Data Penyelenggara",
+        "section": "Data Organisasi",
         "order": 3,
         "required": true,
         "validation_json": {"length": 16}
       },
       {
-        "key": "nama_kegiatan",
-        "label": "Nama / Tema Kegiatan PUB",
-        "field_type": "text",
-        "section": "Rencana Kegiatan",
+        "key": "npwp_organisasi",
+        "label": "NPWP",
+        "field_type": "npwp",
+        "section": "Data Organisasi",
         "order": 4,
-        "required": true,
-        "placeholder": "Contoh: Bakti Sosial Ramadan 2025"
+        "required": true
       },
       {
-        "key": "tujuan_pengumpulan",
-        "label": "Tujuan Pengumpulan",
-        "field_type": "textarea",
-        "section": "Rencana Kegiatan",
+        "key": "nomor_rekening_pub",
+        "label": "Nomor Rekening / Wadah Penampung Hasil PUB",
+        "field_type": "text",
+        "section": "Data PUB",
         "order": 5,
-        "required": true,
-        "placeholder": "Jelaskan tujuan sosial dari kegiatan pengumpulan ini"
+        "required": true
       },
       {
-        "key": "metode_pengumpulan",
-        "label": "Metode Pengumpulan",
-        "field_type": "multiselect",
-        "section": "Rencana Kegiatan",
+        "key": "bentuk_pub",
+        "label": "Bentuk Pengumpulan",
+        "field_type": "select",
+        "section": "Data PUB",
         "order": 6,
         "required": true,
         "options_json": [
-          {"value": "kotak_amal", "label": "Kotak Amal"},
-          {"value": "transfer_bank", "label": "Transfer Bank"},
-          {"value": "dompet_digital", "label": "Dompet Digital"},
-          {"value": "donasi_online", "label": "Platform Donasi Online"},
-          {"value": "door_to_door", "label": "Door to Door"},
-          {"value": "acara_penggalangan", "label": "Acara Penggalangan Dana"}
+          {"value": "uang", "label": "Pengumpulan Uang"},
+          {"value": "barang", "label": "Pengumpulan Barang"},
+          {"value": "uang_barang", "label": "Uang dan Barang"}
         ]
       },
       {
-        "key": "tanggal_mulai",
-        "label": "Tanggal Mulai Kegiatan",
-        "field_type": "date",
-        "section": "Jadwal",
+        "key": "adalah_lks",
+        "label": "Organisasi adalah LKS?",
+        "field_type": "select",
+        "section": "Data Organisasi",
         "order": 7,
-        "required": true
-      },
-      {
-        "key": "tanggal_selesai",
-        "label": "Tanggal Selesai Kegiatan",
-        "field_type": "date",
-        "section": "Jadwal",
-        "order": 8,
-        "required": true
-      },
-      {
-        "key": "target_pengumpulan",
-        "label": "Target Pengumpulan (Rp)",
-        "field_type": "number",
-        "section": "Target",
-        "order": 9,
-        "required": false,
-        "validation_json": {"min": 0}
-      },
-      {
-        "key": "wilayah_pengumpulan",
-        "label": "Wilayah Pengumpulan",
-        "field_type": "textarea",
-        "section": "Lokasi",
-        "order": 10,
         "required": true,
-        "placeholder": "Sebutkan wilayah/lokasi yang akan menjadi sasaran pengumpulan"
-      },
-      {
-        "key": "nomor_telepon",
-        "label": "Nomor Telepon Penyelenggara",
-        "field_type": "phone",
-        "section": "Kontak",
-        "order": 11,
-        "required": true
+        "options_json": [
+          {"value": "tidak", "label": "Bukan LKS"},
+          {"value": "ya", "label": "Lembaga Kesejahteraan Sosial (LKS)"}
+        ]
       }
     ],
     "doc_requirements": [
       {
         "key": "surat_permohonan",
         "title": "Surat Permohonan",
-        "description": "Surat permohonan izin PUB bermaterai",
+        "description": "Surat permohonan ditujukan kepada Kepala Otorita Ibu Kota Nusantara c.q. Deputi Bidang Pengendalian Pembangunan.",
         "allowed_types": ["pdf"],
         "max_bytes": 5242880,
         "required": true,
         "order": 1
       },
       {
-        "key": "legalitas_lembaga",
-        "title": "Dokumen Legalitas Lembaga",
-        "description": "Akta pendirian atau dokumen legalitas lembaga penyelenggara",
+        "key": "tanda_daftar_ormas",
+        "title": "Surat Tanda Daftar Organisasi Kemasyarakatan",
+        "description": "Surat tanda daftar organisasi kemasyarakatan dari kementerian yang menyelenggarakan urusan pemerintahan di bidang hukum dan hak asasi manusia.",
         "allowed_types": ["pdf"],
-        "max_bytes": 10485760,
+        "max_bytes": 5242880,
         "required": true,
         "order": 2
       },
       {
-        "key": "ktp_penanggung_jawab",
-        "title": "KTP Penanggung Jawab",
-        "description": "KTP penanggung jawab kegiatan PUB",
-        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
-        "max_bytes": 2097152,
+        "key": "domisili_atau_nib",
+        "title": "Surat Keterangan Domisili atau NIB",
+        "description": "Surat keterangan domisili atau nomor induk berusaha.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
         "required": true,
         "order": 3
       },
       {
-        "key": "proposal_kegiatan",
-        "title": "Proposal Kegiatan PUB",
-        "description": "Proposal lengkap rencana kegiatan pengumpulan, target, dan penggunaan dana",
-        "allowed_types": ["pdf"],
-        "max_bytes": 10485760,
+        "key": "npwp",
+        "title": "NPWP",
+        "description": "Nomor pokok wajib pajak.",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
+        "max_bytes": 5242880,
         "required": true,
         "order": 4
       },
       {
-        "key": "rekening_koran",
-        "title": "Rekening Koran / Bukti Rekening",
-        "description": "Bukti rekening bank atas nama lembaga yang akan menampung donasi",
-        "allowed_types": ["pdf", "jpg", "jpeg"],
+        "key": "bukti_pbb_atau_sewa",
+        "title": "Bukti Setor PBB / Surat Sewa Tempat",
+        "description": "Bukti setor pajak bumi dan bangunan atau surat sewa tempat.",
+        "allowed_types": ["pdf"],
         "max_bytes": 5242880,
         "required": true,
         "order": 5
+      },
+      {
+        "key": "rekening_pub",
+        "title": "Nomor Rekening / Wadah Penampung PUB",
+        "description": "Nomor rekening atau wadah/tempat penampung hasil penyelenggaraan PUB (Pengumpulan Uang dan Barang) yang terdaftar di dalam profil organisasi.",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 6
+      },
+      {
+        "key": "ktp_ketua",
+        "title": "KTP Direktur / Ketua",
+        "description": "Kartu tanda penduduk direktur/ketua.",
+        "allowed_types": ["pdf", "jpg", "jpeg", "png"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 7
+      },
+      {
+        "key": "pernyataan_keabsahan_legalitas",
+        "title": "Surat Pernyataan Keabsahan Dokumen Legalitas",
+        "description": "Surat pernyataan keabsahan dokumen legalitas yang ditandatangani direktur/ketua.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 8
+      },
+      {
+        "key": "pernyataan_bukan_radikalisme",
+        "title": "Surat Pernyataan PUB Tidak Untuk Kegiatan Melawan Hukum",
+        "description": "Surat pernyataan bermeterai cukup yang menyatakan PUB tidak disalurkan untuk kegiatan radikalisme, terorisme, dan kegiatan yang bertentangan dengan hukum.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 9
+      },
+      {
+        "key": "pernyataan_kesediaan_lapor",
+        "title": "Surat Pernyataan Kesediaan Menyampaikan Laporan",
+        "description": "Surat pernyataan bermeterai cukup yang menyatakan bersedia menyampaikan laporan kegiatan dan penggunaan anggaran hasil PUB.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 10
+      },
+      {
+        "key": "tanda_daftar_lks",
+        "title": "Tanda Daftar Lembaga Kesejahteraan Sosial",
+        "description": "Tanda daftar lembaga kesejahteraan sosial bagi lembaga kesejahteraan sosial.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": false,
+        "order": 11,
+        "conditional_field_key": "adalah_lks",
+        "conditional_field_value": "ya"
+      },
+      {
+        "key": "proposal_rancangan_informasi",
+        "title": "Proposal dan Rancangan Informasi",
+        "description": "Proposal; dan rancangan informasi melalui media cetak/elektronik yang tidak bertentangan dengan nilai-nilai kemanusiaan.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 12
       }
     ]
   }
