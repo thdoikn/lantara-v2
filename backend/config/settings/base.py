@@ -49,6 +49,7 @@ LOCAL_APPS = [
     "apps.rdtr",
     "apps.tte",
     "apps.reference",
+    "apps.antrean",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
