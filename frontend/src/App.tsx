@@ -43,6 +43,13 @@ const IzinBuilderPage = lazy(() => import("./features/admin/IzinBuilderPage"));
 const AnalyticsPage = lazy(() => import("./features/admin/AnalyticsPage"));
 const AdminUsersPage = lazy(() => import("./features/admin/AdminUsersPage"));
 
+// MPP Antrean (queue) workspace
+const MppLayout = lazy(() => import("./features/mpp/MppLayout"));
+const OperatorConsolePage = lazy(() => import("./features/mpp/OperatorConsolePage"));
+const SupervisorMonitorPage = lazy(() => import("./features/mpp/SupervisorMonitorPage"));
+const DisplayBoardPage = lazy(() => import("./features/mpp/DisplayBoardPage"));
+const CitizenTicketPage = lazy(() => import("./features/mpp/CitizenTicketPage"));
+
 // RDTR (Phase 3)
 const RDTRPage = lazy(() => import("./features/rdtr/RDTRPage"));
 
@@ -105,6 +112,7 @@ export default function App() {
           <Route index element={<PortalDashboard />} />
           <Route path="new/:permitKey" element={<NewSubmissionPage />} />
           <Route path="submissions/:id" element={<SubmissionDetailPage />} />
+          <Route path="submissions/:id/antrean" element={<CitizenTicketPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
@@ -139,6 +147,21 @@ export default function App() {
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
+
+        {/* ── MPP Antrean workspace (operators + supervisors) ── */}
+        <Route
+          path="/mpp"
+          element={
+            <ProtectedRoute requirePortal="mpp">
+              <MppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<OperatorConsolePage />} />
+          <Route path="monitor" element={<SupervisorMonitorPage />} />
+        </Route>
+        {/* Public lobby display board — no auth (a screen on the wall) */}
+        <Route path="/mpp/display/:instansiKey" element={<DisplayBoardPage />} />
 
         {/* ── RDTR (Phase 3) — public map viewer, no auth required ── */}
         <Route path="/rdtr" element={<RDTRPage />} />

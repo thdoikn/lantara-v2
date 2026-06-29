@@ -90,6 +90,7 @@ class TicketViewSet(viewsets.GenericViewSet):
         data = ser.validated_data
 
         submission = None
+        layanan = data.get("layanan")
         sub_id = data.get("submission")
         if sub_id:
             from apps.submissions.models import Submission
@@ -99,10 +100,18 @@ class TicketViewSet(viewsets.GenericViewSet):
                 return Response({"detail": "Pengajuan tidak ditemukan."}, status=404)
             if submission.status != Submission.Status.COLLECTION:
                 return Response({"detail": "Pengajuan ini belum siap diambil."}, status=409)
+            # Resolve the service from the izin when the client didn't name one.
+            if layanan is None:
+                layanan = Layanan.objects.filter(
+                    permit_type_id=submission.permit_type_id, is_active=True
+                ).first()
+
+        if layanan is None:
+            return Response({"detail": "Layanan wajib dipilih."}, status=400)
 
         try:
             ticket = lifecycle.take_ticket(
-                data["layanan"],
+                layanan,
                 data["channel"],
                 applicant=request.user,
                 submission=submission,
