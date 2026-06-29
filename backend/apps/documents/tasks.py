@@ -25,9 +25,7 @@ def validate_document(self, doc_id: str):
         doc.mime_type = mime
 
         ext = (
-            doc.original_filename.rsplit(".", 1)[-1].lower()
-            if "." in doc.original_filename
-            else ""
+            doc.original_filename.rsplit(".", 1)[-1].lower() if "." in doc.original_filename else ""
         )
         allowed = EXTENSION_MIME_MAP.get(ext, set())
 

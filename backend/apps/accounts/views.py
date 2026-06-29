@@ -60,9 +60,7 @@ class OTPVerifyView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        invalid = Response(
-            {"detail": "Kode OTP tidak valid atau sudah kadaluarsa."}, status=400
-        )
+        invalid = Response({"detail": "Kode OTP tidak valid atau sudah kadaluarsa."}, status=400)
         try:
             user = User.objects.get(email=data["email"])
         except User.DoesNotExist:
@@ -135,9 +133,7 @@ class PasswordResetConfirmView(APIView):
             return invalid
 
         otp = (
-            OTPCode.objects.filter(
-                user=user, purpose=OTPCode.Purpose.PASSWORD_RESET, is_used=False
-            )
+            OTPCode.objects.filter(user=user, purpose=OTPCode.Purpose.PASSWORD_RESET, is_used=False)
             .order_by("-created_at")
             .first()
         )
