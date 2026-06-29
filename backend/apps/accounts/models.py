@@ -234,15 +234,31 @@ class UserRole(TimestampedModel):
 
 class VerifierPermitAssignment(TimestampedModel):
     """
-    Assigns a verifier (or admin) to a specific PermitType.
-    Drives what submissions appear in the verifier's queue.
-    A user with the 'verifier' role only sees permit types they are assigned to.
-    Admins and superadmins see all regardless of assignments.
+    Assigns a verifier (or admin) to a PermitType — optionally scoped to a
+    single WorkflowStage. Drives what submissions appear in the verifier's queue
+    and which stages they may act on.
+
+    `stage_key`:
+      - blank ("")  → assignment covers ALL stages of the permit_type (the
+        original behaviour; existing rows keep this).
+      - "<key>"     → assignment covers only that stage (e.g. "verifikasi-berkas"
+        for Bidang Perizinan, "verifikasi-data" for Bidang Pelayanan Dasar,
+        "reviu-hukum" for Bidang Hukum). Enables separation of duties per the
+        SK's two-bidang flow.
+
+    A user with the 'verifier' role only sees/acts on permit types (and stages)
+    they are assigned to. Admins and superadmins see all regardless.
     """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="permit_assignments")
     permit_type = models.ForeignKey(
         "engine.PermitType", on_delete=models.CASCADE, related_name="verifier_assignments"
+    )
+    stage_key = models.SlugField(
+        max_length=120,
+        blank=True,
+        default="",
+        help_text="Blank = all stages of this izin; otherwise a single WorkflowStage.key.",
     )
     assigned_by = models.ForeignKey(
         User,
@@ -255,8 +271,9 @@ class VerifierPermitAssignment(TimestampedModel):
     notes = models.TextField(blank=True)
 
     class Meta:
-        unique_together = [("user", "permit_type")]
+        unique_together = [("user", "permit_type", "stage_key")]
         indexes = [models.Index(fields=["user", "is_active"])]
 
     def __str__(self):
-        return f"{self.user.email} → {self.permit_type.key}"
+        scope = self.stage_key or "*"
+        return f"{self.user.email} → {self.permit_type.key}:{scope}"

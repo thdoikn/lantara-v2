@@ -42,13 +42,24 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             pass
         elif user.has_any_role("verifier"):
             # Verifiers — incl. admins who also hold the verifier role — only see
-            # submissions for their assigned permit types.
+            # submissions for their assigned permit types, scoped to the assigned
+            # stage when the assignment is stage-specific.
+            from django.db.models import Q
+
             from apps.accounts.models import VerifierPermitAssignment
 
-            assigned_keys = VerifierPermitAssignment.objects.filter(
+            assignments = VerifierPermitAssignment.objects.filter(
                 user=user, is_active=True
-            ).values_list("permit_type__key", flat=True)
-            qs = qs.filter(permit_type__key__in=assigned_keys)
+            ).values_list("permit_type__key", "stage_key")
+            scope = Q()
+            has_assignment = False
+            for permit_key, stage_key in assignments:
+                has_assignment = True
+                if stage_key:
+                    scope |= Q(permit_type__key=permit_key, current_stage_key=stage_key)
+                else:
+                    scope |= Q(permit_type__key=permit_key)
+            qs = qs.filter(scope) if has_assignment else qs.none()
         else:
             # Everyone else (incl. admins without a verifier role) sees only
             # their own submissions — their applicant view.
@@ -269,11 +280,19 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     def _verifier_can_act(user, sub) -> bool:
         if user.has_any_role("superadmin") or user.is_sektor_admin:
             return True
+        from django.db.models import Q
+
         from apps.accounts.models import VerifierPermitAssignment
 
-        return VerifierPermitAssignment.objects.filter(
-            user=user, permit_type=sub.permit_type, is_active=True
-        ).exists()
+        # An assignment with a blank stage_key covers all stages; a stage-scoped
+        # assignment only authorises action at that exact current stage.
+        return (
+            VerifierPermitAssignment.objects.filter(
+                user=user, permit_type=sub.permit_type, is_active=True
+            )
+            .filter(Q(stage_key="") | Q(stage_key=sub.current_stage_key))
+            .exists()
+        )
 
     @action(detail=True, methods=["post"])
     def claim(self, request, pk=None):
@@ -612,13 +631,19 @@ def _notify_submission(sub: Submission) -> None:
 def _notify_verifiers_new(sub: Submission) -> None:
     """In-app alert to every verifier assigned to this permit type that a new
     submission is waiting in their queue (no email — avoids inbox spam)."""
+    from django.db.models import Q
+
     from apps.accounts.models import VerifierPermitAssignment
     from apps.notifications.models import Notification
     from apps.notifications.utils import send_notification
 
-    assignments = VerifierPermitAssignment.objects.filter(
-        permit_type=sub.permit_type, is_active=True
-    ).select_related("user")
+    # Only alert verifiers responsible for the submission's CURRENT stage
+    # (blank stage_key = all stages).
+    assignments = (
+        VerifierPermitAssignment.objects.filter(permit_type=sub.permit_type, is_active=True)
+        .filter(Q(stage_key="") | Q(stage_key=sub.current_stage_key))
+        .select_related("user")
+    )
     for a in assignments:
         if a.user_id == sub.applicant_id:
             continue

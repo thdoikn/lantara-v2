@@ -367,9 +367,11 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = VerifierPermitAssignmentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         permit_type = serializer.validated_data["permit_type"]
+        stage_key = serializer.validated_data.get("stage_key", "")
         assignment, created = VerifierPermitAssignment.objects.update_or_create(
             user=user,
             permit_type=permit_type,
+            stage_key=stage_key,
             defaults={
                 "is_active": True,
                 "notes": serializer.validated_data.get("notes", ""),
@@ -383,11 +385,17 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["delete"], url_path=r"assignments/(?P<permit_type_key>[^/.]+)")
     def revoke_assignment(self, request, pk=None, permit_type_key=None):
-        """Deactivate a permit assignment for a user."""
+        """Deactivate a permit assignment for a user.
+
+        Pass ?stage=<key> to revoke only a stage-scoped assignment; omit it to
+        revoke every assignment for this permit type.
+        """
         user = self.get_object()
-        updated = VerifierPermitAssignment.objects.filter(
-            user=user, permit_type__key=permit_type_key
-        ).update(is_active=False)
+        qs = VerifierPermitAssignment.objects.filter(user=user, permit_type__key=permit_type_key)
+        stage = request.query_params.get("stage")
+        if stage is not None:
+            qs = qs.filter(stage_key=stage)
+        updated = qs.update(is_active=False)
         if not updated:
             return Response({"detail": "Penugasan tidak ditemukan."}, status=404)
         return Response({"detail": "Penugasan dicabut."})

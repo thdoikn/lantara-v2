@@ -170,6 +170,8 @@ class VerifierPermitAssignmentSerializer(serializers.ModelSerializer):
         write_only=True,
         queryset=__import__("apps.engine.models", fromlist=["PermitType"]).PermitType.objects.all(),
     )
+    stage_key = serializers.CharField(required=False, allow_blank=True, default="")
+    stage_name = serializers.SerializerMethodField()
 
     class Meta:
         model = VerifierPermitAssignment
@@ -179,9 +181,28 @@ class VerifierPermitAssignmentSerializer(serializers.ModelSerializer):
             "permit_type_key",
             "permit_type_name",
             "sektor_name",
+            "stage_key",
+            "stage_name",
             "is_active",
             "notes",
             "assigned_by_name",
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def get_stage_name(self, obj) -> str:
+        """Human label for the scoped stage (blank assignment = all stages)."""
+        if not obj.stage_key:
+            return "Semua tahap"
+        stage = obj.permit_type.stages.filter(key=obj.stage_key).first()
+        return stage.name if stage else obj.stage_key
+
+    def validate(self, attrs):
+        """A stage-scoped assignment must reference a real stage of the izin."""
+        stage_key = attrs.get("stage_key", "")
+        permit_type = attrs.get("permit_type")
+        if stage_key and permit_type and not permit_type.stages.filter(key=stage_key).exists():
+            raise serializers.ValidationError(
+                {"stage_key": f"Tahap '{stage_key}' tidak ada pada izin ini."}
+            )
+        return attrs
