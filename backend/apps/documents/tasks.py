@@ -12,7 +12,7 @@ def validate_document(self, doc_id: str):
     except UploadedDocument.DoesNotExist:
         return
 
-    from .validators import FORBIDDEN_MIME_TYPES, EXTENSION_MIME_MAP
+    from .validators import EXTENSION_MIME_MAP, FORBIDDEN_MIME_TYPES
 
     try:
         # Re-detect MIME from stored bytes (defence in depth: the file is now at
