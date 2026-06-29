@@ -1,0 +1,238 @@
+{
+  "sektor": {
+    "key": "kesehatan",
+    "name": "Kesehatan",
+    "description": "Layanan perizinan sektor kesehatan di wilayah IKN.",
+    "icon": "🏥",
+    "order": 2,
+    "pengampu": "Direktorat Pelayanan Dasar (Dit. Yandas)"
+  },
+  "permit_type": {
+    "key": "izin-klinik-pratama-utama",
+    "name": "Izin Klinik Pratama/Utama",
+    "description": "Penerbitan Izin Klinik Pratama/Utama di Ibu Kota Nusantara. Pemohon terlebih dahulu memperoleh NIB dan Sertifikat Standar melalui Sistem OSS, kemudian mengajukan ke OIKN.",
+    "is_berusaha": true,
+    "oss_covered": false,
+    "sla_days": 15,
+    "product_name": "Izin Klinik Pratama/Utama",
+    "legal_basis": [
+      "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik",
+      "Undang-Undang Nomor 3 Tahun 2022 tentang Ibu Kota Negara sebagaimana telah diubah dengan Undang-Undang Nomor 21 Tahun 2023",
+      "Undang-Undang Nomor 17 Tahun 2023 tentang Kesehatan",
+      "Peraturan Pemerintah Nomor 2 Tahun 2018 tentang Standar Pelayanan Minimal",
+      "Peraturan Pemerintah Nomor 12 Tahun 2023 tentang Pemberian Perizinan Berusaha, Kemudahan Berusaha, dan Fasilitas Penanaman Modal Bagi Pelaku Usaha di Ibu Kota Nusantara",
+      "Peraturan Pemerintah Nomor 27 Tahun 2023 tentang Kewenangan Khusus Otorita Ibu Kota Nusantara",
+      "Peraturan Pemerintah Nomor 28 Tahun 2024 tentang Peraturan Pelaksanaan Undang-Undang Nomor 17 Tahun 2023 tentang Kesehatan",
+      "Peraturan Presiden Nomor 62 Tahun 2022 tentang Otorita Ibu Kota Nusantara",
+      "Peraturan Presiden Nomor 63 Tahun 2022 tentang Perincian Rencana Induk Ibu Kota Nusantara",
+      "Peraturan Menteri Kesehatan Nomor 9 Tahun 2014 tentang Klinik",
+      "Peraturan Menteri Kesehatan Nomor 11 Tahun 2020 tentang Penerbitan Perizinan Berusaha Terintegrasi Secara Elektronik Sektor Kesehatan",
+      "Peraturan Menteri Kesehatan Nomor 34 Tahun 2021 tentang Standar Pelayanan Kefarmasian di Klinik",
+      "Peraturan Menteri Kesehatan Nomor 11 Tahun 2025 tentang Standar Kegiatan Usaha dan Standar Produk/Jasa pada Penyelenggaraan Perizinan Berusaha Berbasis Risiko Subsektor Kesehatan",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2024 tentang Persetujuan Lingkungan di Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 2 Tahun 2024 tentang Penyelenggaraan Pelayanan Perizinan di Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2026 tentang Tata Cara Pengawasan Perizinan di Ibu Kota Nusantara"
+    ],
+    "fee_description": "Rp0,00 (nol rupiah) sampai dengan tahun 2035",
+    "complaint_info": "Pengaduan, saran, dan masukan disampaikan langsung ke petugas pengaduan atau melalui: Website ikn.go.id; Email ditp5@ikn.go.id; WhatsApp +62 811 5000 5555; Instagram @pp_ikn; SP4N Lapor! www.lapor.go.id. Surat Izin atau Surat Penolakan disampaikan melalui WhatsApp, sistem online lainnya, atau secara manual.",
+    "is_published": true,
+    "stages": [
+      {
+        "key": "submit",
+        "order": 1,
+        "name": "Pengajuan Pemohon (NIB & Sertifikat Standar OSS)",
+        "stage_type": "verification",
+        "actor_role": "applicant",
+        "sla_hours": 0,
+        "requires_site_visit": false,
+        "allowed_actions": ["submit"],
+        "is_terminal": false,
+        "instructions": "Setelah memperoleh NIB dan Sertifikat Standar melalui Sistem OSS, pemohon menyampaikan dokumen persyaratan kepada OIKN melalui sistem perizinan LANTARA."
+      },
+      {
+        "key": "verifikasi-berkas",
+        "order": 2,
+        "name": "Verifikasi Berkas (Bidang Perizinan)",
+        "stage_type": "verification",
+        "actor_role": "Bidang Perizinan / Tim Teknis Kedeputian Pengendalian Pembangunan",
+        "sla_hours": 30,
+        "requires_site_visit": false,
+        "allowed_actions": ["approve", "revise", "reject"],
+        "is_terminal": false,
+        "instructions": "Tim Teknis Kedeputian memeriksa kelengkapan dokumen; jika lengkap meneruskan ke Bidang Pelayanan Dasar, jika tidak lengkap dikembalikan ke pemohon."
+      },
+      {
+        "key": "verifikasi-data",
+        "order": 3,
+        "name": "Verifikasi Data & Peninjauan Lapangan (Bidang Pelayanan Dasar)",
+        "stage_type": "verification",
+        "actor_role": "Bidang Pelayanan Dasar / Direktorat Pelayanan Dasar",
+        "sla_hours": 54,
+        "requires_site_visit": true,
+        "allowed_actions": ["approve", "revise", "reject", "schedule_site_visit"],
+        "is_terminal": false,
+        "instructions": "Direktorat Pelayanan Dasar melakukan verifikasi dokumen dan peninjauan lapangan jika diperlukan, kemudian mengeluarkan rekomendasi (Berita Acara Pemeriksaan Teknis dan Berita Acara Pemeriksaan Lapangan)."
+      },
+      {
+        "key": "penerbitan",
+        "order": 4,
+        "name": "Penerbitan oleh Kepala Otorita",
+        "stage_type": "publish",
+        "actor_role": "Kepala Otorita IKN",
+        "sla_hours": 28,
+        "requires_site_visit": false,
+        "allowed_actions": ["sign", "generate"],
+        "is_terminal": false,
+        "instructions": "Deputi Bidang Pengendalian Pembangunan mengajukan kepada Kepala OIKN untuk menerbitkan Izin Klinik Pratama/Utama sesuai kewenangannya."
+      },
+      {
+        "key": "pengambilan",
+        "order": 5,
+        "name": "Pengambilan / Penyerahan",
+        "stage_type": "collection",
+        "actor_role": "Petugas Loket / WhatsApp",
+        "sla_hours": 8,
+        "requires_site_visit": false,
+        "allowed_actions": ["collect"],
+        "is_terminal": true,
+        "instructions": "Pemohon menerima surat izin atau notifikasi penolakan melalui WhatsApp, sistem online lainnya, atau secara manual."
+      }
+    ],
+    "form_fields": [
+      {
+        "key": "nama_pemohon",
+        "label": "Nama Pemohon / Penanggung Jawab",
+        "field_type": "text",
+        "section": "Identitas Pemohon",
+        "order": 1,
+        "required": true,
+        "prefill_from_profile": true
+      },
+      {
+        "key": "nomor_telepon",
+        "label": "Nomor Telepon / WhatsApp",
+        "field_type": "phone",
+        "section": "Identitas Pemohon",
+        "order": 2,
+        "required": true,
+        "prefill_from_profile": true,
+        "placeholder": "+62..."
+      },
+      {
+        "key": "nib",
+        "label": "Nomor Induk Berusaha (NIB)",
+        "field_type": "text",
+        "section": "Identitas Pemohon",
+        "order": 3,
+        "required": true,
+        "help_text": "NIB yang diterbitkan melalui Sistem OSS."
+      },
+      {
+        "key": "nama_klinik",
+        "label": "Nama Klinik",
+        "field_type": "text",
+        "section": "Data Klinik",
+        "order": 4,
+        "required": true,
+        "validation_json": {"minLength": 3}
+      },
+      {
+        "key": "jenis_klinik",
+        "label": "Jenis Klinik",
+        "field_type": "select",
+        "section": "Data Klinik",
+        "order": 5,
+        "required": true,
+        "options_json": [
+          {"value": "pratama_rawat_jalan", "label": "Klinik Pratama (Rawat Jalan)"},
+          {"value": "pratama_rawat_inap", "label": "Klinik Pratama (Rawat Inap)"},
+          {"value": "utama_rawat_jalan", "label": "Klinik Utama (Rawat Jalan)"},
+          {"value": "utama_rawat_inap", "label": "Klinik Utama (Rawat Inap)"}
+        ]
+      },
+      {
+        "key": "alamat_klinik",
+        "label": "Alamat Klinik",
+        "field_type": "textarea",
+        "section": "Lokasi",
+        "order": 6,
+        "required": true,
+        "validation_json": {"minLength": 10}
+      }
+    ],
+    "doc_requirements": [
+      {
+        "key": "surat_permohonan",
+        "title": "Surat Permohonan",
+        "description": "Surat permohonan ditujukan kepada Kepala Otorita Ibu Kota Nusantara c.q. Deputi Bidang Pengendalian Pembangunan.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 1
+      },
+      {
+        "key": "nib_sertifikat_standar",
+        "title": "NIB dan Sertifikat Standar (OSS)",
+        "description": "Nomor Induk Berusaha (NIB) dan Sertifikat Standar yang diterbitkan melalui Sistem OSS.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 5242880,
+        "required": true,
+        "order": 2
+      },
+      {
+        "key": "imb_pbg",
+        "title": "IMB atau PBG",
+        "description": "Fotokopi/hasil pindai Izin Mendirikan Bangunan (IMB) atau Persetujuan Bangunan Gedung (PBG).",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 3
+      },
+      {
+        "key": "profil_klinik",
+        "title": "Profil Klinik Pratama/Utama",
+        "description": "Profil Klinik paling sedikit meliputi visi dan misi, lingkup kegiatan, rencana strategi, dan struktur organisasi.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 4
+      },
+      {
+        "key": "self_assessment",
+        "title": "Self Assessment",
+        "description": "Self assessment meliputi jenis pelayanan, sumber daya manusia (bagi yang belum memenuhi jumlah SDM harus menyertakan perjanjian dengan Rumah Sakit lain untuk pemenuhan SDM), peralatan, bangunan, dan prasarana Klinik Pratama/Utama.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 5
+      },
+      {
+        "key": "sertifikat_kalibrasi_alkes",
+        "title": "Sertifikat Kelayakan / Kalibrasi Alat Kesehatan",
+        "description": "Surat keterangan atau sertifikat izin kelayakan atau pemanfaatan dan kalibrasi alat kesehatan. Peralatan yang menggunakan sinar pengion wajib memiliki izin.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 6
+      },
+      {
+        "key": "dokumen_bangunan_prasarana",
+        "title": "Dokumen Bangunan, Prasarana, dan Peralatan",
+        "description": "Pemenuhan persyaratan khusus: lokasi sesuai persyaratan kesehatan lingkungan; bangunan permanen dengan ruang pendaftaran/tunggu, konsultasi, administrasi, obat/BHP, tindakan, ASI, kamar mandi (serta ruang rawat inap/farmasi/laboratorium/dapur untuk rawat inap); prasarana (sanitasi, listrik, proteksi kebakaran, ambulans untuk rawat inap, gas medis, tata udara, pencahayaan); serta peralatan ber-NIE dan terkalibrasi.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 7
+      },
+      {
+        "key": "sertifikat_akreditasi",
+        "title": "Sertifikat Akreditasi",
+        "description": "Sertifikat akreditasi (diperlukan untuk perpanjangan izin operasional).",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": false,
+        "order": 8
+      }
+    ]
+  }
+}

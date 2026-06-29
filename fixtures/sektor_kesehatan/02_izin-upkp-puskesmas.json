@@ -1,0 +1,202 @@
+{
+  "sektor": {
+    "key": "kesehatan",
+    "name": "Kesehatan",
+    "description": "Layanan perizinan sektor kesehatan di wilayah IKN.",
+    "icon": "🏥",
+    "order": 2,
+    "pengampu": "Direktorat Pelayanan Dasar (Dit. Yandas)"
+  },
+  "permit_type": {
+    "key": "izin-upkp-puskesmas",
+    "name": "Izin Unit Pelayanan Kesehatan Preventif (UPKP)/Puskesmas",
+    "description": "Penerbitan Izin Unit Pelayanan Kesehatan Preventif (UPKP)/Puskesmas di Ibu Kota Nusantara.",
+    "is_berusaha": false,
+    "oss_covered": false,
+    "sla_days": 15,
+    "product_name": "Izin Unit Pelayanan Kesehatan Preventif (UPKP)/Puskesmas",
+    "legal_basis": [
+      "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik",
+      "Undang-Undang Nomor 3 Tahun 2022 tentang Ibu Kota Negara sebagaimana telah diubah dengan Undang-Undang Nomor 21 Tahun 2023",
+      "Undang-Undang Nomor 17 Tahun 2023 tentang Kesehatan",
+      "Peraturan Pemerintah Nomor 2 Tahun 2018 tentang Standar Pelayanan Minimal",
+      "Peraturan Pemerintah Nomor 12 Tahun 2023 tentang Pemberian Perizinan Berusaha, Kemudahan Berusaha, dan Fasilitas Penanaman Modal Bagi Pelaku Usaha di Ibu Kota Nusantara",
+      "Peraturan Pemerintah Nomor 27 Tahun 2023 tentang Kewenangan Khusus Otorita Ibu Kota Nusantara",
+      "Peraturan Pemerintah Nomor 28 Tahun 2024 tentang Peraturan Pelaksanaan Undang-Undang Nomor 17 Tahun 2023 tentang Kesehatan",
+      "Peraturan Presiden Nomor 62 Tahun 2022 tentang Otorita Ibu Kota Nusantara",
+      "Peraturan Presiden Nomor 63 Tahun 2022 tentang Perincian Rencana Induk Ibu Kota Nusantara",
+      "Peraturan Menteri Kesehatan Nomor 11 Tahun 2020 tentang Penerbitan Perizinan Berusaha Terintegrasi Secara Elektronik Sektor Kesehatan",
+      "Peraturan Menteri Kesehatan Nomor 34 Tahun 2022 tentang Akreditasi Pusat Kesehatan Masyarakat, Klinik, Laboratorium Kesehatan, Unit Transfusi Darah, Tempat Praktik Mandiri Dokter, dan Tempat Praktik Mandiri Dokter Gigi",
+      "Peraturan Menteri Kesehatan Nomor 19 Tahun 2024 tentang Penyelenggaraan Pusat Kesehatan Masyarakat",
+      "Peraturan Menteri Kesehatan Nomor 6 Tahun 2024 tentang Standar Teknis Pemenuhan Standar Pelayanan Minimal (SPM) Kesehatan",
+      "Peraturan Menteri Kesehatan Nomor 11 Tahun 2025 tentang Standar Kegiatan Usaha dan Standar Produk/Jasa pada Penyelenggaraan Perizinan Berusaha Berbasis Risiko Subsektor Kesehatan",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2024 tentang Persetujuan Lingkungan di Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 2 Tahun 2024 tentang Penyelenggaraan Pelayanan Perizinan di Ibu Kota Nusantara",
+      "Peraturan Kepala Otorita Ibu Kota Nusantara Nomor 1 Tahun 2026 tentang Tata Cara Pengawasan Perizinan di Ibu Kota Nusantara"
+    ],
+    "fee_description": "Rp0,00 (nol rupiah) sampai dengan tahun 2035",
+    "complaint_info": "Pengaduan, saran, dan masukan disampaikan langsung ke petugas pengaduan atau melalui: Website ikn.go.id; Email ditp5@ikn.go.id; WhatsApp +62 811 5000 5555; Instagram @pp_ikn; SP4N Lapor! www.lapor.go.id. Surat Izin atau Surat Penolakan disampaikan melalui WhatsApp, sistem online lainnya, atau secara manual.",
+    "is_published": true,
+    "stages": [
+      {
+        "key": "submit",
+        "order": 1,
+        "name": "Pengajuan Pemohon",
+        "stage_type": "verification",
+        "actor_role": "applicant",
+        "sla_hours": 0,
+        "requires_site_visit": false,
+        "allowed_actions": ["submit"],
+        "is_terminal": false,
+        "instructions": "Pemohon menyampaikan dokumen persyaratan kepada Deputi Bidang Pengendalian Pembangunan melalui sistem perizinan LANTARA."
+      },
+      {
+        "key": "verifikasi-berkas",
+        "order": 2,
+        "name": "Verifikasi Berkas (Bidang Perizinan)",
+        "stage_type": "verification",
+        "actor_role": "Bidang Perizinan / Deputi Bidang Pengendalian Pembangunan",
+        "sla_hours": 30,
+        "requires_site_visit": false,
+        "allowed_actions": ["approve", "revise", "reject"],
+        "is_terminal": false,
+        "instructions": "Deputi Bidang Pengendalian Pembangunan memeriksa kelengkapan isian formulir dan berkas permohonan."
+      },
+      {
+        "key": "verifikasi-data",
+        "order": 3,
+        "name": "Verifikasi Data & Visitasi Lapangan (Bidang Pelayanan Dasar)",
+        "stage_type": "verification",
+        "actor_role": "Bidang Pelayanan Dasar / Direktorat Pelayanan Dasar",
+        "sla_hours": 54,
+        "requires_site_visit": true,
+        "allowed_actions": ["approve", "revise", "reject", "schedule_site_visit"],
+        "is_terminal": false,
+        "instructions": "Deputi Bidang Sosial Budaya dan Pemberdayaan Masyarakat melalui Direktorat Pelayanan Dasar melakukan verifikasi dokumen dan visitasi lapangan, kemudian mengeluarkan rekomendasi diterima atau penolakan."
+      },
+      {
+        "key": "penerbitan",
+        "order": 4,
+        "name": "Penerbitan oleh Kepala Otorita",
+        "stage_type": "publish",
+        "actor_role": "Kepala Otorita IKN",
+        "sla_hours": 28,
+        "requires_site_visit": false,
+        "allowed_actions": ["sign", "generate"],
+        "is_terminal": false,
+        "instructions": "Deputi Bidang Pengendalian Pembangunan mengelola administrasi penerbitan dan Kepala Otorita Ibu Kota Nusantara menerbitkan Izin UPKP/Puskesmas."
+      },
+      {
+        "key": "pengambilan",
+        "order": 5,
+        "name": "Pengambilan / Penyerahan",
+        "stage_type": "collection",
+        "actor_role": "Petugas Loket / WhatsApp",
+        "sla_hours": 8,
+        "requires_site_visit": false,
+        "allowed_actions": ["collect"],
+        "is_terminal": true,
+        "instructions": "Pemohon menerima surat izin atau notifikasi penolakan melalui WhatsApp, sistem online lainnya, atau secara manual."
+      }
+    ],
+    "form_fields": [
+      {
+        "key": "nama_pemohon",
+        "label": "Nama Pemohon / Penanggung Jawab",
+        "field_type": "text",
+        "section": "Identitas Pemohon",
+        "order": 1,
+        "required": true,
+        "prefill_from_profile": true
+      },
+      {
+        "key": "nomor_telepon",
+        "label": "Nomor Telepon / WhatsApp",
+        "field_type": "phone",
+        "section": "Identitas Pemohon",
+        "order": 2,
+        "required": true,
+        "prefill_from_profile": true,
+        "placeholder": "+62..."
+      },
+      {
+        "key": "nama_puskesmas",
+        "label": "Nama UPKP / Puskesmas",
+        "field_type": "text",
+        "section": "Data Fasilitas",
+        "order": 3,
+        "required": true,
+        "validation_json": {"minLength": 3}
+      },
+      {
+        "key": "kategori_puskesmas",
+        "label": "Kategori Puskesmas",
+        "field_type": "select",
+        "section": "Data Fasilitas",
+        "order": 4,
+        "required": true,
+        "options_json": [
+          {"value": "nonrawat_inap", "label": "Puskesmas Non-Rawat Inap"},
+          {"value": "rawat_inap", "label": "Puskesmas Rawat Inap"},
+          {"value": "pembantu", "label": "Puskesmas Pembantu"}
+        ]
+      },
+      {
+        "key": "alamat_puskesmas",
+        "label": "Alamat / Lokasi",
+        "field_type": "textarea",
+        "section": "Lokasi",
+        "order": 5,
+        "required": true,
+        "validation_json": {"minLength": 10}
+      }
+    ],
+    "doc_requirements": [
+      {
+        "key": "dokumen_pembentukan",
+        "title": "Dokumen Pembentukan UPKP/Puskesmas",
+        "description": "Dokumen pembentukan Unit Pelayanan Kesehatan Preventif (UPKP)/Puskesmas. Puskesmas harus didirikan pada setiap wilayah/sub-wilayah perencanaan; dalam kondisi tertentu pada 1 kecamatan dapat didirikan lebih dari 1 Puskesmas.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 1
+      },
+      {
+        "key": "sertifikat_tanah",
+        "title": "Sertifikat Tanah / Bukti Kepemilikan",
+        "description": "Fotokopi/hasil pindai dokumen sertifikat tanah atau bukti lain kepemilikan tanah yang sah.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 2
+      },
+      {
+        "key": "imb_pbg_slf",
+        "title": "IMB/PBG dan Sertifikat Laik Fungsi (SLF)",
+        "description": "Fotokopi/hasil pindai Izin Mendirikan Bangunan (IMB) atau Persetujuan Bangunan Gedung (PBG) dan Sertifikat Laik Fungsi (SLF).",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 3
+      },
+      {
+        "key": "kajian_kelayakan",
+        "title": "Kajian Kelayakan Pendirian Puskesmas",
+        "description": "Kajian kelayakan pendirian Puskesmas bagi Puskesmas yang pertama kali didirikan.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 4
+      },
+      {
+        "key": "daftar_standar_sarana",
+        "title": "Daftar Bangunan, Prasarana, Peralatan, Ketenagaan, Kefarmasian, dan Laboratorium",
+        "description": "Daftar bangunan, prasarana, peralatan, ketenagaan, kefarmasian, dan laboratorium sesuai dengan standar (lokasi, bangunan permanen dengan ruang kantor/pelayanan/penunjang/rawat inap, prasarana penghawaan-pencahayaan-air bersih-kelistrikan-komunikasi-gas medik-proteksi petir-proteksi kebakaran-evakuasi, peralatan ber-NIE dan terkalibrasi, ruang farmasi, serta laboratorium) sesuai Peraturan Menteri Kesehatan mengenai Puskesmas.",
+        "allowed_types": ["pdf"],
+        "max_bytes": 10485760,
+        "required": true,
+        "order": 5
+      }
+    ]
+  }
+}
