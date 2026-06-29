@@ -135,6 +135,23 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.submissions.tasks.release_stale_claims",
         "schedule": crontab(minute="*/15"),
     },
+    # ── Antrean MPP — frequent, cheap sweeps over today's live tickets ──
+    "antrean-recompute-estimates": {
+        "task": "apps.antrean.tasks.recompute_estimates",
+        "schedule": crontab(minute="*"),
+    },
+    "antrean-sweep-checkin-expiry": {
+        "task": "apps.antrean.tasks.sweep_checkin_expiry",
+        "schedule": crontab(minute="*"),
+    },
+    "antrean-sweep-no-show": {
+        "task": "apps.antrean.tasks.sweep_no_show",
+        "schedule": crontab(minute="*"),
+    },
+    "antrean-notify-position-threshold": {
+        "task": "apps.antrean.tasks.notify_position_threshold",
+        "schedule": crontab(minute="*"),
+    },
 }
 
 # Auto-release a verifier's claim if held this many hours with no action taken,
