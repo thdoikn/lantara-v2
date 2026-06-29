@@ -112,6 +112,7 @@ urlpatterns = [
     path("permits/", include("apps.permits.urls")),
     path("notifications/", include("apps.notifications.urls")),
     path("reference/", include("apps.reference.urls")),
+    path("antrean/", include("apps.antrean.urls")),
     # Admin engine builder
     path("admin/engine/", include(admin_router.urls)),
     path("admin/engine/", include(permit_nested_router())),

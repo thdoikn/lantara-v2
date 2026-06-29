@@ -1,0 +1,30 @@
+from django.urls import path
+from rest_framework.routers import DefaultRouter
+
+from .views import (
+    CounterStaffAssignmentViewSet,
+    DisplayBoardView,
+    InstansiViewSet,
+    LayananViewSet,
+    LoketViewSet,
+    MonitorView,
+    QueueParameterViewSet,
+    TicketViewSet,
+)
+
+router = DefaultRouter()
+router.register("instansi", InstansiViewSet, basename="antrean-instansi")
+router.register("tickets", TicketViewSet, basename="antrean-ticket")
+router.register("loket", LoketViewSet, basename="antrean-loket")
+router.register("layanan", LayananViewSet, basename="antrean-layanan")
+router.register("parameters", QueueParameterViewSet, basename="antrean-parameter")
+router.register("staff", CounterStaffAssignmentViewSet, basename="antrean-staff")
+
+urlpatterns = router.urls + [
+    path("monitor/", MonitorView.as_view(), name="antrean-monitor"),
+    path(
+        "display-board/<slug:instansi_key>/",
+        DisplayBoardView.as_view(),
+        name="antrean-display-board",
+    ),
+]
