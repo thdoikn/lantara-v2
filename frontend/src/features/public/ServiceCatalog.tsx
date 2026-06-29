@@ -4,8 +4,8 @@ import PublicNav from "@/components/PublicNav";
 import BatangBanyu from "@/components/BatangBanyu";
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
-  Search, ChevronRight, Clock, Building2, X, Award,
-  ExternalLink, Briefcase, SearchX,
+  Search, ChevronRight, Clock, Building2, X,
+  ExternalLink, SearchX,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "@/lib/api";
@@ -60,29 +60,17 @@ function PermitCard({
           {permit.name}
         </h4>
 
-        {/* What the applicant receives */}
-        {permit.product_name && (
-          <div className="flex items-start gap-1.5 mt-3 text-khatulistiwa-600/80">
-            <Award className="w-3.5 h-3.5 mt-0.5 shrink-0 text-terakota-500" aria-hidden="true" />
-            <span className="text-xs leading-snug line-clamp-2">{permit.product_name}</span>
-          </div>
-        )}
-
         {/* Meta row */}
         <div className="flex items-center gap-3 mt-3 flex-wrap">
           <span className="inline-flex items-center gap-1.5 text-khatulistiwa-500/70 text-xs">
             <Clock className="w-3.5 h-3.5 shrink-0 text-khatulistiwa-400/70" aria-hidden="true" />
             {permit.sla_days} hari kerja
           </span>
-          {permit.oss_covered ? (
+          {permit.oss_covered && (
             <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 text-[11px] font-semibold px-2 py-0.5 rounded-full">
               <ExternalLink className="w-3 h-3" aria-hidden="true" /> via OSS
             </span>
-          ) : permit.is_berusaha ? (
-            <span className="inline-flex items-center gap-1 text-khatulistiwa-700 bg-khatulistiwa-50 border border-khatulistiwa-100 text-[11px] font-semibold px-2 py-0.5 rounded-full">
-              <Briefcase className="w-3 h-3" aria-hidden="true" /> Berusaha
-            </span>
-          ) : null}
+          )}
         </div>
 
         <div className="flex items-center justify-end mt-4 pt-3 border-t border-pertiwi-muted">

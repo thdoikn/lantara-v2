@@ -3,16 +3,26 @@ import { Link, useParams } from "react-router-dom";
 import {
   Clock, FileText, CheckCircle2, ChevronRight,
   ShieldCheck, Scale, AlertCircle, Users, Plus,
-  Sparkles, MessageCircle, CreditCard, Award, ExternalLink,
+  Sparkles, MessageCircle, CreditCard, ExternalLink,
+  Briefcase, Globe, Mail, Instagram, Megaphone,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import PublicNav from "@/components/PublicNav";
 import BatangBanyu from "@/components/BatangBanyu";
 import LantaraLoader from "@/components/LantaraLoader";
 import { useAuthStore } from "@/lib/auth";
-import { WA_LINK, WA_NUMBER_DISPLAY } from "@/lib/contact";
+import { CONTACT_CHANNELS, type ContactChannelKey } from "@/lib/contact";
 import api from "@/lib/api";
 import type { PermitType } from "@/types";
+
+const CONTACT_ICONS: Record<ContactChannelKey, LucideIcon> = {
+  whatsapp: MessageCircle,
+  website: Globe,
+  email: Mail,
+  instagram: Instagram,
+  sp4n: Megaphone,
+};
 
 // Role label translations (Bahasa Indonesia)
 const ROLE_LABELS: Record<string, string> = {
@@ -137,18 +147,16 @@ export default function PermitDetailPage() {
                     <span className="text-amber-200 text-sm font-semibold">Diproses via OSS</span>
                   </div>
                 )}
+                {permit.is_berusaha && !isOss && (
+                  <div
+                    className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-4 py-2"
+                    title="Perizinan berusaha — memerlukan Nomor Induk Berusaha (NIB) dari sistem OSS"
+                  >
+                    <Briefcase className="w-4 h-4 text-khatulistiwa-200" aria-hidden="true" />
+                    <span className="text-khatulistiwa-100 text-sm font-semibold">Perizinan Berusaha · perlu NIB</span>
+                  </div>
+                )}
               </div>
-
-              {/* Produk — what the applicant receives */}
-              {permit.product_name && (
-                <div className="flex items-start gap-2 mt-4 text-khatulistiwa-200/70">
-                  <Award className="w-4 h-4 mt-0.5 shrink-0 text-terakota-400" aria-hidden="true" />
-                  <p className="text-sm leading-snug">
-                    <span className="text-khatulistiwa-300/60">Anda menerima: </span>
-                    <span className="text-white font-medium">{permit.product_name}</span>
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* High-authority CTA button */}
@@ -314,26 +322,36 @@ export default function PermitDetailPage() {
                   )}
                 </div>
 
-                {/* Pengaduan */}
-                {permit.complaint_info && (
-                  <div className="bg-khatulistiwa-900 rounded-2xl p-5 border border-khatulistiwa-700/30">
-                    <div className="flex items-center gap-2 mb-3">
-                      <ShieldCheck className="w-4 h-4 text-terakota-400" aria-hidden="true" />
-                      <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Pengaduan</p>
-                    </div>
-                    <p className="text-khatulistiwa-200/70 text-xs leading-relaxed mb-3">{permit.complaint_info}</p>
-                    <a
-                      href={WA_LINK}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/25 text-emerald-300
-                                 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-emerald-500/25 transition-colors"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                      WhatsApp Satu Nomor IKN · {WA_NUMBER_DISPLAY}
-                    </a>
+                {/* Pengaduan — official channels (structured, not a wall of text) */}
+                <div className="bg-khatulistiwa-900 rounded-2xl p-5 border border-khatulistiwa-700/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ShieldCheck className="w-4 h-4 text-terakota-400" aria-hidden="true" />
+                    <p className="text-terakota-400 text-xs font-bold tracking-[0.15em] uppercase">Pengaduan</p>
                   </div>
-                )}
+                  <ul className="space-y-1.5">
+                    {CONTACT_CHANNELS.map((c) => {
+                      const Icon = CONTACT_ICONS[c.key];
+                      const primary = c.key === "whatsapp";
+                      return (
+                        <li key={c.key}>
+                          <a
+                            href={c.href}
+                            {...(c.external ? { target: "_blank", rel: "noreferrer" } : {})}
+                            className={
+                              primary
+                                ? "flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-emerald-500/25 transition-colors"
+                                : "flex items-center gap-2 px-1 py-1 text-xs text-khatulistiwa-200/70 hover:text-white transition-colors"
+                            }
+                          >
+                            <Icon className={`w-3.5 h-3.5 shrink-0 ${primary ? "" : "text-terakota-400/70"}`} aria-hidden="true" />
+                            <span className={primary ? "" : "text-khatulistiwa-300/45"}>{c.label}</span>
+                            <span className="truncate">{c.value}</span>
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               </div>
 
               {/* Row 2: Dasar Hukum */}
@@ -347,7 +365,7 @@ export default function PermitDetailPage() {
                     {permit.legal_basis.map((lb) => (
                       <div key={lb} className="flex items-start gap-2">
                         <span className="text-terakota-500/60 text-xs mt-0.5 shrink-0">§</span>
-                        <p className="text-khatulistiwa-200/65 text-xs leading-relaxed">{lb}</p>
+                        <p className="text-khatulistiwa-200/65 text-xs leading-relaxed text-justify">{lb}</p>
                       </div>
                     ))}
                   </div>
@@ -419,7 +437,7 @@ export default function PermitDetailPage() {
                               )}
 
                               {stage.instructions && (
-                                <p className="text-khatulistiwa-300/50 text-xs mt-2 leading-relaxed">{stage.instructions}</p>
+                                <p className="text-khatulistiwa-300/50 text-xs mt-2 leading-relaxed text-justify">{stage.instructions}</p>
                               )}
                             </div>
                           </div>

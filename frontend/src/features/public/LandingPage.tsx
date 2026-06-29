@@ -6,12 +6,22 @@ import {
   ArrowRight, Clock, Shield, Smartphone, CheckCircle2,
   ChevronDown, Search, MessageCircle, Building2,
   LayoutDashboard, ShieldCheck, Settings, Info,
+  Globe, Mail, Instagram, Megaphone,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import { getPortals, staffPortals, isStaffWithoutRole } from "@/lib/access";
 import { getSektorVisual } from "@/lib/sektorVisuals";
-import { WA_LINK, WA_NUMBER_DISPLAY } from "@/lib/contact";
+import { CONTACT_CHANNELS, type ContactChannelKey } from "@/lib/contact";
+
+const CONTACT_ICONS: Record<ContactChannelKey, LucideIcon> = {
+  whatsapp: MessageCircle,
+  website: Globe,
+  email: Mail,
+  instagram: Instagram,
+  sp4n: Megaphone,
+};
 import PublicNav from "@/components/PublicNav";
 import BatangBanyu from "@/components/BatangBanyu";
 import type { Sektor } from "@/types";
@@ -365,7 +375,7 @@ function SektorCards({ sektors }: { sektors: Sektor[] }) {
                 className={isFeatured ? "-mt-4" : ""}
               >
                 <Link
-                  to={`/layanan#${sektor.key}`}
+                  to={`/layanan?sektor=${sektor.key}`}
                   className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 ${
                     isFeatured
                       ? "bg-khatulistiwa-800 border-khatulistiwa-600/50 shadow-[0_20px_60px_rgba(24,80,136,0.35)] hover:shadow-[0_28px_80px_rgba(24,80,136,0.5)] hover:-translate-y-2"
@@ -700,10 +710,27 @@ function Footer() {
             <p className="text-white/50 text-sm leading-relaxed max-w-[220px]">
               Otorita Ibu Kota Nusantara<br />Kalimantan Timur, Indonesia
             </p>
-            <a href={WA_LINK} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
-              <MessageCircle className="h-4 w-4 text-terakota-400" aria-hidden="true" />
-              WhatsApp Resmi · {WA_NUMBER_DISPLAY}
-            </a>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-white text-sm font-bold uppercase tracking-wider pb-2 border-b border-terakota-500/50">Kontak &amp; Pengaduan</p>
+            <ul className="grid gap-2.5 text-sm">
+              {CONTACT_CHANNELS.map((c) => {
+                const Icon = CONTACT_ICONS[c.key];
+                return (
+                  <li key={c.key}>
+                    <a
+                      href={c.href}
+                      {...(c.external ? { target: "_blank", rel: "noreferrer" } : {})}
+                      className="inline-flex items-center gap-2 text-white/55 hover:text-white transition-colors"
+                    >
+                      <Icon className="h-4 w-4 text-terakota-400 shrink-0" aria-hidden="true" />
+                      <span className="text-white/40">{c.label}:</span> {c.value}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
 
