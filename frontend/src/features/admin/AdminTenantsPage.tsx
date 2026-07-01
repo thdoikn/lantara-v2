@@ -40,7 +40,7 @@ export default function AdminTenantsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold text-khatulistiwa-900">Tenant MPP</h1>

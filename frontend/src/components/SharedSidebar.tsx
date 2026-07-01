@@ -12,7 +12,7 @@ export interface NavItem {
   badge?: number;
 }
 
-type PortalVariant = "pemohon" | "verifier" | "admin";
+type PortalVariant = "pemohon" | "verifier" | "admin" | "tenant" | "loket";
 
 type VariantStyle = {
   strip: string;
@@ -50,6 +50,23 @@ const VARIANT_STYLES: Record<PortalVariant, VariantStyle> = {
     navActive: "bg-amber-600/20 text-white border border-amber-500/30",
     accent: "text-amber-300",
     dot: "bg-amber-300",
+  },
+  // MPP portals: tenant = blue authority desk, loket = warm terakota counter.
+  tenant: {
+    strip: "bg-khatulistiwa-500",
+    logoBg: "bg-khatulistiwa-600",
+    logoRing: "ring-khatulistiwa-500/30",
+    navActive: "bg-khatulistiwa-600/25 text-white border border-khatulistiwa-500/30",
+    accent: "text-terakota-400",
+    dot: "bg-terakota-400",
+  },
+  loket: {
+    strip: "bg-terakota-500",
+    logoBg: "bg-terakota-600",
+    logoRing: "ring-terakota-500/30",
+    navActive: "bg-terakota-600/25 text-white border border-terakota-500/30",
+    accent: "text-terakota-300",
+    dot: "bg-terakota-300",
   },
 };
 

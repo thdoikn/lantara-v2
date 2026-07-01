@@ -161,7 +161,7 @@ export default function App() {
           <Route
             path="queue-analytics"
             element={
-              <div className="mx-auto max-w-6xl px-6 py-8">
+              <div className="mx-auto max-w-6xl">
                 <QueueAnalytics title="Analitik Antrean MPP" />
               </div>
             }
