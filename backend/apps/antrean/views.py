@@ -385,6 +385,32 @@ class CounterStaffAssignmentViewSet(viewsets.ModelViewSet):
         serializer.save(assigned_by=user)
 
 
+class StaffUserSearchView(APIView):
+    """Candidate loket operators for a tenant admin's picker — users who already
+    hold the loket_operator role (the OIKN admin grants the role; the tenant admin
+    then assigns them to specific lokets)."""
+
+    permission_classes = [IsTenantAdmin]
+
+    def get(self, request):
+        from django.contrib.auth import get_user_model
+
+        from .serializers import StaffUserSerializer
+
+        q = request.query_params.get("q", "").strip()
+        user_model = get_user_model()
+        qs = user_model.objects.filter(
+            is_deleted=False,
+            user_roles__role__key="loket_operator",
+            user_roles__is_active=True,
+        ).distinct()
+        if q:
+            from django.db.models import Q
+
+            qs = qs.filter(Q(email__icontains=q) | Q(full_name__icontains=q))
+        return Response(StaffUserSerializer(qs[:20], many=True).data)
+
+
 class MonitorView(APIView):
     """Supervisor live monitor — per-loket state + per-service queue depth."""
 

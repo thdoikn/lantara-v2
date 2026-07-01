@@ -12,6 +12,7 @@ from .views import (
     LoketViewSet,
     MonitorView,
     QueueParameterViewSet,
+    StaffUserSearchView,
     TicketViewSet,
 )
 
@@ -26,6 +27,7 @@ router.register("admin/instansi", AdminInstansiViewSet, basename="antrean-admin-
 
 urlpatterns = router.urls + [
     path("monitor/", MonitorView.as_view(), name="antrean-monitor"),
+    path("staff-users/", StaffUserSearchView.as_view(), name="antrean-staff-users"),
     path("kiosk/take/", KioskTakeView.as_view(), name="antrean-kiosk-take"),
     path("checkin/", CheckinScanView.as_view(), name="antrean-checkin-scan"),
     path(

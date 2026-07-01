@@ -228,6 +228,9 @@ class QueueParameterSerializer(serializers.ModelSerializer):
 
 class CounterStaffAssignmentSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.full_name", read_only=True)
+    user_email = serializers.EmailField(source="user.email", read_only=True)
+    loket_code = serializers.CharField(source="loket.code", read_only=True)
+    instansi_name = serializers.CharField(source="instansi.name", read_only=True)
 
     class Meta:
         model = CounterStaffAssignment
@@ -235,9 +238,20 @@ class CounterStaffAssignmentSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "user_name",
+            "user_email",
             "instansi",
+            "instansi_name",
             "loket",
+            "loket_code",
             "role_scope",
             "is_active",
             "notes",
         ]
+
+
+class StaffUserSerializer(serializers.Serializer):
+    """Minimal user shape for the tenant admin's operator picker."""
+
+    id = serializers.UUIDField()
+    email = serializers.EmailField()
+    full_name = serializers.CharField()
