@@ -224,12 +224,20 @@ class LoketViewSet(viewsets.ModelViewSet):
         return Response(TicketSerializer(ticket).data)
 
 
+class AdminInstansiViewSet(viewsets.ModelViewSet):
+    """Tenant CRUD (supervisor) — register OIKN directorates + external agencies."""
+
+    permission_classes = [IsMppSupervisor]
+    serializer_class = InstansiSerializer
+    queryset = Instansi.objects.select_related("direktorat").prefetch_related("layanan")
+
+
 class LayananViewSet(viewsets.ModelViewSet):
     """Service CRUD (supervisor/admin)."""
 
     permission_classes = [IsMppSupervisor]
     serializer_class = LayananSerializer
-    queryset = Layanan.objects.select_related("instansi", "permit_type")
+    queryset = Layanan.objects.select_related("instansi")
 
 
 class QueueParameterViewSet(viewsets.ModelViewSet):

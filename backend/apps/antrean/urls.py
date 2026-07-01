@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    AdminInstansiViewSet,
     CounterStaffAssignmentViewSet,
     DisplayBoardView,
     InstansiViewSet,
@@ -19,6 +20,7 @@ router.register("loket", LoketViewSet, basename="antrean-loket")
 router.register("layanan", LayananViewSet, basename="antrean-layanan")
 router.register("parameters", QueueParameterViewSet, basename="antrean-parameter")
 router.register("staff", CounterStaffAssignmentViewSet, basename="antrean-staff")
+router.register("admin/instansi", AdminInstansiViewSet, basename="antrean-admin-instansi")
 
 urlpatterns = router.urls + [
     path("monitor/", MonitorView.as_view(), name="antrean-monitor"),

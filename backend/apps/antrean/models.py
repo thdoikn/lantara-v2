@@ -5,11 +5,10 @@ A SEPARATE bounded context from the permit engine: minutes-long, presence-driven
 counter service vs. the engine's days-long, document-driven izin workflow. A
 ``Loket`` is not a ``WorkflowStage``; the calling pool is not an SLA sweep.
 
-Tenant-agnostic by design (its own ``Instansi``/``Layanan``) so the MPP can serve
-any participating agency (Dukcapil, BPJS, banks, perizinan…), not only Lantara
-izin. The only links to the engine are two OPTIONAL, nullable references — never
-the reverse: ``Layanan.permit_type`` and ``Ticket.submission``. ``engine`` and
-``submissions`` must never import ``apps.antrean``.
+Tenant-agnostic and fully standalone (its own ``Instansi``/``Layanan``): the MPP
+serves any participating tenant — OIKN directorates AND external agencies (BPJS,
+Pajak, banks…). It has NO coupling to the permit engine or submissions; online
+izin is handled entirely online and never enters a queue.
 
 Business rules come from the "Sistem Antrean MPP IKN" planning doc. Per its
 Tabel 8, the numeric parameters are configurable (see ``QueueParameter`` and the
@@ -30,17 +29,25 @@ ACTIVE_TICKET_STATUSES = ("reserved", "checked_in", "in_pool", "called", "servin
 
 
 class Instansi(TimestampedModel):
-    """A participating MPP agency that owns counters and services.
+    """A participating MPP tenant that owns counters and services.
 
-    Tenant-agnostic: NOT a foreign key to the permit engine. ``direktorat`` is an
-    optional OIKN grounding, nullable because non-OIKN tenants (Baznas, BRI…)
-    have no Direktorat.
+    Tenant-agnostic: NOT a foreign key to the permit engine. Tenants are either
+    OIKN directorates (``owner_type=oikn``, grounded via ``direktorat``) or
+    external agencies (``owner_type=external`` — BPJS, Pajak, banks…). External
+    tenants get queue orchestration only; no downstream integration (CLAUDE.md §9).
     """
+
+    class OwnerType(models.TextChoices):
+        OIKN = "oikn", "Otorita IKN"
+        EXTERNAL = "external", "Instansi Eksternal"
 
     key = models.SlugField(max_length=120, unique=True)
     name = models.CharField(max_length=300)
     short_name = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
+    owner_type = models.CharField(max_length=10, choices=OwnerType.choices, default=OwnerType.OIKN)
+    logo = models.ImageField(upload_to="mpp/tenants/", null=True, blank=True)
+    # Only for OIKN tenants — the directorate that runs this counter.
     direktorat = models.ForeignKey(
         "reference.Direktorat",
         null=True,

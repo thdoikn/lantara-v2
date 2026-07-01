@@ -13,8 +13,8 @@ from .models import (
 
 @admin.register(Instansi)
 class InstansiAdmin(admin.ModelAdmin):
-    list_display = ("name", "key", "direktorat", "order", "is_active")
-    list_filter = ("is_active",)
+    list_display = ("name", "key", "owner_type", "direktorat", "order", "is_active")
+    list_filter = ("owner_type", "is_active")
     search_fields = ("name", "key", "short_name")
     prepopulated_fields = {"key": ("name",)}
 

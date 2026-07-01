@@ -40,6 +40,7 @@ class LayananSerializer(serializers.ModelSerializer):
 
 class InstansiSerializer(serializers.ModelSerializer):
     layanan = LayananSerializer(many=True, read_only=True)
+    logo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Instansi
@@ -49,11 +50,21 @@ class InstansiSerializer(serializers.ModelSerializer):
             "name",
             "short_name",
             "description",
+            "owner_type",
+            "logo",
+            "logo_url",
             "direktorat",
             "order",
             "is_active",
             "layanan",
         ]
+
+    def get_logo_url(self, obj):
+        if not obj.logo:
+            return None
+        url = obj.logo.url
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request else url
 
 
 class LoketSerializer(serializers.ModelSerializer):
