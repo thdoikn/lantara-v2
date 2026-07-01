@@ -1,4 +1,4 @@
-import { Settings, LayoutGrid, Users, BarChart3, Cpu } from "lucide-react";
+import { Settings, LayoutGrid, Users, BarChart3, Cpu, Building2 } from "lucide-react";
 import PortalShell from "@/components/PortalShell";
 import type { NavItem } from "@/components/SharedSidebar";
 import type { QuickAction } from "@/components/PortalShell";
@@ -7,6 +7,7 @@ const NAV: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutGrid, exact: true },
   { to: "/admin/engine", label: "Engine Builder", icon: Settings },
   { to: "/admin/users", label: "Pengguna & RBAC", icon: Users },
+  { to: "/admin/tenants", label: "Tenant MPP", icon: Building2 },
   { to: "/admin/analytics", label: "Analitik", icon: BarChart3 },
 ];
 

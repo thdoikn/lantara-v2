@@ -401,9 +401,10 @@ class CounterStaffAssignmentViewSet(viewsets.ModelViewSet):
 
 
 class StaffUserSearchView(APIView):
-    """Candidate loket operators for a tenant admin's picker — users who already
-    hold the loket_operator role (the OIKN admin grants the role; the tenant admin
-    then assigns them to specific lokets)."""
+    """Candidate MPP staff for the assignment pickers — users who already hold a
+    given role. ?role=loket_operator (tenant admin's operator picker, default) or
+    ?role=tenant_admin (OIKN admin's tenant-admin picker). The OIKN admin grants
+    the role; the assignment then scopes them to a tenant/loket."""
 
     permission_classes = [IsTenantAdmin]
 
@@ -412,11 +413,14 @@ class StaffUserSearchView(APIView):
 
         from .serializers import StaffUserSerializer
 
+        role = request.query_params.get("role", "loket_operator")
+        if role not in ("loket_operator", "tenant_admin"):
+            role = "loket_operator"
         q = request.query_params.get("q", "").strip()
         user_model = get_user_model()
         qs = user_model.objects.filter(
             is_deleted=False,
-            user_roles__role__key="loket_operator",
+            user_roles__role__key=role,
             user_roles__is_active=True,
         ).distinct()
         if q:

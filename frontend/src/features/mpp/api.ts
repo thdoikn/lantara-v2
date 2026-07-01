@@ -243,6 +243,23 @@ export async function updateInstansi(id: string, patch: Partial<Instansi>): Prom
   return data;
 }
 
+export interface InstansiInput {
+  key: string;
+  name: string;
+  short_name?: string;
+  owner_type: "oikn" | "external";
+  direktorat?: string | null;
+}
+
+export async function createInstansi(input: InstansiInput): Promise<Instansi> {
+  const { data } = await api.post("/antrean/admin/instansi/", input);
+  return data;
+}
+
+export async function deleteInstansi(id: string): Promise<void> {
+  await api.delete(`/antrean/admin/instansi/${id}/`);
+}
+
 export interface LoketInput {
   instansi: string;
   code: string;
@@ -296,7 +313,10 @@ export async function deleteStaff(id: string): Promise<void> {
   await api.delete(`/antrean/staff/${id}/`);
 }
 
-export async function searchStaffUsers(q: string): Promise<StaffUser[]> {
-  const { data } = await api.get("/antrean/staff-users/", { params: { q } });
+export async function searchStaffUsers(
+  q: string,
+  role: "loket_operator" | "tenant_admin" = "loket_operator",
+): Promise<StaffUser[]> {
+  const { data } = await api.get("/antrean/staff-users/", { params: { q, role } });
   return data;
 }
