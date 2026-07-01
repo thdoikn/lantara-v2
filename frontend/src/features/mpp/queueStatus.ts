@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import type { Ticket, TicketStatus } from "./api";
 
-export type Tone = "amber" | "royal" | "emerald" | "slate" | "danger";
+// Tones map onto the app's Batang Banyu palette (khatulistiwa blue + terakota
+// gold + status colors) so the queue screens match Katalog Perizinan et al.
+export type Tone = "warm" | "blue" | "success" | "muted" | "danger";
 
 export interface StatusMeta {
   label: string;
@@ -26,39 +28,39 @@ export interface StatusMeta {
 export const STATUS_META: Record<TicketStatus, StatusMeta> = {
   reserved: {
     label: "Belum Check-in",
-    tone: "amber",
+    tone: "warm",
     icon: Clock,
     hint: "Nomor Anda dipesan. Lakukan check-in saat tiba di MPP agar masuk antrean.",
     urgent: true,
   },
   checked_in: {
     label: "Sudah Check-in",
-    tone: "royal",
+    tone: "blue",
     icon: Users,
     hint: "Anda telah check-in dan masuk kolam panggil.",
   },
   in_pool: {
     label: "Dalam Antrean",
-    tone: "royal",
+    tone: "blue",
     icon: Users,
     hint: "Anda dalam antrean. Mohon tunggu di area tunggu.",
   },
   called: {
     label: "Sedang Dipanggil",
-    tone: "emerald",
+    tone: "success",
     icon: BellRing,
     hint: "Giliran Anda! Segera menuju loket.",
     urgent: true,
   },
   serving: {
     label: "Sedang Dilayani",
-    tone: "royal",
+    tone: "blue",
     icon: Loader,
     hint: "Anda sedang dilayani di loket.",
   },
   served: {
     label: "Selesai",
-    tone: "emerald",
+    tone: "success",
     icon: CheckCircle2,
     hint: "Layanan selesai. Terima kasih atas kunjungan Anda.",
   },
@@ -70,47 +72,47 @@ export const STATUS_META: Record<TicketStatus, StatusMeta> = {
   },
   expired: {
     label: "Kedaluwarsa",
-    tone: "slate",
+    tone: "muted",
     icon: CircleSlash,
     hint: "Nomor kedaluwarsa. Silakan ambil nomor baru bila masih diperlukan.",
   },
   cancelled: {
     label: "Dibatalkan",
-    tone: "slate",
+    tone: "muted",
     icon: CircleSlash,
     hint: "Nomor telah dibatalkan.",
   },
 };
 
-/** Tailwind class bundles per tone — text/bg/border/ring for badges + accents. */
-export const TONE_CLASSES: Record<Tone, { text: string; bg: string; badge: string; ring: string }> = {
-  amber: {
-    text: "text-gold-500",
-    bg: "bg-gold-500",
-    badge: "bg-gold-500/15 text-gold-500",
-    ring: "ring-gold-500/30",
+/** Class bundles per tone (good contrast on the warm/light card surfaces). */
+export const TONE_CLASSES: Record<Tone, { text: string; solid: string; badge: string; ring: string }> = {
+  warm: {
+    text: "text-amber-700",
+    solid: "bg-terakota-500",
+    badge: "bg-terakota-500/20 text-amber-800",
+    ring: "ring-terakota-400/40",
   },
-  royal: {
-    text: "text-royal-600",
-    bg: "bg-royal-600",
-    badge: "bg-royal-100 text-royal-700",
-    ring: "ring-royal-500/30",
+  blue: {
+    text: "text-khatulistiwa-700",
+    solid: "bg-khatulistiwa-600",
+    badge: "bg-khatulistiwa-100 text-khatulistiwa-700",
+    ring: "ring-khatulistiwa-500/30",
   },
-  emerald: {
+  success: {
     text: "text-status-success",
-    bg: "bg-status-success",
+    solid: "bg-status-success",
     badge: "bg-status-success/15 text-status-success",
     ring: "ring-status-success/30",
   },
-  slate: {
-    text: "text-ink-faint",
-    bg: "bg-ink-faint",
-    badge: "bg-ink-faint/15 text-ink-muted",
-    ring: "ring-ink-faint/20",
+  muted: {
+    text: "text-khatulistiwa-400",
+    solid: "bg-khatulistiwa-300",
+    badge: "bg-khatulistiwa-100 text-khatulistiwa-500",
+    ring: "ring-khatulistiwa-200",
   },
   danger: {
     text: "text-status-danger",
-    bg: "bg-status-danger",
+    solid: "bg-status-danger",
     badge: "bg-status-danger/10 text-status-danger",
     ring: "ring-status-danger/30",
   },

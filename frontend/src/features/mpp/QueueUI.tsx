@@ -34,13 +34,13 @@ export function QueueStepper({ ticket }: { ticket: Ticket }) {
   const steps = stepsFor(ticket);
   const current = currentStepIndex(ticket);
   const tone: Tone = STATUS_META[ticket.status].tone;
-  const activeClass = TONE_CLASSES[tone];
+  const active = TONE_CLASSES[tone];
 
   return (
     <ol className="flex items-center">
       {steps.map((step, i) => {
         const done = i < current;
-        const active = i === current;
+        const isActive = i === current;
         const Icon = step.icon;
         return (
           <li key={step.key} className="flex flex-1 items-center last:flex-none">
@@ -49,17 +49,17 @@ export function QueueStepper({ ticket }: { ticket: Ticket }) {
                 className={[
                   "flex h-9 w-9 items-center justify-center rounded-full ring-2 transition-colors",
                   done
-                    ? "bg-royal-600 text-white ring-royal-600"
-                    : active
-                      ? `${activeClass.bg} text-white ring-4 ${activeClass.ring}`
-                      : "bg-white text-ink-faint ring-royal-100",
+                    ? "bg-khatulistiwa-600 text-white ring-khatulistiwa-600"
+                    : isActive
+                      ? `${active.solid} text-white ring-4 ${active.ring}`
+                      : "bg-white text-khatulistiwa-400 ring-pertiwi-muted",
                 ].join(" ")}
               >
                 {done ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
               </div>
               <span
                 className={`text-[10px] font-medium sm:text-xs ${
-                  active ? "text-ink" : "text-ink-faint"
+                  isActive ? "text-khatulistiwa-900" : "text-khatulistiwa-400"
                 }`}
               >
                 {step.label}
@@ -68,7 +68,7 @@ export function QueueStepper({ ticket }: { ticket: Ticket }) {
             {i < steps.length - 1 && (
               <div
                 className={`mx-1 h-0.5 flex-1 rounded-full sm:mx-2 ${
-                  i < current ? "bg-royal-600" : "bg-royal-100"
+                  i < current ? "bg-khatulistiwa-600" : "bg-pertiwi-muted"
                 }`}
               />
             )}
@@ -83,8 +83,10 @@ export function QueueStepper({ ticket }: { ticket: Ticket }) {
 export function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="bg-white px-4 py-4">
-      <p className="text-xs text-ink-faint">{label}</p>
-      <p className={`mt-1 font-semibold ${accent ? "text-royal-700" : "text-ink"}`}>{value}</p>
+      <p className="text-xs text-khatulistiwa-400">{label}</p>
+      <p className={`mt-1 font-semibold ${accent ? "text-khatulistiwa-700" : "text-khatulistiwa-900"}`}>
+        {value}
+      </p>
     </div>
   );
 }

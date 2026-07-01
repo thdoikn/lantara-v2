@@ -10,6 +10,7 @@ import {
   Loader2,
   Plus,
 } from "lucide-react";
+import PublicNav from "@/components/PublicNav";
 import {
   getTicket,
   checkInTicket,
@@ -75,17 +76,18 @@ export default function MyTicketPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="mx-auto max-w-lg px-4 py-6">
+    <main className="min-h-screen bg-pertiwi-warm">
+      <PublicNav />
+      <div className="mx-auto max-w-lg px-4 pb-16 pt-24">
         <Link
           to="/antrean"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-royal-600 hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-khatulistiwa-600 hover:underline"
         >
           <ArrowLeft className="h-4 w-4" /> Katalog Antrean
         </Link>
 
         {isLoading || !ticket ? (
-          <div className="mt-10 flex flex-col items-center gap-3 text-ink-muted">
+          <div className="mt-10 flex flex-col items-center gap-3 text-khatulistiwa-500/70">
             <Loader2 className="h-6 w-6 animate-spin" />
             Memuat tiket…
           </div>
@@ -107,7 +109,7 @@ export default function MyTicketPage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -115,9 +117,7 @@ export default function MyTicketPage() {
 function GuidanceBanner({ ticket }: { ticket: Ticket }) {
   const meta = STATUS_META[ticket.status];
   const tone = TONE_CLASSES[meta.tone];
-  const countdown = useCountdown(
-    ticket.status === "reserved" ? ticket.estimated_call_at : null,
-  );
+  const countdown = useCountdown(ticket.status === "reserved" ? ticket.estimated_call_at : null);
   const Icon = meta.icon;
 
   let headline = meta.hint;
@@ -136,7 +136,9 @@ function GuidanceBanner({ ticket }: { ticket: Ticket }) {
         meta.urgent ? "ring-2 " + tone.ring : ""
       }`}
     >
-      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${meta.urgent ? "animate-pulse motion-reduce:animate-none" : ""}`} />
+      <Icon
+        className={`mt-0.5 h-5 w-5 shrink-0 ${meta.urgent ? "animate-pulse motion-reduce:animate-none" : ""}`}
+      />
       <p className="text-sm font-medium leading-snug">{headline}</p>
     </div>
   );
@@ -168,16 +170,16 @@ function ActionBar({
 
   if (isTerminal) {
     return (
-      <div className="rounded-2xl border border-royal-100 bg-white p-5 text-center shadow-sm">
+      <div className="rounded-2xl border border-pertiwi-muted bg-white p-5 text-center shadow-sm">
         {ticket.status === "served" ? (
           <CheckCircle2 className="mx-auto h-8 w-8 text-status-success" />
         ) : (
-          <XCircle className="mx-auto h-8 w-8 text-ink-faint" />
+          <XCircle className="mx-auto h-8 w-8 text-khatulistiwa-400" />
         )}
-        <p className="mt-2 text-sm text-ink-muted">{STATUS_META[ticket.status].hint}</p>
+        <p className="mt-2 text-sm text-khatulistiwa-600">{STATUS_META[ticket.status].hint}</p>
         <button
           onClick={onNew}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-royal-600 px-5 py-2.5 font-semibold text-white hover:bg-royal-700"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-khatulistiwa-600 px-5 py-2.5 font-semibold text-white hover:bg-khatulistiwa-500"
         >
           <Plus className="h-4 w-4" /> Ambil Nomor Baru
         </button>
@@ -191,7 +193,7 @@ function ActionBar({
         <button
           onClick={onCheckIn}
           disabled={checkinBusy}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-royal-600 px-4 py-3.5 text-base font-semibold text-white shadow-glow-royal transition hover:bg-royal-700 disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-khatulistiwa-600 px-4 py-3.5 text-base font-semibold text-white shadow-lg shadow-khatulistiwa-600/25 transition hover:bg-khatulistiwa-500 disabled:opacity-60"
         >
           <MapPin className="h-5 w-5" />
           {checkinBusy ? "Memproses…" : "Check-in di Lokasi"}
@@ -231,7 +233,7 @@ function SecondaryButton({
     <button
       onClick={onClick}
       disabled={busy}
-      className="flex items-center justify-center gap-2 rounded-xl border border-royal-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink-muted transition hover:bg-royal-50 disabled:opacity-60"
+      className="flex items-center justify-center gap-2 rounded-xl border border-pertiwi-muted bg-white px-4 py-2.5 text-sm font-semibold text-khatulistiwa-700 transition hover:bg-pertiwi-warm disabled:opacity-60"
     >
       <Icon className="h-4 w-4" /> {label}
     </button>

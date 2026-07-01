@@ -1,16 +1,20 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import {
   Search,
-  ArrowRight,
+  X,
+  ChevronRight,
   Users,
   Clock,
-  ArrowLeft,
+  Building2,
   MonitorSmartphone,
-  Loader2,
-  Ticket as TicketIcon,
+  SearchX,
 } from "lucide-react";
+import PublicNav from "@/components/PublicNav";
+import BatangBanyu from "@/components/BatangBanyu";
+import { cn } from "@/lib/cn";
 import { listInstansi, takeTicket, type Instansi, type Layanan } from "./api";
 import { errMsg } from "./queueStatus";
 import { useAuthStore } from "@/lib/auth";
@@ -18,11 +22,10 @@ import { toast } from "@/lib/toast";
 
 const CATEGORY_LABEL: Record<string, string> = { cepat: "Cepat", sedang: "Sedang", lama: "Lama" };
 
-/** Busyness label + tone from the live waiting count. */
 function busyness(waiting: number): { label: string; cls: string } {
   if (waiting === 0) return { label: "Tidak ada antrean", cls: "text-status-success" };
   if (waiting <= 5) return { label: "Lengang", cls: "text-status-success" };
-  if (waiting <= 15) return { label: "Cukup ramai", cls: "text-gold-500" };
+  if (waiting <= 15) return { label: "Cukup ramai", cls: "text-amber-700" };
   return { label: "Ramai", cls: "text-status-danger" };
 }
 
@@ -32,6 +35,19 @@ export default function QueueCatalogPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [activeTenant, setActiveTenant] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      const tag = (document.activeElement as HTMLElement)?.tagName;
+      if (e.key === "/" && tag !== "INPUT" && tag !== "TEXTAREA") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const { data: tenants, isLoading } = useQuery({
     queryKey: ["antrean", "instansi"],
@@ -49,9 +65,9 @@ export default function QueueCatalogPage() {
     onError: (e) => toast.error(errMsg(e)),
   });
 
+  const q = query.trim().toLowerCase();
   const visible = useMemo(() => {
     if (!tenants) return [];
-    const q = query.trim().toLowerCase();
     return tenants
       .filter((t) => !activeTenant || t.key === activeTenant)
       .map((t) => ({
@@ -63,7 +79,9 @@ export default function QueueCatalogPage() {
           : t.layanan,
       }))
       .filter((t) => t.layanan.length > 0);
-  }, [tenants, activeTenant, query]);
+  }, [tenants, activeTenant, q]);
+
+  const totalServices = (tenants ?? []).reduce((n, t) => n + t.layanan.length, 0);
 
   function onTake(l: Layanan) {
     if (!isAuthenticated) {
@@ -75,111 +93,153 @@ export default function QueueCatalogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-16">
-      {/* Hero */}
-      <header className="relative overflow-hidden bg-gradient-royal text-white">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-gold-500/20 blur-3xl" />
-        <div className="relative mx-auto max-w-5xl px-4 pb-8 pt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-royal-100 hover:text-white"
+    <main id="main-content" className="min-h-screen bg-pertiwi-warm">
+      <PublicNav />
+
+      {/* ── Dark hero header ── */}
+      <div className="relative overflow-hidden bg-gradient-hero">
+        <BatangBanyu variant="fill" opacity={0.05} className="text-terakota-400" />
+        <div
+          className="absolute -right-20 -top-20 h-96 w-96 opacity-[0.04] pointer-events-none"
+          aria-hidden="true"
+        >
+          <div className="h-full w-full rounded-full border-[40px] border-terakota-500" />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-6xl px-8 pb-12 pt-28">
+          <nav
+            className="mb-6 flex items-center gap-2 text-xs text-khatulistiwa-300/50"
+            aria-label="Breadcrumb"
           >
-            <ArrowLeft className="h-4 w-4" /> Beranda
-          </Link>
-          <div className="mt-4 flex items-center gap-2">
-            <TicketIcon className="h-6 w-6 text-gold-500" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-royal-200">
-              Mal Pelayanan Publik IKN
-            </span>
+            <Link to="/" className="transition-colors hover:text-terakota-400">
+              Lantara
+            </Link>
+            <span aria-hidden="true">/</span>
+            <span className="text-white/60">Antrean MPP</span>
+          </nav>
+
+          <div className="max-w-2xl">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-terakota-400">
+              MAL PELAYANAN PUBLIK IKN
+            </p>
+            <h1 className="mb-4 font-display text-5xl font-black leading-tight text-white md:text-6xl">
+              Ambil Nomor
+              <br />
+              Antrean
+            </h1>
+            <p className="text-lg text-khatulistiwa-200/60">
+              {totalServices ? `${totalServices} ` : ""}layanan dari instansi OIKN &amp; mitra.
+              Ambil nomor dari ponsel, pantau estimasi, lalu check-in saat tiba.
+            </p>
           </div>
-          <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">Ambil Nomor Antrean</h1>
-          <p className="mt-2 max-w-2xl text-royal-100">
-            Pilih instansi dan layanan yang Anda tuju. Ambil nomor dari ponsel, pantau estimasi,
-            lalu check-in saat tiba di lokasi.
-          </p>
 
           {/* Search */}
-          <div className="mt-5 flex max-w-xl items-center gap-2 rounded-2xl bg-white/95 px-4 py-3 shadow-lg">
-            <Search className="h-5 w-5 text-ink-faint" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari layanan… (mis. KTP, BPJS, kesehatan)"
-              className="w-full bg-transparent text-ink outline-none placeholder:text-ink-faint"
-              aria-label="Cari layanan"
-            />
+          <div className="relative mt-8 max-w-2xl">
+            <div className="flex items-center gap-3 rounded-2xl border border-white/[0.15] bg-white/[0.08] px-5 py-4 transition-all focus-within:border-terakota-400/60 focus-within:bg-white/[0.12]">
+              <Search className="h-5 w-5 shrink-0 text-white/40" aria-hidden="true" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cari layanan… (mis. KTP, BPJS, kesehatan)"
+                className="flex-1 bg-transparent text-base text-white outline-none placeholder-white/30"
+                aria-label="Cari layanan antrean"
+              />
+              {query ? (
+                <button
+                  onClick={() => {
+                    setQuery("");
+                    inputRef.current?.focus();
+                  }}
+                  className="shrink-0 text-white/40 transition-colors hover:text-white"
+                  aria-label="Hapus pencarian"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              ) : (
+                <kbd className="shrink-0 rounded-md border border-white/10 px-2 py-1 font-mono text-xs text-white/20">
+                  /
+                </kbd>
+              )}
+            </div>
           </div>
 
           <Link
             to="/antrean/kiosk"
-            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-royal-100 hover:text-white"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-khatulistiwa-200/70 transition-colors hover:text-terakota-400"
           >
             <MonitorSmartphone className="h-4 w-4" /> Di lokasi? Gunakan mode anjungan (walk-in)
           </Link>
         </div>
-      </header>
 
-      <div className="mx-auto max-w-5xl px-4">
-        {/* Tenant filter */}
-        {!isLoading && tenants && (
-          <div className="sticky top-0 z-10 -mx-4 flex gap-2 overflow-x-auto bg-surface/90 px-4 py-3 backdrop-blur">
-            <Pill active={activeTenant === null} onClick={() => setActiveTenant(null)}>
-              Semua
-            </Pill>
-            {tenants.map((t) => (
-              <Pill key={t.id} active={activeTenant === t.key} onClick={() => setActiveTenant(t.key)}>
-                {t.short_name || t.name}
-              </Pill>
-            ))}
+        {/* Curved wave transition to cream */}
+        <div className="relative h-8 text-pertiwi-warm" aria-hidden="true">
+          <svg
+            viewBox="0 0 1440 32"
+            className="absolute bottom-0 w-full"
+            preserveAspectRatio="none"
+            style={{ height: "32px" }}
+          >
+            <path d="M0,32 L0,0 Q720,32 1440,0 L1440,32 Z" fill="currentColor" />
+          </svg>
+        </div>
+      </div>
+
+      {/* ── Sticky tenant filter ── */}
+      {!isLoading && tenants && (
+        <div className="sticky top-16 z-20 border-b border-pertiwi-muted bg-pertiwi-warm">
+          <div className="mx-auto max-w-6xl px-8 py-4">
+            <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+              {[{ key: null, name: "Semua" }, ...tenants.map((t) => ({ key: t.key, name: t.short_name || t.name }))].map(
+                (t) => {
+                  const active = t.key === activeTenant;
+                  return (
+                    <button
+                      key={t.key ?? "all"}
+                      onClick={() => setActiveTenant(t.key)}
+                      className={cn(
+                        "flex-shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200",
+                        active
+                          ? "bg-khatulistiwa-600 text-white shadow-[0_4px_12px_rgba(24,80,136,0.35)]"
+                          : "border border-pertiwi-muted bg-white text-khatulistiwa-700 shadow-sm hover:border-khatulistiwa-300 hover:text-khatulistiwa-600",
+                      )}
+                    >
+                      {t.name}
+                    </button>
+                  );
+                },
+              )}
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
+      {/* ── Body ── */}
+      <div className="mx-auto max-w-6xl px-8 py-10">
         {isLoading ? (
-          <div className="mt-10 flex flex-col items-center gap-3 text-ink-muted">
-            <Loader2 className="h-6 w-6 animate-spin" /> Memuat layanan…
-          </div>
+          <p className="text-khatulistiwa-500/70">Memuat layanan…</p>
         ) : visible.length === 0 ? (
-          <p className="mt-16 text-center text-ink-muted">
-            Tidak ada layanan yang cocok dengan pencarian Anda.
-          </p>
+          <div className="py-20 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-khatulistiwa-100">
+              <SearchX className="h-8 w-8 text-khatulistiwa-400" aria-hidden="true" />
+            </div>
+            <h2 className="font-display text-xl font-bold text-khatulistiwa-900">
+              Tidak ada layanan yang cocok
+            </h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-khatulistiwa-500/70">
+              Coba kata kunci lain atau pilih instansi lain.
+            </p>
+          </div>
         ) : (
-          <div className="mt-4 space-y-8">
+          <div className="space-y-14">
             {visible.map((tenant) => (
-              <TenantSection
-                key={tenant.id}
-                tenant={tenant}
-                onTake={onTake}
-                busy={take.isPending}
-              />
+              <TenantSection key={tenant.id} tenant={tenant} onTake={onTake} busy={take.isPending} />
             ))}
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function Pill({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-        active
-          ? "bg-royal-600 text-white shadow-sm"
-          : "border border-royal-200 bg-white text-ink-muted hover:bg-royal-50"
-      }`}
-    >
-      {children}
-    </button>
+    </main>
   );
 }
 
@@ -193,23 +253,49 @@ function TenantSection({
   busy: boolean;
 }) {
   return (
-    <section>
-      <div className="mb-3 flex items-center gap-3">
-        <TenantAvatar tenant={tenant} />
-        <div>
-          <h2 className="font-display text-lg font-semibold text-ink">{tenant.name}</h2>
-          <span
-            className={`text-xs font-medium ${
-              tenant.owner_type === "oikn" ? "text-royal-600" : "text-gold-500"
-            }`}
-          >
-            {tenant.owner_type === "oikn" ? "Otorita IKN" : "Instansi Eksternal"}
-          </span>
+    <section aria-labelledby={`tenant-${tenant.key}`} className="scroll-mt-32">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex min-w-0 items-center gap-4">
+          <TenantAvatar tenant={tenant} />
+          <div className="min-w-0">
+            <h2
+              id={`tenant-${tenant.key}`}
+              className="truncate font-display text-2xl font-black text-khatulistiwa-900"
+            >
+              {tenant.name}
+            </h2>
+            <p className="truncate text-sm text-khatulistiwa-500/70">
+              {tenant.owner_type === "oikn" ? "Otorita IKN" : "Instansi Eksternal"}
+            </p>
+          </div>
         </div>
+        <span className="shrink-0 rounded-full bg-khatulistiwa-800 px-4 py-2 text-sm font-bold text-terakota-300">
+          {tenant.layanan.length} layanan
+        </span>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {tenant.layanan.map((l) => (
-          <ServiceCard key={l.id} layanan={l} onTake={() => onTake(l)} busy={busy} />
+
+      <div
+        className="mb-6 h-px bg-gradient-to-r from-khatulistiwa-800/30 via-terakota-500/20 to-transparent"
+        aria-hidden="true"
+      />
+
+      <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {tenant.layanan.map((l, i) => (
+          <motion.div
+            key={l.id}
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: Math.min(i * 0.03, 0.3) }}
+            className="h-full"
+          >
+            <ServiceCard
+              layanan={l}
+              external={tenant.owner_type === "external"}
+              onTake={() => onTake(l)}
+              busy={busy}
+            />
+          </motion.div>
         ))}
       </div>
     </section>
@@ -222,69 +308,75 @@ function TenantAvatar({ tenant }: { tenant: Instansi }) {
       <img
         src={tenant.logo_url}
         alt=""
-        className="h-11 w-11 rounded-xl object-contain ring-1 ring-royal-100"
+        className="h-12 w-12 rounded-2xl object-contain ring-1 ring-pertiwi-muted"
       />
     );
   }
-  const initials = (tenant.short_name || tenant.name)
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
   return (
-    <div
-      className={`flex h-11 w-11 items-center justify-center rounded-xl font-display font-bold text-white ${
-        tenant.owner_type === "oikn" ? "bg-royal-600" : "bg-gold-500"
-      }`}
-    >
-      {initials}
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-khatulistiwa-800 shadow-md">
+      <Building2
+        className={`h-6 w-6 ${tenant.owner_type === "oikn" ? "text-terakota-400" : "text-terakota-300"}`}
+        aria-hidden="true"
+      />
     </div>
   );
 }
 
 function ServiceCard({
   layanan,
+  external,
   onTake,
   busy,
 }: {
   layanan: Layanan;
+  external: boolean;
   onTake: () => void;
   busy: boolean;
 }) {
   const b = busyness(layanan.waiting);
   const estWait = layanan.waiting * layanan.avg_minutes;
   return (
-    <div className="group flex flex-col rounded-2xl border border-royal-100 bg-white p-4 shadow-sm transition hover:border-royal-300 hover:shadow-md">
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-semibold text-ink">{layanan.name}</p>
-        <span className="shrink-0 rounded-full bg-royal-50 px-2 py-0.5 text-[10px] font-medium text-royal-600">
-          {CATEGORY_LABEL[layanan.category]}
-        </span>
-      </div>
+    <div
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-pertiwi-muted bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-khatulistiwa-300 hover:shadow-lg"
+    >
+      <div
+        className={`h-1 w-full shrink-0 ${external ? "bg-terakota-500" : "bg-khatulistiwa-600"}`}
+        aria-hidden="true"
+      />
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="font-display text-base font-semibold leading-snug text-khatulistiwa-900">
+            {layanan.name}
+          </h4>
+          <span className="shrink-0 rounded-full bg-khatulistiwa-50 px-2 py-0.5 text-[10px] font-semibold text-khatulistiwa-600">
+            {CATEGORY_LABEL[layanan.category]}
+          </span>
+        </div>
 
-      <div className="mt-3 flex items-center gap-4 text-xs">
-        <span className="inline-flex items-center gap-1 text-ink-muted">
-          <Users className="h-3.5 w-3.5" /> {layanan.waiting} antre
-        </span>
-        <span className="inline-flex items-center gap-1 text-ink-muted">
-          <Clock className="h-3.5 w-3.5" /> ± {layanan.avg_minutes} mnt/org
-        </span>
-      </div>
-      <div className="mt-1.5 flex items-center justify-between">
-        <span className={`text-xs font-medium ${b.cls}`}>{b.label}</span>
-        {layanan.waiting > 0 && (
-          <span className="text-[11px] text-ink-faint">est. tunggu ± {estWait} mnt</span>
-        )}
-      </div>
+        <div className="mt-3 flex items-center gap-4 text-xs text-khatulistiwa-500/80">
+          <span className="inline-flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 text-khatulistiwa-400/70" /> {layanan.waiting} antre
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 text-khatulistiwa-400/70" /> ± {layanan.avg_minutes} mnt
+          </span>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between">
+          <span className={`text-xs font-semibold ${b.cls}`}>{b.label}</span>
+          {layanan.waiting > 0 && (
+            <span className="text-[11px] text-khatulistiwa-400">est. ± {estWait} mnt</span>
+          )}
+        </div>
 
-      <button
-        onClick={onTake}
-        disabled={busy}
-        className="mt-4 flex items-center justify-center gap-1.5 rounded-xl bg-royal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-royal-700 disabled:opacity-60"
-      >
-        Ambil Nomor <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-      </button>
+        <button
+          onClick={onTake}
+          disabled={busy}
+          className="mt-4 flex items-center justify-center gap-1.5 rounded-xl bg-khatulistiwa-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-khatulistiwa-500 disabled:opacity-60"
+        >
+          Ambil Nomor
+          <ChevronRight className="h-4 w-4 transition-all group-hover:translate-x-0.5" />
+        </button>
+      </div>
     </div>
   );
 }
