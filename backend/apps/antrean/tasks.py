@@ -14,6 +14,32 @@ def _today():
     return timezone.localtime().date()
 
 
+@shared_task(bind=True, max_retries=2)
+def generate_ticket_pdf(self, ticket_id: str, send_email: bool = True):
+    """Render the ticket PDF (number + QR), store it to MinIO, and optionally
+    email it to the ticket's delivery address."""
+    from django.core.files.base import ContentFile
+
+    from apps.antrean.models import Ticket
+
+    from .email import send_ticket_email
+    from .pdf import render_ticket_pdf
+
+    try:
+        ticket = Ticket.objects.select_related("layanan__instansi", "applicant").get(id=ticket_id)
+    except Ticket.DoesNotExist:
+        return
+    try:
+        pdf_bytes = render_ticket_pdf(ticket)
+        ticket.pdf_file.save(
+            f"tiket-{ticket.number}-{ticket.id}.pdf", ContentFile(pdf_bytes), save=True
+        )
+        if send_email and ticket.delivery_email:
+            send_ticket_email(ticket)
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=15)
+
+
 @shared_task
 def recompute_estimates():
     """Refresh estimated_call_at + check-in deadlines for live tickets and push
@@ -131,11 +157,7 @@ def notify_position_threshold():
                 notif_type=Notification.NotifType.ANTREAN_ALMOST_TURN,
                 title=f"Tinggal {ahead} nomor lagi",
                 body=f"Nomor {t.number} hampir dipanggil. Mohon bersiap di area tunggu.",
-                action_url=(
-                    f"/portal/submissions/{t.submission_id}/antrean"
-                    if t.submission_id
-                    else f"/antrean/tiket/{t.id}"
-                ),
+                action_url=f"/antrean/tiket/{t.id}",
                 send_email=False,
                 send_whatsapp=True,
             )

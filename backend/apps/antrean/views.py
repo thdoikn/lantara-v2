@@ -36,6 +36,7 @@ from .serializers import (
     QueueParameterSerializer,
     RetriageSerializer,
     TakeTicketSerializer,
+    TicketDetailSerializer,
     TicketSerializer,
 )
 from .services import lifecycle, triage
@@ -98,14 +99,18 @@ class TicketViewSet(viewsets.GenericViewSet):
             )
         except AntreanError as exc:
             return _err(exc)
-        return Response(
-            TicketSerializer(ticket, context={"request": request}).data,
-            status=status.HTTP_201_CREATED,
-        )
+
+        # Render + email the ticket asynchronously; the QR is available live.
+        from .tasks import generate_ticket_pdf
+
+        generate_ticket_pdf.delay(str(ticket.id))
+        return Response(self._detail(ticket, request), status=status.HTTP_201_CREATED)
+
+    def _detail(self, ticket, request):
+        return TicketDetailSerializer(ticket, context={"request": request}).data
 
     def retrieve(self, request, pk=None):
-        ticket = self.get_object()
-        return Response(TicketSerializer(ticket).data)
+        return Response(self._detail(self.get_object(), request))
 
     def list(self, request):
         """The requester's active/today tickets."""
@@ -122,7 +127,7 @@ class TicketViewSet(viewsets.GenericViewSet):
             ticket = check_in(ticket, actor=request.user)
         except AntreanError as exc:
             return _err(exc)
-        return Response(TicketSerializer(ticket).data)
+        return Response(self._detail(ticket, request))
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
@@ -133,7 +138,34 @@ class TicketViewSet(viewsets.GenericViewSet):
             ticket = lifecycle.cancel(ticket, actor=request.user)
         except AntreanError as exc:
             return _err(exc)
-        return Response(TicketSerializer(ticket).data)
+        return Response(self._detail(ticket, request))
+
+    @action(detail=True, methods=["get"])
+    def pdf(self, request, pk=None):
+        """Download the ticket PDF — rendered on demand if not yet stored."""
+        from django.http import HttpResponse
+
+        from .pdf import render_ticket_pdf
+
+        ticket = self.get_object()
+        if ticket.applicant_id and ticket.applicant_id != request.user.id:
+            return Response({"detail": "Bukan nomor Anda."}, status=403)
+        pdf_bytes = render_ticket_pdf(ticket)
+        resp = HttpResponse(pdf_bytes, content_type="application/pdf")
+        resp["Content-Disposition"] = f'attachment; filename="tiket-{ticket.number}.pdf"'
+        return resp
+
+    @action(detail=True, methods=["post"])
+    def email(self, request, pk=None):
+        """Send / resend the ticket to its delivery email."""
+        ticket = self.get_object()
+        if ticket.applicant_id and ticket.applicant_id != request.user.id:
+            return Response({"detail": "Bukan nomor Anda."}, status=403)
+        from .tasks import generate_ticket_pdf
+
+        generate_ticket_pdf.delay(str(ticket.id), send_email=True)
+        target = ticket.delivery_email or "-"
+        return Response({"detail": f"Tiket dikirim ke {target}."})
 
     # ── Operator ────────────────────────────────────────────────────────────
     @action(detail=True, methods=["post"])

@@ -245,10 +245,29 @@ class Ticket(TimestampedModel):
         on_delete=models.SET_NULL,
         related_name="antrean_tickets",
     )
-    # For anonymous walk-in kiosk tickets (applicant null).
+    # For anonymous walk-in kiosk tickets (applicant null) + delivery.
     holder_name = models.CharField(max_length=200, blank=True)
     holder_phone = models.CharField(max_length=20, blank=True)
+    holder_email = models.EmailField(blank=True)
+    # Generated ticket PDF (number + QR), stored to MinIO.
+    pdf_file = models.FileField(upload_to="mpp/tickets/", null=True, blank=True)
     triage_note = models.TextField(blank=True)
+
+    @property
+    def delivery_email(self) -> str:
+        """Where to send the ticket: the logged-in applicant's email, else the
+        email the walk-in visitor typed at the kiosk."""
+        if self.applicant_id and self.applicant.email:
+            return self.applicant.email
+        return self.holder_email
+
+    @property
+    def checkin_url(self) -> str:
+        """Payload encoded in the ticket QR (also a working deep link)."""
+        from django.conf import settings
+
+        base = getattr(settings, "FRONTEND_BASE_URL", "")
+        return f"{base}/antrean/tiket/{self.id}"
 
     class Meta:
         verbose_name = "Tiket Antrean"

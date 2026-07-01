@@ -1,8 +1,8 @@
 """
 Antrean service-layer tests — the riskiest logic:
   quota 60/40 (no cross-fill), hybrid ordering + demotion, 1:N priority
-  interleave, re-triage (same vs different instansi), working-hours gate, and the
-  collection-stage seam (complete → submission collected).
+  interleave, re-triage (same vs different instansi), working-hours gate, ticket
+  delivery (PDF/QR/email), and that the queue is standalone (no izin coupling).
 
 Run with:  pytest apps/antrean/test_services.py -v
 """
@@ -167,7 +167,7 @@ def test_is_operating_day_skips_weekend_and_holiday(db):
     assert is_operating_day(date(2026, 6, 29)) is False  # Monday but holiday
 
 
-# ── One-active-per-day + take/lifecycle + seam ────────────────────────────────
+# ── One-active-per-day + take/lifecycle ───────────────────────────────────────
 
 
 def test_one_active_ticket_per_service_per_day(layanan, wide_hours, django_user_model):
@@ -175,6 +175,26 @@ def test_one_active_ticket_per_service_per_day(layanan, wide_hours, django_user_
     lifecycle.take_ticket(layanan, "online", applicant=user)
     with pytest.raises(DuplicateActiveTicketError):
         lifecycle.take_ticket(layanan, "online", applicant=user)
+
+
+# ── Ticket delivery (PDF + QR + email routing) ────────────────────────────────
+
+
+def test_ticket_pdf_and_qr_render(layanan):
+    from apps.antrean.pdf import qr_data_url, render_ticket_pdf
+
+    t = _ticket(layanan, seq=1, status="reserved")
+    assert qr_data_url(t).startswith("data:image/png;base64,")
+    assert render_ticket_pdf(t)[:4] == b"%PDF"
+
+
+def test_delivery_email_prefers_applicant_then_holder(layanan, django_user_model):
+    user = django_user_model.objects.create_user(email="me@demo.id", password="p", full_name="Me")
+    online = _ticket(layanan, seq=1, applicant=user)
+    assert online.delivery_email == "me@demo.id"
+
+    walkin = _ticket(layanan, seq=2, channel="walkin", holder_email="tamu@demo.id")
+    assert walkin.delivery_email == "tamu@demo.id"
 
 
 def test_full_service_flow_has_no_submission_side_effect(

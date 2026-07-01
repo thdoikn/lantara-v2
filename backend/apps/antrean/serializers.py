@@ -138,6 +138,29 @@ class TicketSerializer(serializers.ModelSerializer):
         return position_ahead(obj)
 
 
+class TicketDetailSerializer(TicketSerializer):
+    """Single-ticket view — adds the on-screen QR + PDF link (heavier to compute,
+    so kept off the list serializer)."""
+
+    qr_data_url = serializers.SerializerMethodField()
+    pdf_url = serializers.SerializerMethodField()
+
+    class Meta(TicketSerializer.Meta):
+        fields = TicketSerializer.Meta.fields + ["holder_email", "qr_data_url", "pdf_url"]
+
+    def get_qr_data_url(self, obj):
+        from .pdf import qr_data_url
+
+        return qr_data_url(obj)
+
+    def get_pdf_url(self, obj):
+        if not obj.pdf_file:
+            return None
+        url = obj.pdf_file.url
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request else url
+
+
 class TakeTicketSerializer(serializers.Serializer):
     """Online-virtual take-ticket payload (logged-in citizen picks a service)."""
 
