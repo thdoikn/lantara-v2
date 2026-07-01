@@ -200,6 +200,16 @@ def test_delivery_email_prefers_applicant_then_holder(layanan, django_user_model
 # ── Walk-in (anonymous kiosk) + kiosk check-in ────────────────────────────────
 
 
+def test_serializers_have_valid_fields(layanan):
+    """Guard against fields referencing removed model attributes (e.g. the old
+    permit_type/submission seam)."""
+    from apps.antrean.serializers import InstansiSerializer, LayananSerializer
+
+    assert LayananSerializer(layanan).data["key"] == "ambil-izin"
+    # Serializing the tenant nests the layanan serializer — exercises both.
+    assert "owner_type" in InstansiSerializer(layanan.instansi).data
+
+
 def test_anonymous_walkin_take(layanan, wide_hours):
     t = lifecycle.take_ticket(layanan, "walkin", holder_name="Tamu", holder_email="t@d.id")
     assert t.applicant_id is None  # anonymous

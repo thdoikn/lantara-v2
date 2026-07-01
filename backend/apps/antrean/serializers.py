@@ -14,7 +14,6 @@ from .models import (
 class LayananSerializer(serializers.ModelSerializer):
     instansi_key = serializers.SlugField(source="instansi.key", read_only=True)
     instansi_name = serializers.CharField(source="instansi.name", read_only=True)
-    permit_type_key = serializers.SlugField(source="permit_type.key", read_only=True)
 
     class Meta:
         model = Layanan
@@ -31,8 +30,6 @@ class LayananSerializer(serializers.ModelSerializer):
             "instansi",
             "instansi_key",
             "instansi_name",
-            "permit_type",
-            "permit_type_key",
             "is_active",
             "order",
         ]
