@@ -197,6 +197,26 @@ def test_delivery_email_prefers_applicant_then_holder(layanan, django_user_model
     assert walkin.delivery_email == "tamu@demo.id"
 
 
+# ── Walk-in (anonymous kiosk) + kiosk check-in ────────────────────────────────
+
+
+def test_anonymous_walkin_take(layanan, wide_hours):
+    t = lifecycle.take_ticket(layanan, "walkin", holder_name="Tamu", holder_email="t@d.id")
+    assert t.applicant_id is None  # anonymous
+    assert t.holder_email == "t@d.id"
+    assert t.status == "in_pool"  # walk-in auto-checked-in
+
+
+def test_kiosk_scan_checks_in_online_ticket(layanan, wide_hours, django_user_model):
+    from apps.antrean.services.checkin import check_in
+
+    user = django_user_model.objects.create_user(email="c@d.id", password="p", full_name="C")
+    t = lifecycle.take_ticket(layanan, "online", applicant=user)
+    assert t.status == "reserved"
+    t = check_in(t)  # same service the kiosk station calls after scanning the QR
+    assert t.status == "in_pool"
+
+
 def test_full_service_flow_has_no_submission_side_effect(
     layanan, wide_hours, instansi, django_user_model
 ):

@@ -3,9 +3,11 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     AdminInstansiViewSet,
+    CheckinScanView,
     CounterStaffAssignmentViewSet,
     DisplayBoardView,
     InstansiViewSet,
+    KioskTakeView,
     LayananViewSet,
     LoketViewSet,
     MonitorView,
@@ -24,6 +26,8 @@ router.register("admin/instansi", AdminInstansiViewSet, basename="antrean-admin-
 
 urlpatterns = router.urls + [
     path("monitor/", MonitorView.as_view(), name="antrean-monitor"),
+    path("kiosk/take/", KioskTakeView.as_view(), name="antrean-kiosk-take"),
+    path("checkin/", CheckinScanView.as_view(), name="antrean-checkin-scan"),
     path(
         "display-board/<slug:instansi_key>/",
         DisplayBoardView.as_view(),

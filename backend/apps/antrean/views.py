@@ -4,6 +4,7 @@ Antrean MPP API.
   Citizen  : take a number, check in, watch position, cancel.
   Operator : open/close loket, call-next, recall, serve, complete, no-show, re-triage.
   Supervisor: parameters, loket management, staff assignment, live monitor.
+  Kiosk    : anonymous walk-in take + QR check-in station (on-site).
   Public   : display board (now-serving + next-up).
 """
 
@@ -12,6 +13,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from .models import (
@@ -29,6 +31,7 @@ from .permissions import (
     user_scoped_instansi_ids,
 )
 from .serializers import (
+    CheckinScanSerializer,
     CounterStaffAssignmentSerializer,
     InstansiSerializer,
     LayananSerializer,
@@ -38,6 +41,7 @@ from .serializers import (
     TakeTicketSerializer,
     TicketDetailSerializer,
     TicketSerializer,
+    WalkinTakeSerializer,
 )
 from .services import lifecycle, triage
 from .services.checkin import check_in
@@ -349,3 +353,52 @@ class DisplayBoardView(APIView):
                 }
             )
         return Response({"instansi": instansi.name, "loket": loket_rows})
+
+
+class KioskTakeView(APIView):
+    """Anonymous walk-in take-number at the on-site e-kiosk (auto checked-in)."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
+
+    def post(self, request):
+        ser = WalkinTakeSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = ser.validated_data
+        try:
+            ticket = lifecycle.take_ticket(
+                data["layanan"],
+                Ticket.Channel.WALKIN,
+                is_priority=data["is_priority"],
+                holder_name=data["holder_name"],
+                holder_email=data["holder_email"],
+            )
+        except AntreanError as exc:
+            return _err(exc)
+        # Optional email receipt for walk-in; the QR is shown on-screen regardless.
+        if ticket.holder_email:
+            from .tasks import generate_ticket_pdf
+
+            generate_ticket_pdf.delay(str(ticket.id))
+        return Response(
+            TicketDetailSerializer(ticket, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CheckinScanView(APIView):
+    """Staffed anjungan check-in station — scans an online ticket's QR (UUID)."""
+
+    permission_classes = [IsMppOperator]
+
+    def post(self, request):
+        ser = CheckinScanSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        ticket = Ticket.objects.filter(id=ser.validated_data["ticket"]).first()
+        if ticket is None:
+            return Response({"detail": "Tiket tidak ditemukan."}, status=404)
+        try:
+            ticket = check_in(ticket, actor=request.user)
+        except AntreanError as exc:
+            return _err(exc)
+        return Response(TicketSerializer(ticket).data)

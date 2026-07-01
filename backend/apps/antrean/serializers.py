@@ -168,6 +168,22 @@ class TakeTicketSerializer(serializers.Serializer):
     is_priority = serializers.BooleanField(default=False)
 
 
+class WalkinTakeSerializer(serializers.Serializer):
+    """Anonymous walk-in take at the on-site e-kiosk. Email is optional (the
+    number + QR are also shown on-screen to photograph)."""
+
+    layanan = serializers.PrimaryKeyRelatedField(queryset=Layanan.objects.filter(is_active=True))
+    is_priority = serializers.BooleanField(default=False)
+    holder_name = serializers.CharField(required=False, allow_blank=True, default="")
+    holder_email = serializers.EmailField(required=False, allow_blank=True, default="")
+
+
+class CheckinScanSerializer(serializers.Serializer):
+    """Kiosk check-in station scans a ticket QR (its UUID)."""
+
+    ticket = serializers.UUIDField()
+
+
 class RetriageSerializer(serializers.Serializer):
     layanan = serializers.PrimaryKeyRelatedField(queryset=Layanan.objects.filter(is_active=True))
 

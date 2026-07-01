@@ -1,10 +1,10 @@
 """
 manage.py seed_antrean_demo
 
-Seeds a demo MPP agency (Perizinan OIKN) with services and a loket, plus global
-Tabel-8 parameters, so the full citizen → check-in → call → complete flow can be
-exercised end-to-end. One service links to a real izin PermitType's collection
-stage to demonstrate the engine seam. Idempotent.
+Seeds a demo MPP with two tenants — an OIKN directorate and an external agency —
+each with services and a loket, plus global Tabel-8 parameters, so the full
+walk-in / online → check-in → call → complete flow can be exercised end-to-end.
+Idempotent.
 """
 
 from django.core.management.base import BaseCommand
@@ -19,48 +19,90 @@ GLOBAL_PARAMS = [
     ("position_notify_threshold", "3", "int"),
 ]
 
+# (instansi defaults, [service defaults], loket code)
+TENANTS = [
+    (
+        {
+            "key": "pelayanan-dasar",
+            "name": "Direktorat Pelayanan Dasar (Kesehatan)",
+            "short_name": "Pelayanan Dasar",
+            "owner_type": "oikn",
+            "description": "Layanan kesehatan dasar Otorita IKN di MPP.",
+            "order": 1,
+        },
+        [
+            {
+                "key": "konsultasi-kesehatan",
+                "name": "Konsultasi Kesehatan",
+                "category": "lama",
+                "avg_minutes": 25,
+                "daily_quota": 12,
+            },
+            {
+                "key": "rujukan",
+                "name": "Surat Rujukan",
+                "category": "cepat",
+                "avg_minutes": 8,
+                "daily_quota": 76,
+                "order": 2,
+            },
+        ],
+        "Loket A1",
+    ),
+    (
+        {
+            "key": "bpjs-kesehatan",
+            "name": "BPJS Kesehatan",
+            "short_name": "BPJS",
+            "owner_type": "external",
+            "description": "Layanan BPJS Kesehatan (instansi eksternal peserta MPP).",
+            "order": 2,
+        },
+        [
+            {
+                "key": "cetak-kartu",
+                "name": "Cetak Kartu BPJS",
+                "category": "cepat",
+                "avg_minutes": 8,
+                "daily_quota": 76,
+            },
+            {
+                "key": "perubahan-data",
+                "name": "Perubahan Data Peserta",
+                "category": "sedang",
+                "avg_minutes": 12,
+                "daily_quota": 51,
+                "order": 2,
+            },
+        ],
+        "Loket B1",
+    ),
+]
+
 
 class Command(BaseCommand):
-    help = "Seed a demo MPP instansi, services, loket, and Tabel-8 parameters (idempotent)"
+    help = "Seed demo MPP tenants (OIKN + external), services, lokets, params (idempotent)"
 
     def handle(self, *args, **options):
         from apps.antrean.models import Instansi, Layanan, Loket, QueueParameter
 
-        # Global parameters (config-not-code).
         for key, value, vt in GLOBAL_PARAMS:
             QueueParameter.objects.get_or_create(
                 layanan=None, key=key, defaults={"value": value, "value_type": vt}
             )
 
-        instansi, _ = Instansi.objects.get_or_create(
-            key="perizinan-oikn",
-            defaults={
-                "name": "Loket Perizinan OIKN",
-                "short_name": "Perizinan",
-                "description": "Layanan perizinan Otorita IKN di Mal Pelayanan Publik.",
-                "order": 1,
-            },
-        )
-
-        Layanan.objects.get_or_create(
-            instansi=instansi,
-            key="konsultasi-perizinan",
-            defaults={
-                "name": "Konsultasi Perizinan",
-                "category": Layanan.Category.LAMA,
-                "avg_minutes": 25,
-                "daily_quota": 12,
-                "order": 2,
-            },
-        )
-
-        loket, _ = Loket.objects.get_or_create(
-            instansi=instansi, code="Loket 1", defaults={"name": "Loket Perizinan 1"}
-        )
-        loket.layanan.add(*instansi.layanan.all())
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Seeded instansi '{instansi.key}' with {instansi.layanan.count()} layanan, 1 loket."
+        for inst_defaults, services, loket_code in TENANTS:
+            key = inst_defaults.pop("key")
+            instansi, _ = Instansi.objects.get_or_create(key=key, defaults=inst_defaults)
+            for svc in services:
+                svc_key = svc.pop("key")
+                Layanan.objects.get_or_create(instansi=instansi, key=svc_key, defaults=svc)
+                svc["key"] = svc_key
+            loket, _ = Loket.objects.get_or_create(instansi=instansi, code=loket_code)
+            loket.layanan.add(*instansi.layanan.all())
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Tenant '{key}' ({instansi.get_owner_type_display()}): "
+                    f"{instansi.layanan.count()} layanan, loket {loket_code}."
+                )
             )
-        )

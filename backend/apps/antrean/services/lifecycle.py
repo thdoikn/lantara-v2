@@ -45,6 +45,7 @@ def take_ticket(
     is_priority=False,
     holder_name="",
     holder_phone="",
+    holder_email="",
     actor=None,
 ):
     """Issue a new ticket. Enforces operating window, the rigid 60/40 quota, and
@@ -94,6 +95,7 @@ def take_ticket(
         applicant=applicant,
         holder_name=holder_name,
         holder_phone=holder_phone,
+        holder_email=holder_email,
     )
     ticket.estimated_call_at = estimate_for(ticket, ahead=None if walkin else seq - 1)
 
