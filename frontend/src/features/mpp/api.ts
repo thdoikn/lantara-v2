@@ -24,6 +24,8 @@ export interface Layanan {
   instansi_key: string;
   instansi_name: string;
   is_active: boolean;
+  /** Live count of people waiting today (reserved + in pool). */
+  waiting: number;
 }
 
 export interface Instansi {

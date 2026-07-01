@@ -66,10 +66,30 @@ class InstansiViewSet(viewsets.ReadOnlyModelViewSet):
             .order_by("order", "name")
         )
 
+    def get_serializer_context(self):
+        """Attach today's per-service waiting counts in a single grouped query so
+        the nested LayananSerializer avoids N+1 when reporting queue length."""
+        from django.db.models import Count
+
+        ctx = super().get_serializer_context()
+        today = timezone.localtime().date()
+        rows = (
+            Ticket.objects.filter(
+                service_date=today,
+                status__in=[Ticket.Status.RESERVED, Ticket.Status.IN_POOL],
+            )
+            .values("layanan_id")
+            .annotate(n=Count("id"))
+        )
+        ctx["waiting_map"] = {r["layanan_id"]: r["n"] for r in rows}
+        return ctx
+
     @action(detail=True, methods=["get"])
     def layanan(self, request, key=None):
         qs = Layanan.objects.filter(instansi__key=key, is_active=True)
-        return Response(LayananSerializer(qs, many=True).data)
+        return Response(
+            LayananSerializer(qs, many=True, context=self.get_serializer_context()).data
+        )
 
 
 class TicketViewSet(viewsets.GenericViewSet):

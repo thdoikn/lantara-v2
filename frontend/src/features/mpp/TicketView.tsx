@@ -1,85 +1,139 @@
+import { useState } from "react";
+import { Star, QrCode, X } from "lucide-react";
 import type { Ticket } from "./api";
-
-export const STATUS_LABEL: Record<string, string> = {
-  reserved: "Menunggu Check-in",
-  checked_in: "Sudah Check-in",
-  in_pool: "Dalam Antrean",
-  called: "Sedang Dipanggil",
-  serving: "Sedang Dilayani",
-  served: "Selesai",
-  no_show: "Tidak Hadir",
-  expired: "Kedaluwarsa",
-  cancelled: "Dibatalkan",
-};
-
-export const ACTIVE_STATUSES = ["reserved", "checked_in", "in_pool", "called", "serving"];
-
-export function fmtTime(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-}
+import { STATUS_META, TONE_CLASSES, fmtClock } from "./queueStatus";
+import { StatusBadge, QueueStepper, Stat } from "./QueueUI";
+import { useCountdown } from "./useCountdown";
 
 /**
- * The visual ticket: royal header with the big number + QR, and a stat grid.
+ * The visual queue ticket — a "ticket stub": royal header with the big number,
+ * a perforated divider, the QR, a live stat grid, and the journey stepper.
  * Shared by the citizen ticket page and the kiosk confirmation screen.
  */
-export function TicketView({ ticket, large = false }: { ticket: Ticket; large?: boolean }) {
+export function TicketView({
+  ticket,
+  large = false,
+  showStepper = true,
+}: {
+  ticket: Ticket;
+  large?: boolean;
+  showStepper?: boolean;
+}) {
+  const [zoom, setZoom] = useState(false);
+  const meta = STATUS_META[ticket.status];
+  const tone = TONE_CLASSES[meta.tone];
+  const countdown = useCountdown(
+    ["reserved", "checked_in", "in_pool"].includes(ticket.status)
+      ? ticket.estimated_call_at
+      : null,
+  );
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-royal-100 bg-white shadow-sm">
-      <div className="bg-gradient-royal px-6 py-8 text-center text-white">
-        <p className="text-sm opacity-80">Nomor Antrean</p>
-        <p className={`font-display font-bold tracking-tight ${large ? "text-8xl" : "text-6xl"}`}>
-          {ticket.number}
-        </p>
-        <p className="mt-1 text-sm opacity-90">
-          {ticket.instansi_name} — {ticket.layanan_name}
-        </p>
-        {ticket.is_priority && (
-          <p className="mt-2 inline-block rounded-full bg-gold-500 px-3 py-0.5 text-xs font-semibold text-royal-950">
-            PRIORITAS
+    <div className="overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-royal-100">
+      {/* Header — big number over a royal gradient with a soft glow */}
+      <div className="relative overflow-hidden bg-gradient-royal px-6 pb-8 pt-7 text-center text-white">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-royal-200">
+            {ticket.instansi_name}
+          </p>
+          <p
+            className={`font-display font-bold leading-none tracking-tight ${
+              large ? "text-[5.5rem]" : "text-7xl"
+            }`}
+          >
+            {ticket.number}
+          </p>
+          <p className="mt-1 text-sm text-royal-100">{ticket.layanan_name}</p>
+          {ticket.is_priority && (
+            <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-gold-500 px-3 py-1 text-xs font-bold text-royal-950">
+              <Star className="h-3.5 w-3.5 fill-royal-950" /> PRIORITAS
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Perforation */}
+      <div className="relative h-0">
+        <div className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-surface" />
+        <div className="absolute -right-3 -top-3 h-6 w-6 rounded-full bg-surface" />
+        <div className="mx-6 border-t-2 border-dashed border-royal-100" />
+      </div>
+
+      {/* Status + guidance */}
+      <div className="flex flex-col items-center gap-2 px-6 pb-4 pt-6 text-center">
+        <StatusBadge status={ticket.status} />
+        <p className="text-sm text-ink-muted">{meta.hint}</p>
+        {countdown && (
+          <p className="text-sm">
+            <span className="text-ink-faint">Estimasi dipanggil dalam </span>
+            <span className={`font-bold ${tone.text}`}>{countdown.label}</span>
           </p>
         )}
       </div>
 
+      {/* QR */}
       {ticket.qr_data_url && (
-        <div className="flex justify-center border-b border-royal-50 py-5">
+        <button
+          onClick={() => setZoom(true)}
+          className="mx-auto mb-4 flex flex-col items-center gap-1.5 rounded-2xl border border-royal-100 p-3 transition hover:bg-royal-50"
+        >
           <img
             src={ticket.qr_data_url}
             alt="QR check-in"
-            className={large ? "h-44 w-44" : "h-32 w-32"}
+            className={large ? "h-40 w-40" : "h-28 w-28"}
           />
+          <span className="flex items-center gap-1 text-xs text-ink-faint">
+            <QrCode className="h-3.5 w-3.5" /> Ketuk untuk perbesar
+          </span>
+        </button>
+      )}
+
+      {showStepper && (
+        <div className="px-5 pb-5 pt-1">
+          <QueueStepper ticket={ticket} />
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-px bg-royal-50 text-center">
-        <Stat label="Status" value={STATUS_LABEL[ticket.status] ?? ticket.status} />
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-px border-t border-royal-50 bg-royal-50 sm:grid-cols-4">
         <Stat
           label="Sisa di depan"
-          value={ticket.ahead === null || ticket.ahead === undefined ? "—" : `${ticket.ahead} nomor`}
+          value={
+            ticket.ahead === null || ticket.ahead === undefined ? "—" : `${ticket.ahead} nomor`
+          }
+          accent
         />
-        <Stat label="Estimasi panggil" value={fmtTime(ticket.estimated_call_at)} />
+        <Stat label="Estimasi panggil" value={fmtClock(ticket.estimated_call_at)} />
         <Stat label="Loket" value={ticket.loket_code ?? "—"} />
+        <Stat label="Kanal" value={ticket.channel === "online" ? "Online" : "Walk-in"} />
       </div>
 
       {ticket.is_demoted && (
-        <p className="bg-status-warning/10 px-6 py-2 text-center text-xs text-status-warning">
+        <p className="bg-gold-500/10 px-6 py-2 text-center text-xs text-gold-500">
           Check-in melewati jendela — posisi mengikuti waktu check-in.
         </p>
       )}
+
+      {/* QR zoom overlay */}
+      {zoom && ticket.qr_data_url && (
+        <div
+          className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-4 bg-royal-950/90 p-6"
+          onClick={() => setZoom(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <img src={ticket.qr_data_url} alt="QR check-in" className="h-72 w-72 rounded-2xl bg-white p-4" />
+          <p className="text-2xl font-display font-bold text-white">{ticket.number}</p>
+          <p className="text-royal-200">Tunjukkan / pindai di anjungan MPP untuk check-in</p>
+          <button
+            className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white"
+            onClick={() => setZoom(false)}
+          >
+            <X className="h-4 w-4" /> Tutup
+          </button>
+        </div>
+      )}
     </div>
   );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-white px-4 py-4">
-      <p className="text-xs text-ink-faint">{label}</p>
-      <p className="mt-1 font-semibold text-ink">{value}</p>
-    </div>
-  );
-}
-
-export function errMsg(e: unknown): string {
-  const ax = e as { response?: { data?: { detail?: string } } };
-  return ax.response?.data?.detail ?? "Terjadi kesalahan.";
 }

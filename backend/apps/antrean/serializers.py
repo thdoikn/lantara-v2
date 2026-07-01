@@ -14,6 +14,10 @@ from .models import (
 class LayananSerializer(serializers.ModelSerializer):
     instansi_key = serializers.SlugField(source="instansi.key", read_only=True)
     instansi_name = serializers.CharField(source="instansi.name", read_only=True)
+    # Live number of people waiting today (reserved + in the calling pool), so the
+    # catalog can show how busy each service is. Fed via serializer context in one
+    # query (see InstansiViewSet.get_serializer_context); 0 when absent.
+    waiting = serializers.SerializerMethodField()
 
     class Meta:
         model = Layanan
@@ -32,7 +36,11 @@ class LayananSerializer(serializers.ModelSerializer):
             "instansi_name",
             "is_active",
             "order",
+            "waiting",
         ]
+
+    def get_waiting(self, obj) -> int:
+        return self.context.get("waiting_map", {}).get(obj.id, 0)
 
 
 class InstansiSerializer(serializers.ModelSerializer):
