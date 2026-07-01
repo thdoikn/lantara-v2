@@ -16,6 +16,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
+from apps.common.permissions import IsAdminOrSuperAdmin
+
 from .models import (
     CounterStaffAssignment,
     Instansi,
@@ -27,6 +29,8 @@ from .models import (
 from .permissions import (
     IsLoketOperator,
     IsTenantAdmin,
+    tenant_admin_instansi_ids,
+    user_can_administer_instansi,
     user_can_operate_loket,
     user_scoped_instansi_ids,
 )
@@ -247,6 +251,21 @@ class LoketViewSet(viewsets.ModelViewSet):
             qs = qs.filter(instansi_id__in=scoped)
         return qs
 
+    def _assert_can_admin(self, instansi):
+        from rest_framework.exceptions import PermissionDenied
+
+        if not user_can_administer_instansi(self.request.user, instansi):
+            raise PermissionDenied("Bukan tenant yang Anda kelola.")
+
+    def perform_create(self, serializer):
+        self._assert_can_admin(serializer.validated_data["instansi"])
+        serializer.save()
+
+    def perform_update(self, serializer):
+        inst = serializer.validated_data.get("instansi", serializer.instance.instansi)
+        self._assert_can_admin(inst)
+        serializer.save()
+
     @action(detail=True, methods=["post"])
     def open(self, request, pk=None):
         loket = self.get_object()
@@ -281,23 +300,56 @@ class LoketViewSet(viewsets.ModelViewSet):
 
 
 class AdminInstansiViewSet(viewsets.ModelViewSet):
-    """Tenant CRUD (supervisor) — register OIKN directorates + external agencies."""
+    """Tenant management. OIKN admins create/delete tenants (Phase 7); tenant
+    admins edit their own tenant's settings (hours, break, branding)."""
 
-    permission_classes = [IsTenantAdmin]
     serializer_class = InstansiSerializer
-    queryset = Instansi.objects.select_related("direktorat").prefetch_related("layanan")
+
+    def get_permissions(self):
+        # Only a global OIKN admin may register or remove a tenant.
+        if self.action in ("create", "destroy"):
+            return [IsAdminOrSuperAdmin()]
+        return [IsTenantAdmin()]
+
+    def get_queryset(self):
+        qs = Instansi.objects.select_related("direktorat").prefetch_related("layanan")
+        scoped = tenant_admin_instansi_ids(self.request.user)
+        if scoped is not None:
+            qs = qs.filter(id__in=scoped)
+        return qs
 
 
 class LayananViewSet(viewsets.ModelViewSet):
-    """Service CRUD (supervisor/admin)."""
+    """Service CRUD incl. max-queue (daily_quota) — tenant admin, own tenant only."""
 
     permission_classes = [IsTenantAdmin]
     serializer_class = LayananSerializer
-    queryset = Layanan.objects.select_related("instansi")
+
+    def get_queryset(self):
+        qs = Layanan.objects.select_related("instansi")
+        scoped = tenant_admin_instansi_ids(self.request.user)
+        if scoped is not None:
+            qs = qs.filter(instansi_id__in=scoped)
+        return qs
+
+    def _assert_can_admin(self, instansi):
+        from rest_framework.exceptions import PermissionDenied
+
+        if not user_can_administer_instansi(self.request.user, instansi):
+            raise PermissionDenied("Bukan tenant yang Anda kelola.")
+
+    def perform_create(self, serializer):
+        self._assert_can_admin(serializer.validated_data["instansi"])
+        serializer.save()
+
+    def perform_update(self, serializer):
+        inst = serializer.validated_data.get("instansi", serializer.instance.instansi)
+        self._assert_can_admin(inst)
+        serializer.save()
 
 
 class QueueParameterViewSet(viewsets.ModelViewSet):
-    """Tabel-8 knob CRUD (supervisor)."""
+    """Tabel-8 knob CRUD (tenant admin)."""
 
     permission_classes = [IsTenantAdmin]
     serializer_class = QueueParameterSerializer
@@ -305,12 +357,32 @@ class QueueParameterViewSet(viewsets.ModelViewSet):
 
 
 class CounterStaffAssignmentViewSet(viewsets.ModelViewSet):
+    """Staff scoping. A tenant admin assigns loket operators within their tenant;
+    only a global admin may grant the tenant_admin scope."""
+
     permission_classes = [IsTenantAdmin]
     serializer_class = CounterStaffAssignmentSerializer
-    queryset = CounterStaffAssignment.objects.select_related("user", "instansi", "loket")
+
+    def get_queryset(self):
+        qs = CounterStaffAssignment.objects.select_related("user", "instansi", "loket")
+        scoped = tenant_admin_instansi_ids(self.request.user)
+        if scoped is not None:
+            qs = qs.filter(instansi_id__in=scoped)
+        return qs
 
     def perform_create(self, serializer):
-        serializer.save(assigned_by=self.request.user)
+        from rest_framework.exceptions import PermissionDenied
+
+        data = serializer.validated_data
+        instansi = data["instansi"]
+        scope = data.get("role_scope", CounterStaffAssignment.Scope.LOKET_OPERATOR)
+        user = self.request.user
+        is_global = user.has_any_role("superadmin", "admin")
+        if scope == CounterStaffAssignment.Scope.TENANT_ADMIN and not is_global:
+            raise PermissionDenied("Penetapan Admin Tenant hanya oleh admin OIKN.")
+        if not is_global and not user_can_administer_instansi(user, instansi):
+            raise PermissionDenied("Bukan tenant yang Anda kelola.")
+        serializer.save(assigned_by=user)
 
 
 class MonitorView(APIView):

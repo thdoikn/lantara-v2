@@ -47,6 +47,13 @@ class Instansi(TimestampedModel):
     description = models.TextField(blank=True)
     owner_type = models.CharField(max_length=10, choices=OwnerType.choices, default=OwnerType.OIKN)
     logo = models.ImageField(upload_to="mpp/tenants/", null=True, blank=True)
+    # Per-tenant operating hours + optional break window. When null, the service
+    # layer falls back to the global QueueParameter defaults. During the break the
+    # counter neither issues nor calls numbers.
+    operating_open = models.TimeField(null=True, blank=True)
+    operating_close = models.TimeField(null=True, blank=True)
+    break_start = models.TimeField(null=True, blank=True)
+    break_end = models.TimeField(null=True, blank=True)
     # Only for OIKN tenants — the directorate that runs this counter.
     direktorat = models.ForeignKey(
         "reference.Direktorat",

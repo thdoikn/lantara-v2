@@ -7,7 +7,7 @@ Antrean service-layer tests — the riskiest logic:
 Run with:  pytest apps/antrean/test_services.py -v
 """
 
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 
 import pytest
 from django.utils import timezone
@@ -156,6 +156,21 @@ def test_retriage_other_instansi_recomputes(layanan, other_instansi):
 
 
 # ── Working hours ─────────────────────────────────────────────────────────────
+
+
+def test_tenant_break_blocks_take_and_call(instansi, layanan):
+    from apps.antrean.services.working_hours import calling_open, in_break, take_number_open
+
+    # Break covering the whole day → issuing and calling are both paused now.
+    instansi.operating_open = time(0, 0)
+    instansi.operating_close = time(23, 59)
+    instansi.break_start = time(0, 0)
+    instansi.break_end = time(23, 59)
+    instansi.save()
+    now = timezone.now()
+    assert in_break(now, layanan) is True
+    assert take_number_open(now, layanan) is False
+    assert calling_open(now, layanan) is False
 
 
 def test_is_operating_day_skips_weekend_and_holiday(db):

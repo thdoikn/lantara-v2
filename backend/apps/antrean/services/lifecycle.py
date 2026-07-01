@@ -146,9 +146,15 @@ def call_next(loket, operator):
     from apps.antrean.models import Ticket, TicketEvent
 
     from .ordering import pick_next
+    from .working_hours import calling_open
 
     if not loket.is_open:
         raise InvalidTicketStateError("Loket belum dibuka.")
+    rep = loket.layanan.first()
+    if rep and not calling_open(timezone.now(), rep):
+        raise InvalidTicketStateError(
+            "Di luar jam operasional atau sedang istirahat — pemanggilan dijeda."
+        )
 
     candidate = pick_next(loket, timezone.localtime().date())
     if candidate is None:
