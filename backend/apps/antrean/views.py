@@ -240,7 +240,7 @@ class LoketViewSet(viewsets.ModelViewSet):
     serializer_class = LoketSerializer
 
     def get_permissions(self):
-        if self.action in ("list", "retrieve", "call_next", "open", "close"):
+        if self.action in ("list", "retrieve", "call_next", "open", "close", "queue"):
             return [IsLoketOperator()]
         return [IsTenantAdmin()]
 
@@ -284,6 +284,21 @@ class LoketViewSet(viewsets.ModelViewSet):
         loket.current_operator = None
         loket.save(update_fields=["is_open", "current_operator", "updated_at"])
         return Response(LoketSerializer(loket).data)
+
+    @action(detail=True, methods=["get"])
+    def queue(self, request, pk=None):
+        """The waiting pool for this loket — next-up preview + count."""
+        from .services.ordering import pool_for_loket
+
+        loket = self.get_object()
+        pool = sorted(pool_for_loket(loket, timezone.localtime().date()), key=lambda t: t.seq)
+        pool.sort(key=lambda t: t.effective_time)
+        return Response(
+            {
+                "waiting": len(pool),
+                "next_up": TicketSerializer(pool[:8], many=True).data,
+            }
+        )
 
     @action(detail=True, methods=["post"], url_path="call-next")
     def call_next(self, request, pk=None):

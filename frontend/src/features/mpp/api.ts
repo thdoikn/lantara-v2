@@ -209,6 +209,21 @@ export async function ticketAction(id: string, action: TicketAction): Promise<Ti
   return data;
 }
 
+export async function retriageTicket(id: string, layanan: string): Promise<Ticket> {
+  const { data } = await api.post(`/antrean/tickets/${id}/retriage/`, { layanan });
+  return data;
+}
+
+export interface LoketQueue {
+  waiting: number;
+  next_up: Ticket[];
+}
+
+export async function loketQueue(loketId: string): Promise<LoketQueue> {
+  const { data } = await api.get(`/antrean/loket/${loketId}/queue/`);
+  return data;
+}
+
 // ── Public board ──────────────────────────────────────────────────────────────
 
 export async function getBoard(instansiKey: string): Promise<BoardData> {
