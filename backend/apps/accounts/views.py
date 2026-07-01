@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.common.permissions import AuthRateThrottle, IsAdminOrSuperAdmin, IsSuperAdmin
+from apps.common.permissions import AuthRateThrottle, IsAdminOrSuperAdmin
 
 from .models import ApplicantProfile, OTPCode, Role, User, UserRole, VerifierPermitAssignment
 from .serializers import (
@@ -270,9 +270,10 @@ class OIDCCallbackView(APIView):
 
 
 class RoleViewSet(viewsets.ReadOnlyModelViewSet):
-    """Superadmin only — list/retrieve roles."""
+    """Admins list/retrieve roles (read-only) — needed so the RBAC screen can
+    offer the grantable roles. Granting itself is guarded on UserViewSet."""
 
-    permission_classes = [IsSuperAdmin]
+    permission_classes = [IsAdminOrSuperAdmin]
     queryset = Role.objects.prefetch_related("permissions")
     serializer_class = RoleSerializer
     lookup_field = "key"
