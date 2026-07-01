@@ -87,14 +87,6 @@ class Layanan(TimestampedModel):
     daily_quota = models.PositiveIntegerField(null=True, blank=True)
     # Panggil ulang maksimal sebelum no-show (Tabel 8 → 2).
     recall_max = models.PositiveSmallIntegerField(default=2)
-    # The seam — OPTIONAL link to an izin. Engine never imports antrean.
-    permit_type = models.ForeignKey(
-        "engine.PermitType",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="antrean_layanan",
-    )
     is_active = models.BooleanField(default=True)
     order = models.PositiveSmallIntegerField(default=0)
 
@@ -249,15 +241,6 @@ class Ticket(TimestampedModel):
     # For anonymous walk-in kiosk tickets (applicant null).
     holder_name = models.CharField(max_length=200, blank=True)
     holder_phone = models.CharField(max_length=20, blank=True)
-
-    # The seam — OPTIONAL link to an izin submission at its collection stage.
-    submission = models.ForeignKey(
-        "submissions.Submission",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="antrean_tickets",
-    )
     triage_note = models.TextField(blank=True)
 
     class Meta:
@@ -280,7 +263,6 @@ class Ticket(TimestampedModel):
             models.Index(fields=["layanan", "service_date", "status"]),
             models.Index(fields=["status", "estimated_call_at"]),
             models.Index(fields=["applicant", "status"]),
-            models.Index(fields=["submission"]),
         ]
 
     def __str__(self):

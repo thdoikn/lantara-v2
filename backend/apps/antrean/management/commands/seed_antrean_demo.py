@@ -25,7 +25,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from apps.antrean.models import Instansi, Layanan, Loket, QueueParameter
-        from apps.engine.models import PermitType
 
         # Global parameters (config-not-code).
         for key, value, vt in GLOBAL_PARAMS:
@@ -43,24 +42,6 @@ class Command(BaseCommand):
             },
         )
 
-        # Service linked to an izin's collection stage (the engine seam).
-        izin = PermitType.objects.filter(stages__stage_type="collection").first()
-        pickup, _ = Layanan.objects.get_or_create(
-            instansi=instansi,
-            key="pengambilan-izin",
-            defaults={
-                "name": "Pengambilan Dokumen Izin",
-                "category": Layanan.Category.CEPAT,
-                "avg_minutes": 8,
-                "daily_quota": 76,
-                "permit_type": izin,
-            },
-        )
-        if izin and pickup.permit_type_id != izin.id:
-            pickup.permit_type = izin
-            pickup.save(update_fields=["permit_type"])
-
-        # A standalone consultation service (no izin link) — walk-in heavy.
         Layanan.objects.get_or_create(
             instansi=instansi,
             key="konsultasi-perizinan",
@@ -80,7 +61,6 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Seeded instansi '{instansi.key}' with {instansi.layanan.count()} layanan, "
-                f"1 loket. Izin seam: {izin.key if izin else 'none found'}."
+                f"Seeded instansi '{instansi.key}' with {instansi.layanan.count()} layanan, 1 loket."
             )
         )

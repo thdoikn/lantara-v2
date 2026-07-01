@@ -1,9 +1,9 @@
 """Ticket lifecycle — issue, call, recall, serve, complete, no-show, cancel.
 
 State changes that race (issuing under quota, calling the pool head) run inside a
-transaction with row locks. The collection-stage seam fires here: completing a
-ticket that is linked to an izin submission advances that submission to collected
-— importing submissions from antrean is the allowed direction (never the reverse).
+transaction with row locks. The queue is a standalone physical-visit system: a
+completed ticket simply means the citizen was served at the counter — there is no
+coupling to izin submissions.
 """
 
 from datetime import timedelta
@@ -42,7 +42,6 @@ def take_ticket(
     channel,
     *,
     applicant=None,
-    submission=None,
     is_priority=False,
     holder_name="",
     holder_phone="",
@@ -93,7 +92,6 @@ def take_ticket(
         taken_at=now,
         checkin_at=now if walkin else None,
         applicant=applicant,
-        submission=submission,
         holder_name=holder_name,
         holder_phone=holder_phone,
     )
@@ -137,8 +135,6 @@ def _taken_body(ticket) -> str:
 
 
 def _ticket_url(ticket) -> str:
-    if ticket.submission_id:
-        return f"/portal/submissions/{ticket.submission_id}/antrean"
     return f"/antrean/tiket/{ticket.id}"
 
 
@@ -240,8 +236,7 @@ def start_serving(ticket, operator):
 
 @transaction.atomic
 def complete(ticket, operator):
-    """Finish service. If linked to an izin submission at its collection stage,
-    advance that submission to collected (the engine seam, antrean→submissions)."""
+    """Finish service — the citizen has been served at the counter."""
     from apps.antrean.models import Ticket, TicketEvent
 
     ticket = Ticket.objects.select_for_update().get(pk=ticket.pk)
@@ -265,27 +260,8 @@ def complete(ticket, operator):
         loket=ticket.loket,
     )
 
-    if ticket.submission_id:
-        _advance_linked_submission(ticket, operator)
-
     _push_realtime(ticket)
     return ticket
-
-
-def _advance_linked_submission(ticket, operator):
-    """Best-effort: mark the linked submission collected. Never let a submissions
-    hiccup roll back a completed in-person service."""
-    from apps.submissions.models import Submission
-
-    sub = ticket.submission
-    if sub is None or sub.status != Submission.Status.COLLECTION:
-        return
-    try:
-        from apps.submissions.services import mark_collected
-
-        mark_collected(sub, actor=operator, notes=f"Diambil di MPP (antrean {ticket.number}).")
-    except Exception:
-        pass
 
 
 @transaction.atomic

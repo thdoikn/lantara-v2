@@ -21,7 +21,6 @@ class Notification(TimestampedModel):
         SLA_BREACHED = "sla_breached", "SLA Terlampaui"
         VISIT_SCHEDULED = "visit_scheduled", "Kunjungan Dijadwalkan"
         # Antrean MPP
-        ANTREAN_AVAILABLE = "antrean_available", "Antrean Tersedia"
         ANTREAN_TICKET_TAKEN = "antrean_ticket_taken", "Nomor Antrean Diterima"
         ANTREAN_ALMOST_TURN = "antrean_almost_turn", "Antrean Hampir Tiba"
         ANTREAN_CALLED = "antrean_called", "Dipanggil ke Loket"

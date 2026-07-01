@@ -82,46 +82,26 @@ class TicketViewSet(viewsets.GenericViewSet):
     def get_queryset(self):
         return Ticket.objects.select_related("layanan__instansi", "loket")
 
-    # ── Citizen ──────────────────────────────────────────────────────────────
+    # ── Citizen (online-virtual) ─────────────────────────────────────────────
     def create(self, request):
-        """Take a number. Links to an izin pickup when `submission` is given."""
+        """Take an online-virtual number for a physical MPP visit (logged in)."""
         ser = TakeTicketSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         data = ser.validated_data
 
-        submission = None
-        layanan = data.get("layanan")
-        sub_id = data.get("submission")
-        if sub_id:
-            from apps.submissions.models import Submission
-
-            submission = Submission.objects.filter(id=sub_id).first()
-            if submission is None or submission.applicant_id != request.user.id:
-                return Response({"detail": "Pengajuan tidak ditemukan."}, status=404)
-            if submission.status != Submission.Status.COLLECTION:
-                return Response({"detail": "Pengajuan ini belum siap diambil."}, status=409)
-            # Resolve the service from the izin when the client didn't name one.
-            if layanan is None:
-                layanan = Layanan.objects.filter(
-                    permit_type_id=submission.permit_type_id, is_active=True
-                ).first()
-
-        if layanan is None:
-            return Response({"detail": "Layanan wajib dipilih."}, status=400)
-
         try:
             ticket = lifecycle.take_ticket(
-                layanan,
-                data["channel"],
+                data["layanan"],
+                Ticket.Channel.ONLINE,
                 applicant=request.user,
-                submission=submission,
                 is_priority=data["is_priority"],
-                holder_name=data["holder_name"],
-                holder_phone=data["holder_phone"],
             )
         except AntreanError as exc:
             return _err(exc)
-        return Response(TicketSerializer(ticket).data, status=status.HTTP_201_CREATED)
+        return Response(
+            TicketSerializer(ticket, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def retrieve(self, request, pk=None):
         ticket = self.get_object()

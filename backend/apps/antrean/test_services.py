@@ -177,29 +177,21 @@ def test_one_active_ticket_per_service_per_day(layanan, wide_hours, django_user_
         lifecycle.take_ticket(layanan, "online", applicant=user)
 
 
-def test_complete_marks_linked_submission_collected(
+def test_full_service_flow_has_no_submission_side_effect(
     layanan, wide_hours, instansi, django_user_model
 ):
-    from apps.engine.models import PermitType, Sektor, WorkflowStage
-    from apps.submissions.models import Submission
-
-    sektor = Sektor.objects.create(key="kesehatan", name="Kesehatan")
-    pt = PermitType.objects.create(sektor=sektor, key="izin-x", name="Izin X", sla_days=5)
-    WorkflowStage.objects.create(
-        permit_type=pt, key="penyerahan", name="Penyerahan", order=1, stage_type="collection"
-    )
+    """The queue is standalone: serving a ticket touches no izin submission."""
     user = django_user_model.objects.create_user(email="a@b.id", password="p", full_name="A")
-    sub = Submission.objects.create(
-        applicant=user, permit_type=pt, status=Submission.Status.COLLECTION
-    )
-
     loket = Loket.objects.create(instansi=instansi, code="L9", is_open=True)
     loket.layanan.add(layanan)
-    ticket = lifecycle.take_ticket(layanan, "walkin", applicant=user, submission=sub)
+
+    ticket = lifecycle.take_ticket(layanan, "walkin", applicant=user)
     lifecycle.call_next(loket, user)
     ticket.refresh_from_db()
     lifecycle.start_serving(ticket, user)
     lifecycle.complete(ticket, user)
 
-    sub.refresh_from_db()
-    assert sub.status == Submission.Status.COLLECTED
+    ticket.refresh_from_db()
+    assert ticket.status == "served"
+    # No FK to submissions exists anymore.
+    assert not hasattr(ticket, "submission")

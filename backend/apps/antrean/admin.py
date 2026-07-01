@@ -45,7 +45,7 @@ class TicketAdmin(admin.ModelAdmin):
     list_display = ("number", "layanan", "service_date", "channel", "status", "is_priority")
     list_filter = ("status", "channel", "is_priority", "service_date")
     search_fields = ("number", "holder_name", "holder_phone")
-    raw_id_fields = ("applicant", "submission", "served_by", "loket")
+    raw_id_fields = ("applicant", "served_by", "loket")
 
 
 @admin.register(TicketEvent)

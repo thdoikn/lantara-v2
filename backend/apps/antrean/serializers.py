@@ -113,7 +113,6 @@ class TicketSerializer(serializers.ModelSerializer):
             "served_at",
             "loket",
             "loket_code",
-            "submission",
             "holder_name",
             "holder_phone",
             "ahead",
@@ -129,19 +128,10 @@ class TicketSerializer(serializers.ModelSerializer):
 
 
 class TakeTicketSerializer(serializers.Serializer):
-    """Citizen take-ticket payload. ``submission`` links the ticket to an izin
-    pickup (the engine seam); ``channel`` defaults to online for the SPA."""
+    """Online-virtual take-ticket payload (logged-in citizen picks a service)."""
 
-    # Optional when `submission` is given — the service is then resolved from the
-    # submission's permit type (the citizen need not know the layanan id).
-    layanan = serializers.PrimaryKeyRelatedField(
-        queryset=Layanan.objects.filter(is_active=True), required=False, allow_null=True
-    )
-    channel = serializers.ChoiceField(choices=Ticket.Channel.choices, default=Ticket.Channel.ONLINE)
-    submission = serializers.UUIDField(required=False, allow_null=True)
+    layanan = serializers.PrimaryKeyRelatedField(queryset=Layanan.objects.filter(is_active=True))
     is_priority = serializers.BooleanField(default=False)
-    holder_name = serializers.CharField(required=False, allow_blank=True, default="")
-    holder_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
 
 class RetriageSerializer(serializers.Serializer):
