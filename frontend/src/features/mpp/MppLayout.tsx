@@ -19,6 +19,7 @@ export default function MppLayout() {
           <nav className="flex gap-1 text-sm font-medium">
             <Tab to="/loket" end label="Loket Saya" />
             <Tab to="/loket/checkin" label="Check-in" />
+            <Tab to="/loket/analitik" label="Analitik" />
           </nav>
         </div>
       </header>

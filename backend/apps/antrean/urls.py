@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     AdminInstansiViewSet,
+    AntreanAnalyticsView,
     CheckinScanView,
     CounterStaffAssignmentViewSet,
     DisplayBoardView,
@@ -27,6 +28,7 @@ router.register("admin/instansi", AdminInstansiViewSet, basename="antrean-admin-
 
 urlpatterns = router.urls + [
     path("monitor/", MonitorView.as_view(), name="antrean-monitor"),
+    path("analytics/", AntreanAnalyticsView.as_view(), name="antrean-analytics"),
     path("staff-users/", StaffUserSearchView.as_view(), name="antrean-staff-users"),
     path("kiosk/take/", KioskTakeView.as_view(), name="antrean-kiosk-take"),
     path("checkin/", CheckinScanView.as_view(), name="antrean-checkin-scan"),

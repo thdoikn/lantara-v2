@@ -8,7 +8,8 @@ const NAV: NavItem[] = [
   { to: "/admin/engine", label: "Engine Builder", icon: Settings },
   { to: "/admin/users", label: "Pengguna & RBAC", icon: Users },
   { to: "/admin/tenants", label: "Tenant MPP", icon: Building2 },
-  { to: "/admin/analytics", label: "Analitik", icon: BarChart3 },
+  { to: "/admin/analytics", label: "Analitik Izin", icon: BarChart3 },
+  { to: "/admin/queue-analytics", label: "Analitik Antrean", icon: BarChart3 },
 ];
 
 const QUICK_ACTIONS: QuickAction[] = [

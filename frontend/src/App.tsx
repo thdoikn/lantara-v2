@@ -51,6 +51,8 @@ const TenantLoketsPage = lazy(() => import("./features/mpp/tenant/TenantLoketsPa
 const TenantServicesPage = lazy(() => import("./features/mpp/tenant/TenantServicesPage"));
 const TenantSettingsPage = lazy(() => import("./features/mpp/tenant/TenantSettingsPage"));
 const TenantOperatorsPage = lazy(() => import("./features/mpp/tenant/TenantOperatorsPage"));
+const TenantAnalyticsPage = lazy(() => import("./features/mpp/tenant/TenantAnalyticsPage"));
+const QueueAnalytics = lazy(() => import("./features/mpp/QueueAnalytics"));
 const OperatorConsolePage = lazy(() => import("./features/mpp/OperatorConsolePage"));
 const SupervisorMonitorPage = lazy(() => import("./features/mpp/SupervisorMonitorPage"));
 const CheckinStationPage = lazy(() => import("./features/mpp/CheckinStationPage"));
@@ -135,6 +137,7 @@ export default function App() {
         >
           <Route index element={<VerifierDashboard />} />
           <Route path="queue" element={<VerifierQueue />} />
+          <Route path="analitik" element={<AnalyticsPage />} />
           <Route path="submissions/:id" element={<VerifierSubmissionPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
@@ -155,6 +158,14 @@ export default function App() {
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="tenants" element={<AdminTenantsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
+          <Route
+            path="queue-analytics"
+            element={
+              <div className="mx-auto max-w-6xl px-6 py-8">
+                <QueueAnalytics title="Analitik Antrean MPP" />
+              </div>
+            }
+          />
         </Route>
 
         {/* ── Antrean MPP — citizen surfaces ── */}
@@ -183,6 +194,7 @@ export default function App() {
         >
           <Route index element={<OperatorConsolePage />} />
           <Route path="checkin" element={<CheckinStationPage />} />
+          <Route path="analitik" element={<QueueAnalytics title="Analitik Loket Saya" />} />
         </Route>
 
         {/* ── Tenant Portal (tenant admins) ── */}
@@ -199,6 +211,7 @@ export default function App() {
           <Route path="layanan" element={<TenantServicesPage />} />
           <Route path="jam" element={<TenantSettingsPage />} />
           <Route path="petugas" element={<TenantOperatorsPage />} />
+          <Route path="analitik" element={<TenantAnalyticsPage />} />
         </Route>
 
         {/* Public lobby display board — no auth (a screen on the wall) */}

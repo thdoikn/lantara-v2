@@ -400,6 +400,130 @@ class CounterStaffAssignmentViewSet(viewsets.ModelViewSet):
         serializer.save(assigned_by=user)
 
 
+class AntreanAnalyticsView(APIView):
+    """Queue analytics — KPIs, channel mix, by-hour histogram, per-loket
+    throughput, and a daily trend, scoped by role and an optional date range.
+    ?from=YYYY-MM-DD&to=YYYY-MM-DD&instansi=<id>&loket=<id>&format=csv"""
+
+    permission_classes = [IsLoketOperator]
+
+    def get(self, request):
+        import csv
+        from datetime import date, timedelta
+
+        from django.db.models import Avg, Count, F, Q
+        from django.db.models.functions import ExtractHour, TruncDate
+        from django.http import HttpResponse
+
+        today = timezone.localtime().date()
+        try:
+            d_from = (
+                date.fromisoformat(request.query_params["from"])
+                if request.query_params.get("from")
+                else today - timedelta(days=29)
+            )
+            d_to = (
+                date.fromisoformat(request.query_params["to"])
+                if request.query_params.get("to")
+                else today
+            )
+        except ValueError:
+            return Response({"detail": "Format tanggal tidak valid."}, status=400)
+
+        qs = Ticket.objects.filter(service_date__gte=d_from, service_date__lte=d_to)
+
+        # Role scoping: global admin → all; tenant admin → their tenants; else the
+        # operator's tenants. Optional instansi/loket params narrow further.
+        scoped = user_scoped_instansi_ids(request.user)
+        if scoped is not None:
+            qs = qs.filter(layanan__instansi_id__in=scoped)
+        if request.query_params.get("instansi"):
+            qs = qs.filter(layanan__instansi_id=request.query_params["instansi"])
+        if request.query_params.get("loket"):
+            qs = qs.filter(loket_id=request.query_params["loket"])
+
+        def _minutes(delta):
+            return round(delta.total_seconds() / 60, 1) if delta else None
+
+        by_status = {r["status"]: r["n"] for r in qs.values("status").annotate(n=Count("id"))}
+        issued = sum(by_status.values())
+        served = by_status.get("served", 0)
+        no_show = by_status.get("no_show", 0) + by_status.get("expired", 0)
+        durations = qs.filter(status="served").aggregate(
+            wait=Avg(F("called_at") - F("checkin_at")),
+            service=Avg(F("served_at") - F("serving_at")),
+        )
+        channel = {r["channel"]: r["n"] for r in qs.values("channel").annotate(n=Count("id"))}
+
+        by_hour = [{"hour": h, "issued": 0} for h in range(24)]
+        for row in qs.annotate(h=ExtractHour("taken_at")).values("h").annotate(n=Count("id")):
+            if row["h"] is not None:
+                by_hour[row["h"]]["issued"] = row["n"]
+
+        by_loket = list(
+            qs.filter(loket__isnull=False)
+            .values("loket__code")
+            .annotate(
+                served=Count("id", filter=Q(status="served")),
+                avg_service=Avg(F("served_at") - F("serving_at"), filter=Q(status="served")),
+            )
+            .order_by("-served")
+        )
+        for r in by_loket:
+            r["loket"] = r.pop("loket__code")
+            r["avg_service"] = _minutes(r["avg_service"])
+
+        trend = list(
+            qs.annotate(d=TruncDate("service_date"))
+            .values("d")
+            .annotate(
+                issued=Count("id"),
+                served=Count("id", filter=Q(status="served")),
+                no_show=Count("id", filter=Q(status__in=["no_show", "expired"])),
+            )
+            .order_by("d")
+        )
+        trend = [
+            {
+                "date": str(r["d"]),
+                "issued": r["issued"],
+                "served": r["served"],
+                "no_show": r["no_show"],
+            }
+            for r in trend
+        ]
+
+        if request.query_params.get("export") == "csv":
+            resp = HttpResponse(content_type="text/csv")
+            resp["Content-Disposition"] = f'attachment; filename="antrean-{d_from}-{d_to}.csv"'
+            w = csv.writer(resp)
+            w.writerow(["Tanggal", "Diterbitkan", "Dilayani", "Tidak Hadir"])
+            for r in trend:
+                w.writerow([r["date"], r["issued"], r["served"], r["no_show"]])
+            return resp
+
+        return Response(
+            {
+                "range": {"from": str(d_from), "to": str(d_to)},
+                "kpi": {
+                    "issued": issued,
+                    "served": served,
+                    "no_show": no_show,
+                    "no_show_rate": round(no_show / issued * 100, 1) if issued else 0,
+                    "cancelled": by_status.get("cancelled", 0),
+                    "avg_wait_min": _minutes(durations["wait"]),
+                    "avg_service_min": _minutes(durations["service"]),
+                    "demoted": qs.filter(is_demoted=True).count(),
+                },
+                "channel": {"online": channel.get("online", 0), "walkin": channel.get("walkin", 0)},
+                "by_status": by_status,
+                "by_hour": by_hour,
+                "by_loket": by_loket,
+                "trend": trend,
+            }
+        )
+
+
 class StaffUserSearchView(APIView):
     """Candidate MPP staff for the assignment pickers — users who already hold a
     given role. ?role=loket_operator (tenant admin's operator picker, default) or

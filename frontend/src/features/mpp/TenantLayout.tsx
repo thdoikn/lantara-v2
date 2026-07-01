@@ -19,6 +19,7 @@ const TABS = [
   { to: "/tenant/layanan", label: "Layanan" },
   { to: "/tenant/jam", label: "Jam Operasional" },
   { to: "/tenant/petugas", label: "Petugas" },
+  { to: "/tenant/analitik", label: "Analitik" },
 ];
 
 export default function TenantLayout() {
