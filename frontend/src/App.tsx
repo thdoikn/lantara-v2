@@ -45,6 +45,7 @@ const AdminUsersPage = lazy(() => import("./features/admin/AdminUsersPage"));
 
 // MPP Antrean (queue)
 const MppLayout = lazy(() => import("./features/mpp/MppLayout"));
+const TenantLayout = lazy(() => import("./features/mpp/TenantLayout"));
 const OperatorConsolePage = lazy(() => import("./features/mpp/OperatorConsolePage"));
 const SupervisorMonitorPage = lazy(() => import("./features/mpp/SupervisorMonitorPage"));
 const CheckinStationPage = lazy(() => import("./features/mpp/CheckinStationPage"));
@@ -165,19 +166,31 @@ export default function App() {
           }
         />
 
-        {/* ── MPP Antrean workspace (operators + supervisors) ── */}
+        {/* ── Loket Portal (counter operators) ── */}
         <Route
-          path="/mpp"
+          path="/loket"
           element={
-            <ProtectedRoute requirePortal="mpp">
+            <ProtectedRoute requirePortal="loket">
               <MppLayout />
             </ProtectedRoute>
           }
         >
           <Route index element={<OperatorConsolePage />} />
           <Route path="checkin" element={<CheckinStationPage />} />
-          <Route path="monitor" element={<SupervisorMonitorPage />} />
         </Route>
+
+        {/* ── Tenant Portal (tenant admins) ── */}
+        <Route
+          path="/tenant"
+          element={
+            <ProtectedRoute requirePortal="tenant">
+              <TenantLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<SupervisorMonitorPage />} />
+        </Route>
+
         {/* Public lobby display board — no auth (a screen on the wall) */}
         <Route path="/mpp/display/:instansiKey" element={<DisplayBoardPage />} />
 

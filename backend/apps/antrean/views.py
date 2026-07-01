@@ -25,8 +25,8 @@ from .models import (
     Ticket,
 )
 from .permissions import (
-    IsMppOperator,
-    IsMppSupervisor,
+    IsLoketOperator,
+    IsTenantAdmin,
     user_can_operate_loket,
     user_scoped_instansi_ids,
 )
@@ -101,7 +101,7 @@ class TicketViewSet(viewsets.GenericViewSet):
 
     def get_permissions(self):
         if self.action in self._OPERATOR_ACTIONS:
-            return [IsMppOperator()]
+            return [IsLoketOperator()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
@@ -237,8 +237,8 @@ class LoketViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ("list", "retrieve", "call_next", "open", "close"):
-            return [IsMppOperator()]
-        return [IsMppSupervisor()]
+            return [IsLoketOperator()]
+        return [IsTenantAdmin()]
 
     def get_queryset(self):
         qs = Loket.objects.select_related("instansi", "current_operator")
@@ -283,7 +283,7 @@ class LoketViewSet(viewsets.ModelViewSet):
 class AdminInstansiViewSet(viewsets.ModelViewSet):
     """Tenant CRUD (supervisor) — register OIKN directorates + external agencies."""
 
-    permission_classes = [IsMppSupervisor]
+    permission_classes = [IsTenantAdmin]
     serializer_class = InstansiSerializer
     queryset = Instansi.objects.select_related("direktorat").prefetch_related("layanan")
 
@@ -291,7 +291,7 @@ class AdminInstansiViewSet(viewsets.ModelViewSet):
 class LayananViewSet(viewsets.ModelViewSet):
     """Service CRUD (supervisor/admin)."""
 
-    permission_classes = [IsMppSupervisor]
+    permission_classes = [IsTenantAdmin]
     serializer_class = LayananSerializer
     queryset = Layanan.objects.select_related("instansi")
 
@@ -299,13 +299,13 @@ class LayananViewSet(viewsets.ModelViewSet):
 class QueueParameterViewSet(viewsets.ModelViewSet):
     """Tabel-8 knob CRUD (supervisor)."""
 
-    permission_classes = [IsMppSupervisor]
+    permission_classes = [IsTenantAdmin]
     serializer_class = QueueParameterSerializer
     queryset = QueueParameter.objects.select_related("layanan")
 
 
 class CounterStaffAssignmentViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsMppSupervisor]
+    permission_classes = [IsTenantAdmin]
     serializer_class = CounterStaffAssignmentSerializer
     queryset = CounterStaffAssignment.objects.select_related("user", "instansi", "loket")
 
@@ -316,7 +316,7 @@ class CounterStaffAssignmentViewSet(viewsets.ModelViewSet):
 class MonitorView(APIView):
     """Supervisor live monitor — per-loket state + per-service queue depth."""
 
-    permission_classes = [IsMppSupervisor]
+    permission_classes = [IsTenantAdmin]
 
     def get(self, request):
         today = timezone.localtime().date()
@@ -409,7 +409,7 @@ class KioskTakeView(APIView):
 class CheckinScanView(APIView):
     """Staffed anjungan check-in station — scans an online ticket's QR (UUID)."""
 
-    permission_classes = [IsMppOperator]
+    permission_classes = [IsLoketOperator]
 
     def post(self, request):
         ser = CheckinScanSerializer(data=request.data)

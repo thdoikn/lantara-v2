@@ -1,22 +1,24 @@
 """
 manage.py seed_antrean_roles
 
-Seeds the two MPP staff roles (mpp_operator, mpp_supervisor). Idempotent.
-Counter staff are then scoped to an Instansi/Loket via CounterStaffAssignment.
+Seeds the two MPP staff roles (tenant_admin, loket_operator). Idempotent.
+Scope is then set via CounterStaffAssignment:
+  - an OIKN admin assigns a tenant_admin to a tenant (Instansi);
+  - that tenant_admin assigns loket_operators to its lokets.
 """
 
 from django.core.management.base import BaseCommand
 
 ANTREAN_ROLES = [
     {
-        "key": "mpp_operator",
-        "name": "Petugas Loket MPP",
-        "description": "Memanggil & melayani antrean pada loket yang ditugaskan.",
+        "key": "tenant_admin",
+        "name": "Admin Tenant MPP",
+        "description": "Mengelola loket, jam operasional, dan kuota tenant; menugaskan petugas loket.",
     },
     {
-        "key": "mpp_supervisor",
-        "name": "Supervisor MPP",
-        "description": "Memantau antrean, mengelola parameter & loket, tindakan eskalasi.",
+        "key": "loket_operator",
+        "name": "Petugas Loket MPP",
+        "description": "Memanggil & melayani antrean pada loket yang ditugaskan.",
     },
 ]
 

@@ -20,18 +20,21 @@ export interface PortalAccess {
   pemohon: boolean;
   verifier: boolean;
   admin: boolean;
-  /** MPP queue workspace — counter operators + supervisors (Antrean MPP). */
-  mpp: boolean;
+  /** Tenant Portal — MPP tenant admins (manage lokets, hours, quota). */
+  tenant: boolean;
+  /** Loket Portal — MPP counter operators. */
+  loket: boolean;
 }
 
-export type StaffPortal = "verifier" | "admin" | "mpp";
+export type StaffPortal = "verifier" | "admin" | "tenant" | "loket";
 
 function rolesOf(user: User | null): string[] {
   return user?.roles ?? [];
 }
 
 export function getPortals(user: User | null): PortalAccess {
-  if (!user) return { pemohon: false, verifier: false, admin: false, mpp: false };
+  if (!user)
+    return { pemohon: false, verifier: false, admin: false, tenant: false, loket: false };
   const roles = rolesOf(user);
   const isSuperadmin = roles.includes("superadmin");
   const isAdmin = isSuperadmin || roles.includes("admin");
@@ -39,13 +42,16 @@ export function getPortals(user: User | null): PortalAccess {
   // or a sektor_admin:{key} role (carries a colon) grants verifier access.
   const isVerifier =
     isSuperadmin || roles.includes("verifier") || roles.some((r) => r.includes(":"));
-  const isMpp =
-    isSuperadmin || isAdmin || roles.includes("mpp_operator") || roles.includes("mpp_supervisor");
+  // Superadmin sees every portal. Tenant/loket are otherwise role-gated; a tenant
+  // admin can also enter the loket portal (they run their counters).
+  const isTenant = isSuperadmin || roles.includes("tenant_admin");
+  const isLoket = isSuperadmin || roles.includes("tenant_admin") || roles.includes("loket_operator");
   return {
     pemohon: true,
     verifier: isVerifier,
     admin: isAdmin,
-    mpp: isMpp,
+    tenant: isTenant,
+    loket: isLoket,
   };
 }
 
@@ -55,18 +61,15 @@ export function staffPortals(user: User | null): StaffPortal[] {
   const out: StaffPortal[] = [];
   if (p.verifier) out.push("verifier");
   if (p.admin) out.push("admin");
-  if (p.mpp) out.push("mpp");
+  if (p.tenant) out.push("tenant");
+  if (p.loket) out.push("loket");
   return out;
 }
 
-/** True if the user is an MPP supervisor (or a global admin/superadmin). */
-export function isMppSupervisor(user: User | null): boolean {
+/** True if the user is a tenant admin (or superadmin). */
+export function isTenantAdmin(user: User | null): boolean {
   const roles = rolesOf(user);
-  return (
-    roles.includes("superadmin") ||
-    roles.includes("admin") ||
-    roles.includes("mpp_supervisor")
-  );
+  return roles.includes("superadmin") || roles.includes("tenant_admin");
 }
 
 /**

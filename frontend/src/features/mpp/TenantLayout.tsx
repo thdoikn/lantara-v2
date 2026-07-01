@@ -1,24 +1,26 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutGrid } from "lucide-react";
+import { Building2 } from "lucide-react";
 
-/** Loket Portal shell — counter operators call and serve the queue. */
-export default function MppLayout() {
+/**
+ * Tenant Portal shell — a tenant admin manages their lokets, hours, quota, and
+ * operators. (Loket/Settings/Operators tabs land in Phase 5.)
+ */
+export default function TenantLayout() {
   return (
     <div className="min-h-screen bg-pertiwi-warm">
       <header className="border-b border-pertiwi-muted bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-khatulistiwa-800">
-              <LayoutGrid className="h-5 w-5 text-terakota-400" />
+              <Building2 className="h-5 w-5 text-terakota-400" />
             </div>
             <div>
-              <p className="font-display text-lg font-bold text-khatulistiwa-900">Portal Loket</p>
+              <p className="font-display text-lg font-bold text-khatulistiwa-900">Portal Tenant</p>
               <p className="text-xs text-khatulistiwa-400">Mal Pelayanan Publik — IKN</p>
             </div>
           </div>
           <nav className="flex gap-1 text-sm font-medium">
-            <Tab to="/loket" end label="Loket Saya" />
-            <Tab to="/loket/checkin" label="Check-in" />
+            <Tab to="/tenant" end label="Monitor" />
           </nav>
         </div>
       </header>

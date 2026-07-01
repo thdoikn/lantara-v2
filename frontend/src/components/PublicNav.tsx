@@ -38,6 +38,8 @@ function portalItems(user: User | null) {
     { to: "/portal", label: "Portal Pemohon", desc: "Permohonan izin Anda", icon: LayoutDashboard, show: true },
     { to: "/verifier", label: "Workspace Verifikator", desc: "Verifikasi sesuai penugasan", icon: ShieldCheck, show: portals.verifier },
     { to: "/admin", label: "Panel Admin", desc: "Engine, pengguna & analitik", icon: Settings, show: portals.admin },
+    { to: "/tenant", label: "Portal Tenant", desc: "Kelola loket & antrean tenant", icon: Settings, show: portals.tenant },
+    { to: "/loket", label: "Portal Loket", desc: "Layani antrean di loket", icon: LayoutDashboard, show: portals.loket },
   ].filter((i) => i.show);
 }
 

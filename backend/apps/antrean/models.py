@@ -343,14 +343,19 @@ class TicketEvent(TimestampedModel):
 class CounterStaffAssignment(TimestampedModel):
     """Scopes an MPP staff member to an Instansi (and optionally one Loket).
 
+    Two shapes, mirroring the two-tier assignment model:
+      - tenant_admin  → (user, instansi, loket=null); assigned by an OIKN admin.
+        Manages the tenant's lokets/settings and assigns loket operators.
+      - loket_operator → (user, instansi, loket=X); assigned by that tenant's
+        tenant_admin. Works the counter.
+
     Mirrors accounts.VerifierPermitAssignment, but scoped by Instansi/Loket
-    instead of the engine's permit stages — antrean is engine-agnostic, so reusing
-    RolePermission's '{stage}:{izin}' strings would overload their meaning.
+    instead of the engine's permit stages.
     """
 
     class Scope(models.TextChoices):
-        OPERATOR = "operator", "Petugas Loket"
-        SUPERVISOR = "supervisor", "Supervisor MPP"
+        LOKET_OPERATOR = "loket_operator", "Petugas Loket"
+        TENANT_ADMIN = "tenant_admin", "Admin Tenant"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="counter_assignments"
@@ -366,7 +371,9 @@ class CounterStaffAssignment(TimestampedModel):
         related_name="staff_assignments",
         help_text="Blank = any loket within the instansi.",
     )
-    role_scope = models.CharField(max_length=12, choices=Scope.choices, default=Scope.OPERATOR)
+    role_scope = models.CharField(
+        max_length=16, choices=Scope.choices, default=Scope.LOKET_OPERATOR
+    )
     assigned_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,

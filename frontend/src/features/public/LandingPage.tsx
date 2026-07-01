@@ -194,6 +194,18 @@ const PORTAL_META = {
     title: "Panel Admin",
     desc: "Kelola engine perizinan, pengguna & analitik",
   },
+  tenant: {
+    to: "/tenant",
+    icon: Settings,
+    title: "Portal Tenant",
+    desc: "Kelola loket, jam operasional & kuota tenant Anda",
+  },
+  loket: {
+    to: "/loket",
+    icon: LayoutDashboard,
+    title: "Portal Loket",
+    desc: "Panggil & layani antrean di loket Anda",
+  },
 } as const;
 
 function AccessPanel() {
@@ -208,7 +220,13 @@ function AccessPanel() {
   const primary = staff.length === 1 ? staff[0] : null;
   const firstName = user.full_name?.split(" ")[0] ?? "";
 
-  const keys: Array<keyof typeof PORTAL_META> = ["pemohon", "verifier", "admin"];
+  const keys: Array<keyof typeof PORTAL_META> = [
+    "pemohon",
+    "verifier",
+    "admin",
+    "tenant",
+    "loket",
+  ];
   const visible = keys.filter((k) => portals[k]);
 
   return (
