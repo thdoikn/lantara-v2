@@ -43,12 +43,15 @@ const IzinBuilderPage = lazy(() => import("./features/admin/IzinBuilderPage"));
 const AnalyticsPage = lazy(() => import("./features/admin/AnalyticsPage"));
 const AdminUsersPage = lazy(() => import("./features/admin/AdminUsersPage"));
 
-// MPP Antrean (queue) workspace
+// MPP Antrean (queue)
 const MppLayout = lazy(() => import("./features/mpp/MppLayout"));
 const OperatorConsolePage = lazy(() => import("./features/mpp/OperatorConsolePage"));
 const SupervisorMonitorPage = lazy(() => import("./features/mpp/SupervisorMonitorPage"));
+const CheckinStationPage = lazy(() => import("./features/mpp/CheckinStationPage"));
 const DisplayBoardPage = lazy(() => import("./features/mpp/DisplayBoardPage"));
-const CitizenTicketPage = lazy(() => import("./features/mpp/CitizenTicketPage"));
+const QueueCatalogPage = lazy(() => import("./features/mpp/QueueCatalogPage"));
+const MyTicketPage = lazy(() => import("./features/mpp/MyTicketPage"));
+const KioskPage = lazy(() => import("./features/mpp/KioskPage"));
 
 // RDTR (Phase 3)
 const RDTRPage = lazy(() => import("./features/rdtr/RDTRPage"));
@@ -112,7 +115,6 @@ export default function App() {
           <Route index element={<PortalDashboard />} />
           <Route path="new/:permitKey" element={<NewSubmissionPage />} />
           <Route path="submissions/:id" element={<SubmissionDetailPage />} />
-          <Route path="submissions/:id/antrean" element={<CitizenTicketPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
@@ -148,6 +150,21 @@ export default function App() {
           <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
 
+        {/* ── Antrean MPP — citizen surfaces ── */}
+        {/* Public catalog: browse tenants/services (take-number requires login) */}
+        <Route path="/antrean" element={<QueueCatalogPage />} />
+        {/* Anonymous on-site e-kiosk (walk-in) */}
+        <Route path="/antrean/kiosk" element={<KioskPage />} />
+        {/* A citizen's own ticket */}
+        <Route
+          path="/antrean/tiket/:id"
+          element={
+            <ProtectedRoute>
+              <MyTicketPage />
+            </ProtectedRoute>
+          }
+        />
+
         {/* ── MPP Antrean workspace (operators + supervisors) ── */}
         <Route
           path="/mpp"
@@ -158,6 +175,7 @@ export default function App() {
           }
         >
           <Route index element={<OperatorConsolePage />} />
+          <Route path="checkin" element={<CheckinStationPage />} />
           <Route path="monitor" element={<SupervisorMonitorPage />} />
         </Route>
         {/* Public lobby display board — no auth (a screen on the wall) */}

@@ -23,7 +23,6 @@ export interface Layanan {
   instansi: string;
   instansi_key: string;
   instansi_name: string;
-  permit_type: string | null;
   is_active: boolean;
 }
 
@@ -33,6 +32,8 @@ export interface Instansi {
   name: string;
   short_name: string;
   description: string;
+  owner_type: "oikn" | "external";
+  logo_url: string | null;
   layanan: Layanan[];
 }
 
@@ -57,8 +58,11 @@ export interface Ticket {
   served_at: string | null;
   loket: string | null;
   loket_code: string | null;
-  submission: string | null;
   ahead: number | null;
+  // Detail-only:
+  holder_email?: string;
+  qr_data_url?: string;
+  pdf_url?: string | null;
 }
 
 export interface Loket {
@@ -84,18 +88,20 @@ export interface BoardData {
   loket: BoardRow[];
 }
 
-// ── Citizen ───────────────────────────────────────────────────────────────────
+// ── Public catalog ────────────────────────────────────────────────────────────
 
-export interface TakeTicketPayload {
-  /** Optional when `submission` is given — resolved from the izin's permit type. */
-  layanan?: string;
-  channel?: "online" | "walkin";
-  submission?: string | null;
-  is_priority?: boolean;
+export async function listInstansi(): Promise<Instansi[]> {
+  const { data } = await api.get("/antrean/instansi/");
+  return data.results ?? data;
 }
 
-export async function takeTicket(payload: TakeTicketPayload): Promise<Ticket> {
-  const { data } = await api.post("/antrean/tickets/", payload);
+// ── Citizen (online-virtual, logged in) ──────────────────────────────────────
+
+export async function takeTicket(layanan: string, isPriority = false): Promise<Ticket> {
+  const { data } = await api.post("/antrean/tickets/", {
+    layanan,
+    is_priority: isPriority,
+  });
   return data;
 }
 
@@ -119,9 +125,30 @@ export async function cancelTicket(id: string): Promise<Ticket> {
   return data;
 }
 
-export async function listInstansi(): Promise<Instansi[]> {
-  const { data } = await api.get("/antrean/instansi/");
-  return data.results ?? data;
+export async function resendTicketEmail(id: string): Promise<{ detail: string }> {
+  const { data } = await api.post(`/antrean/tickets/${id}/email/`);
+  return data;
+}
+
+export function ticketPdfUrl(id: string): string {
+  return `/api/v1/antrean/tickets/${id}/pdf/`;
+}
+
+// ── Walk-in kiosk (anonymous) + check-in station ─────────────────────────────
+
+export async function kioskTake(payload: {
+  layanan: string;
+  is_priority?: boolean;
+  holder_name?: string;
+  holder_email?: string;
+}): Promise<Ticket> {
+  const { data } = await api.post("/antrean/kiosk/take/", payload);
+  return data;
+}
+
+export async function scanCheckIn(ticketId: string): Promise<Ticket> {
+  const { data } = await api.post("/antrean/checkin/", { ticket: ticketId });
+  return data;
 }
 
 // ── Operator ────────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ import {
   ArrowRight, Clock, Shield, Smartphone, CheckCircle2,
   ChevronDown, Search, MessageCircle, Building2,
   LayoutDashboard, ShieldCheck, Settings, Info,
-  Globe, Mail, Instagram, Megaphone,
+  Globe, Mail, Instagram, Megaphone, Ticket,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import api from "@/lib/api";
@@ -747,6 +747,47 @@ function Footer() {
 
 // ── Page — updated rhythm after removing SearchSection ────────────────────────
 
+// ── Antrean MPP band ──────────────────────────────────────────────────────────
+function AntreanBand() {
+  return (
+    <section className="bg-[#F5F0E8] py-16">
+      <div className="mx-auto max-w-5xl px-6">
+        <div className="overflow-hidden rounded-3xl bg-gradient-royal text-white shadow-glow-royal">
+          <div className="flex flex-col items-start gap-6 p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+            <div className="max-w-2xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
+                <Ticket className="h-4 w-4" aria-hidden="true" /> Mal Pelayanan Publik
+              </div>
+              <h2 className="font-display text-2xl font-bold sm:text-3xl">
+                Berkunjung ke MPP? Ambil nomor antrean lebih dulu.
+              </h2>
+              <p className="mt-2 text-royal-100">
+                Layanan Otorita IKN maupun instansi lain (BPJS, Pajak, dan lainnya) dalam satu
+                antrean. Ambil nomor online dari ponsel, pantau estimasi, lalu check-in saat tiba —
+                atau ambil langsung di anjungan.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col gap-3">
+              <Link
+                to="/antrean"
+                className="rounded-xl bg-gold-500 px-6 py-3 text-center font-semibold text-royal-950 hover:opacity-90"
+              >
+                Ambil Nomor Antrean
+              </Link>
+              <Link
+                to="/antrean/kiosk"
+                className="rounded-xl border border-white/30 px-6 py-3 text-center font-semibold text-white hover:bg-white/10"
+              >
+                Mode Anjungan (Walk-in)
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function LandingPage() {
   const { data: sektors } = useQuery<Sektor[]>({
     queryKey: ["sektors"],
@@ -767,6 +808,7 @@ export default function LandingPage() {
         {/* Sektor cards + Cara Kerja — both cream, no transition needed */}
         <SektorCards sektors={sektors ?? []} />
         <HowItWorks />
+        <AntreanBand />
         {/* cream → dark */}
         <WaveTransition from="#F5F0E8" to="#04182A" />
         <Features />

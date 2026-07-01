@@ -16,6 +16,7 @@ export default function MppLayout() {
           </div>
           <nav className="flex gap-1 text-sm font-medium">
             <Tab to="/mpp" end label="Loket Saya" />
+            <Tab to="/mpp/checkin" label="Check-in" />
             {supervisor && <Tab to="/mpp/monitor" label="Monitor" />}
           </nav>
         </div>
