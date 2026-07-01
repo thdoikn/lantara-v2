@@ -75,8 +75,9 @@ def recompute_estimates():
 
 @shared_task
 def sweep_checkin_expiry():
-    """Online tickets that never checked in by noshow_grace_min past their
-    estimate are voided (planning doc §7.2 — no account sanction)."""
+    """Void online tickets that never checked in — either past noshow_grace_min
+    beyond their estimate, or after being skipped more than max_skip_before_expire
+    times (planning doc — check-in is the gate; no account sanction)."""
     from datetime import timedelta
 
     from django.utils import timezone
@@ -84,6 +85,7 @@ def sweep_checkin_expiry():
     from apps.antrean.models import Ticket
 
     from .services import lifecycle
+    from .services.ordering import skipped_count
     from .services.params import get_param
 
     now = timezone.now()
@@ -91,11 +93,12 @@ def sweep_checkin_expiry():
     reserved = Ticket.objects.filter(
         service_date=_today(),
         status=Ticket.Status.RESERVED,
-        estimated_call_at__isnull=False,
     ).select_related("layanan")
     for t in reserved:
+        max_skip = get_param("max_skip_before_expire", t.layanan)
         grace = get_param("noshow_grace_min", t.layanan)
-        if now > t.estimated_call_at + timedelta(minutes=grace):
+        past_grace = t.estimated_call_at and now > t.estimated_call_at + timedelta(minutes=grace)
+        if skipped_count(t) >= max_skip or past_grace:
             lifecycle.no_show(t, operator=None, reason="expired")
             expired += 1
     return f"sweep_checkin_expiry: {expired} expired."

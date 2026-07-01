@@ -65,6 +65,10 @@ export interface Ticket {
   holder_email?: string;
   qr_data_url?: string;
   pdf_url?: string | null;
+  /** How many later numbers were called ahead while un-checked-in. */
+  skipped?: number;
+  /** Skips after which an un-checked-in number is voided. */
+  skip_limit?: number;
 }
 
 export interface Loket {

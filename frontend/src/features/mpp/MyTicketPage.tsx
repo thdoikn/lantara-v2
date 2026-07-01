@@ -120,8 +120,14 @@ function GuidanceBanner({ ticket }: { ticket: Ticket }) {
   const countdown = useCountdown(ticket.status === "reserved" ? ticket.estimated_call_at : null);
   const Icon = meta.icon;
 
+  const skipped = ticket.skipped ?? 0;
+  const skipLimit = ticket.skip_limit ?? 5;
+  const skipping = ticket.status === "reserved" && skipped > 0;
+
   let headline = meta.hint;
-  if (ticket.status === "reserved") {
+  if (skipping) {
+    headline = `Anda telah dilewati ${skipped} nomor. Segera check-in — nomor hangus setelah dilewati ${skipLimit}.`;
+  } else if (ticket.status === "reserved") {
     headline =
       countdown && countdown.minutes <= 20
         ? "Giliran Anda mendekat — sebaiknya berangkat & check-in sekarang."
@@ -130,14 +136,18 @@ function GuidanceBanner({ ticket }: { ticket: Ticket }) {
     headline = `Giliran Anda! Segera menuju ${ticket.loket_code ?? "loket"}.`;
   }
 
+  // A skipping ticket escalates to a danger tone regardless of base status tone.
+  const bannerTone = skipping ? TONE_CLASSES.danger : tone;
+  const showRing = meta.urgent || skipping;
+
   return (
     <div
-      className={`flex items-start gap-3 rounded-2xl p-4 ${tone.badge} ${
-        meta.urgent ? "ring-2 " + tone.ring : ""
+      className={`flex items-start gap-3 rounded-2xl p-4 ${bannerTone.badge} ${
+        showRing ? "ring-2 " + bannerTone.ring : ""
       }`}
     >
       <Icon
-        className={`mt-0.5 h-5 w-5 shrink-0 ${meta.urgent ? "animate-pulse motion-reduce:animate-none" : ""}`}
+        className={`mt-0.5 h-5 w-5 shrink-0 ${showRing ? "animate-pulse motion-reduce:animate-none" : ""}`}
       />
       <p className="text-sm font-medium leading-snug">{headline}</p>
     </div>

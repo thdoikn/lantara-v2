@@ -30,7 +30,16 @@ def render_ticket_html(ticket) -> str:
     lyn = ticket.layanan
     tenant = lyn.instansi
     holder = ticket.holder_name or (ticket.applicant.full_name if ticket.applicant_id else "Tamu")
-    channel = "Online (virtual)" if ticket.channel == "online" else "Walk-in"
+    is_online = ticket.channel == "online"
+    channel = "Online (virtual)" if is_online else "Walk-in"
+    # Online numbers must be checked in on arrival or they get skipped and voided.
+    reminder = (
+        "<div class='reminder'>PENTING: Lakukan CHECK-IN saat tiba di MPP "
+        "(pindai QR di anjungan). Nomor online yang belum check-in akan dilewati "
+        "dan hangus.</div>"
+        if is_online
+        else ""
+    )
     return f"""
 <!DOCTYPE html>
 <html lang="id">
@@ -48,6 +57,9 @@ def render_ticket_html(ticket) -> str:
     td.r {{ text-align: right; color: #4B5E8A; }}
     .qr {{ margin-top: 10px; }}
     .foot {{ font-size: 7pt; color: #94A3B8; margin-top: 8px; }}
+    .reminder {{ font-size: 7.5pt; color: #B45309; background: #FEF3C7;
+                 border: 1px solid #FCD34D; border-radius: 4px;
+                 padding: 5px 6px; margin-top: 8px; text-align: left; }}
   </style>
 </head>
 <body>
@@ -62,6 +74,7 @@ def render_ticket_html(ticket) -> str:
     <tr><td>Tanggal</td><td class="r">{ticket.service_date:%d %b %Y}</td></tr>
   </table>
   <div class="qr"><img src="{qr_data_url(ticket)}" width="120"/></div>
+  {reminder}
   <div class="foot">Pindai QR di anjungan MPP untuk check-in.<br/>Antrean MPP — Otorita IKN</div>
 </body>
 </html>"""

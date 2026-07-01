@@ -16,12 +16,28 @@ def send_ticket_email(ticket) -> bool:
         return False
 
     tenant = ticket.layanan.instansi.name
+    is_online = ticket.channel == "online"
     subject = f"Nomor Antrean {ticket.number} — {tenant}"
+    reminder_text = (
+        "\n\nPENTING: Lakukan check-in saat tiba di MPP (pindai QR pada lampiran di "
+        "anjungan). Nomor online yang belum check-in akan dilewati dan hangus."
+        if is_online
+        else ""
+    )
     text = (
         f"Nomor antrean Anda: {ticket.number}\n"
         f"Layanan: {ticket.layanan.name} ({tenant})\n"
         f"Tanggal: {ticket.service_date:%d %b %Y}\n\n"
         "Tunjukkan nomor / QR pada lampiran saat tiba di MPP untuk check-in."
+        f"{reminder_text}"
+    )
+    reminder_html = (
+        "<p style='margin-top:12px;padding:10px 12px;background:#FEF3C7;"
+        "border:1px solid #FCD34D;border-radius:8px;color:#B45309;font-size:13px'>"
+        "<b>Penting:</b> Lakukan <b>check-in</b> saat tiba di MPP (pindai QR di anjungan). "
+        "Nomor online yang belum check-in akan dilewati dan hangus.</p>"
+        if is_online
+        else ""
     )
     html = f"""
       <div style="font-family:sans-serif;color:#0D1F5C">
@@ -30,6 +46,7 @@ def send_ticket_email(ticket) -> bool:
         <p style="margin:0">{ticket.layanan.name} — {tenant}</p>
         <p style="margin:2px 0;color:#4B5E8A">Tanggal: {ticket.service_date:%d %b %Y}</p>
         <p style="margin-top:12px">Tunjukkan QR pada tiket terlampir untuk check-in di anjungan MPP.</p>
+        {reminder_html}
       </div>
     """
 

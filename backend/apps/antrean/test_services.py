@@ -217,6 +217,26 @@ def test_anonymous_walkin_take(layanan, wide_hours):
     assert t.status == "in_pool"  # walk-in auto-checked-in
 
 
+def test_skipped_ticket_expires(layanan, wide_hours, django_user_model):
+    """An un-checked-in online ticket that gets passed by >= max_skip later
+    numbers is voided by the sweep."""
+    from apps.antrean.services.ordering import skipped_count
+    from apps.antrean.tasks import sweep_checkin_expiry
+
+    user = django_user_model.objects.create_user(email="s@d.id", password="p", full_name="S")
+    reserved = lifecycle.take_ticket(layanan, "online", applicant=user)  # seq 1, reserved
+    assert reserved.status == "reserved"
+
+    now = timezone.now()
+    for s in range(2, 7):  # 5 later numbers already called
+        _ticket(layanan, seq=s, status="served", called_at=now)
+
+    assert skipped_count(reserved) == 5  # default max_skip_before_expire
+    sweep_checkin_expiry()
+    reserved.refresh_from_db()
+    assert reserved.status == "expired"
+
+
 def test_kiosk_scan_checks_in_online_ticket(layanan, wide_hours, django_user_model):
     from apps.antrean.services.checkin import check_in
 

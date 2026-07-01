@@ -149,9 +149,32 @@ class TicketDetailSerializer(TicketSerializer):
 
     qr_data_url = serializers.SerializerMethodField()
     pdf_url = serializers.SerializerMethodField()
+    # Skip pressure for un-checked-in online tickets (drives the "segera check-in"
+    # warning): how many later numbers were called ahead, and the limit at which
+    # the number is voided.
+    skipped = serializers.SerializerMethodField()
+    skip_limit = serializers.SerializerMethodField()
 
     class Meta(TicketSerializer.Meta):
-        fields = TicketSerializer.Meta.fields + ["holder_email", "qr_data_url", "pdf_url"]
+        fields = TicketSerializer.Meta.fields + [
+            "holder_email",
+            "qr_data_url",
+            "pdf_url",
+            "skipped",
+            "skip_limit",
+        ]
+
+    def get_skipped(self, obj) -> int:
+        if obj.status != Ticket.Status.RESERVED:
+            return 0
+        from .services.ordering import skipped_count
+
+        return skipped_count(obj)
+
+    def get_skip_limit(self, obj) -> int:
+        from .services.params import get_param
+
+        return get_param("max_skip_before_expire", obj.layanan)
 
     def get_qr_data_url(self, obj):
         from .pdf import qr_data_url

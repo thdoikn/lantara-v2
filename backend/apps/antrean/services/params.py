@@ -22,6 +22,10 @@ DEFAULTS = {
     "cutoff_min": 60,  # take-number closes 1 h before close
     "recall_interval_min": 3,  # ±3 min between recalls
     "position_notify_threshold": 3,  # "tinggal X lagi" trigger
+    # An un-checked-in online ticket expires once this many later numbers have
+    # been called ahead of it (it kept getting skipped). The holder must take a
+    # fresh number. See services.ordering.skipped_count.
+    "max_skip_before_expire": 5,
 }
 
 

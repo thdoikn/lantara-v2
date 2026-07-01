@@ -75,6 +75,24 @@ def pick_next(loket, service_date):
     return regular[0]
 
 
+def skipped_count(ticket) -> int:
+    """How many later-issued numbers have already been called ahead of this
+    (still un-checked-in) ticket — i.e. how many times it has been skipped.
+
+    A reserved online ticket is never in the calling pool, so walk-ins and
+    checked-in numbers taken *after* it get called first. Once this crosses the
+    configured limit the number is expired (planning doc — check-in is the gate).
+    """
+    from apps.antrean.models import Ticket
+
+    return Ticket.objects.filter(
+        layanan=ticket.layanan,
+        service_date=ticket.service_date,
+        seq__gt=ticket.seq,
+        called_at__isnull=False,
+    ).count()
+
+
 def position_ahead(ticket) -> int:
     """How many active tickets are ahead of this one in its service's line —
     powers the citizen's live position and the 'tinggal X lagi' trigger.
