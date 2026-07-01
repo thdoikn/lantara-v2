@@ -36,7 +36,30 @@ export interface Instansi {
   description: string;
   owner_type: "oikn" | "external";
   logo_url: string | null;
+  operating_open: string | null;
+  operating_close: string | null;
+  break_start: string | null;
+  break_end: string | null;
   layanan: Layanan[];
+}
+
+export interface StaffAssignment {
+  id: string;
+  user: string;
+  user_name: string;
+  user_email: string;
+  instansi: string;
+  instansi_name: string;
+  loket: string | null;
+  loket_code: string | null;
+  role_scope: "tenant_admin" | "loket_operator";
+  is_active: boolean;
+}
+
+export interface StaffUser {
+  id: string;
+  email: string;
+  full_name: string;
 }
 
 export interface Ticket {
@@ -190,5 +213,75 @@ export async function ticketAction(id: string, action: TicketAction): Promise<Ti
 
 export async function getBoard(instansiKey: string): Promise<BoardData> {
   const { data } = await api.get(`/antrean/display-board/${instansiKey}/`);
+  return data;
+}
+
+// ── Tenant admin: tenants, lokets, services, operators ───────────────────────
+
+export async function adminListInstansi(): Promise<Instansi[]> {
+  const { data } = await api.get("/antrean/admin/instansi/");
+  return data.results ?? data;
+}
+
+export async function updateInstansi(id: string, patch: Partial<Instansi>): Promise<Instansi> {
+  const { data } = await api.patch(`/antrean/admin/instansi/${id}/`, patch);
+  return data;
+}
+
+export interface LoketInput {
+  instansi: string;
+  code: string;
+  name?: string;
+  layanan?: string[];
+}
+
+export async function createLoket(input: LoketInput): Promise<Loket> {
+  const { data } = await api.post("/antrean/loket/", input);
+  return data;
+}
+
+export async function updateLoket(id: string, patch: Partial<LoketInput>): Promise<Loket> {
+  const { data } = await api.patch(`/antrean/loket/${id}/`, patch);
+  return data;
+}
+
+export async function deleteLoket(id: string): Promise<void> {
+  await api.delete(`/antrean/loket/${id}/`);
+}
+
+export async function adminListLayanan(): Promise<Layanan[]> {
+  const { data } = await api.get("/antrean/layanan/");
+  return data.results ?? data;
+}
+
+export async function updateLayanan(id: string, patch: Partial<Layanan>): Promise<Layanan> {
+  const { data } = await api.patch(`/antrean/layanan/${id}/`, patch);
+  return data;
+}
+
+export async function listStaff(): Promise<StaffAssignment[]> {
+  const { data } = await api.get("/antrean/staff/");
+  return data.results ?? data;
+}
+
+export async function createStaff(input: {
+  user: string;
+  instansi: string;
+  loket?: string | null;
+  role_scope?: string;
+}): Promise<StaffAssignment> {
+  const { data } = await api.post("/antrean/staff/", {
+    role_scope: "loket_operator",
+    ...input,
+  });
+  return data;
+}
+
+export async function deleteStaff(id: string): Promise<void> {
+  await api.delete(`/antrean/staff/${id}/`);
+}
+
+export async function searchStaffUsers(q: string): Promise<StaffUser[]> {
+  const { data } = await api.get("/antrean/staff-users/", { params: { q } });
   return data;
 }

@@ -46,6 +46,10 @@ const AdminUsersPage = lazy(() => import("./features/admin/AdminUsersPage"));
 // MPP Antrean (queue)
 const MppLayout = lazy(() => import("./features/mpp/MppLayout"));
 const TenantLayout = lazy(() => import("./features/mpp/TenantLayout"));
+const TenantLoketsPage = lazy(() => import("./features/mpp/tenant/TenantLoketsPage"));
+const TenantServicesPage = lazy(() => import("./features/mpp/tenant/TenantServicesPage"));
+const TenantSettingsPage = lazy(() => import("./features/mpp/tenant/TenantSettingsPage"));
+const TenantOperatorsPage = lazy(() => import("./features/mpp/tenant/TenantOperatorsPage"));
 const OperatorConsolePage = lazy(() => import("./features/mpp/OperatorConsolePage"));
 const SupervisorMonitorPage = lazy(() => import("./features/mpp/SupervisorMonitorPage"));
 const CheckinStationPage = lazy(() => import("./features/mpp/CheckinStationPage"));
@@ -189,6 +193,10 @@ export default function App() {
           }
         >
           <Route index element={<SupervisorMonitorPage />} />
+          <Route path="loket" element={<TenantLoketsPage />} />
+          <Route path="layanan" element={<TenantServicesPage />} />
+          <Route path="jam" element={<TenantSettingsPage />} />
+          <Route path="petugas" element={<TenantOperatorsPage />} />
         </Route>
 
         {/* Public lobby display board — no auth (a screen on the wall) */}
