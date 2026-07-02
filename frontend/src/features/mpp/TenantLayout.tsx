@@ -1,19 +1,11 @@
 import { useState } from "react";
-import { Outlet, useOutletContext } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, LayoutGrid, DoorOpen, ListChecks, Clock, Users, BarChart3, Loader2 } from "lucide-react";
 import PortalShell from "@/components/PortalShell";
 import type { NavItem } from "@/components/SharedSidebar";
-import { adminListInstansi, type Instansi } from "./api";
-
-export interface TenantScope {
-  tenant: Instansi;
-  tenants: Instansi[];
-}
-
-export function useTenantScope() {
-  return useOutletContext<TenantScope>();
-}
+import { adminListInstansi } from "./api";
+import type { TenantScope } from "./tenantScope";
 
 const NAV: NavItem[] = [
   { to: "/tenant", label: "Monitor", icon: LayoutGrid, exact: true },

@@ -10,7 +10,7 @@ import {
   type StaffUser,
 } from "../api";
 import { errMsg } from "../queueStatus";
-import { useTenantScope } from "../TenantLayout";
+import { useTenantScope } from "../tenantScope";
 import { Header, Loading, Empty, Modal, Field } from "./TenantLoketsPage";
 import { toast } from "@/lib/toast";
 

@@ -9,7 +9,7 @@ import {
   type Loket,
 } from "../api";
 import { errMsg } from "../queueStatus";
-import { useTenantScope } from "../TenantLayout";
+import { useTenantScope } from "../tenantScope";
 import { toast } from "@/lib/toast";
 
 export default function TenantLoketsPage() {

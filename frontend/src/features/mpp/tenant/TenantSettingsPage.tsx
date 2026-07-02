@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock, Coffee } from "lucide-react";
 import { updateInstansi } from "../api";
 import { errMsg } from "../queueStatus";
-import { useTenantScope } from "../TenantLayout";
+import { useTenantScope } from "../tenantScope";
 import { Header, Field } from "./TenantLoketsPage";
 import { toast } from "@/lib/toast";
 

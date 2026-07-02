@@ -1,5 +1,5 @@
 import QueueAnalytics from "../QueueAnalytics";
-import { useTenantScope } from "../TenantLayout";
+import { useTenantScope } from "../tenantScope";
 
 export default function TenantAnalyticsPage() {
   const { tenant } = useTenantScope();

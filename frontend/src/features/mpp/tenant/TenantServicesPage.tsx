@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 import { adminListLayanan, updateLayanan, type Layanan } from "../api";
 import { errMsg } from "../queueStatus";
-import { useTenantScope } from "../TenantLayout";
+import { useTenantScope } from "../tenantScope";
 import { Header, Loading, Empty } from "./TenantLoketsPage";
 import { toast } from "@/lib/toast";
 
