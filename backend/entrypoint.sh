@@ -39,6 +39,9 @@ if [ "$run_release" = "1" ] || [ "$run_release" = "true" ]; then
   echo "Bootstrapping superadmin..."
   python manage.py bootstrap_superadmin || true
 
+  echo "Seeding MPP antrean roles (tenant_admin, loket_operator)..."
+  python manage.py seed_antrean_roles || true
+
   echo "Ensuring MinIO bucket exists..."
   python manage.py ensure_minio_bucket || true
 
