@@ -66,7 +66,7 @@ class InstansiViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return (
             Instansi.objects.filter(is_active=True)
-            .prefetch_related("layanan")
+            .prefetch_related("layanan", "layanan__loket")
             .order_by("order", "name")
         )
 
@@ -90,7 +90,7 @@ class InstansiViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["get"])
     def layanan(self, request, key=None):
-        qs = Layanan.objects.filter(instansi__key=key, is_active=True)
+        qs = Layanan.objects.filter(instansi__key=key, is_active=True).prefetch_related("loket")
         return Response(
             LayananSerializer(qs, many=True, context=self.get_serializer_context()).data
         )
@@ -341,7 +341,7 @@ class LayananViewSet(viewsets.ModelViewSet):
     serializer_class = LayananSerializer
 
     def get_queryset(self):
-        qs = Layanan.objects.select_related("instansi")
+        qs = Layanan.objects.select_related("instansi").prefetch_related("loket")
         scoped = tenant_admin_instansi_ids(self.request.user)
         if scoped is not None:
             qs = qs.filter(instansi_id__in=scoped)

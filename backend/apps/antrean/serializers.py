@@ -18,6 +18,9 @@ class LayananSerializer(serializers.ModelSerializer):
     # catalog can show how busy each service is. Fed via serializer context in one
     # query (see InstansiViewSet.get_serializer_context); 0 when absent.
     waiting = serializers.SerializerMethodField()
+    # How many lokets serve this service. 0 = tickets can never be called, so the
+    # citizen catalog hides it and the tenant admin gets a warning.
+    loket_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Layanan
@@ -37,10 +40,15 @@ class LayananSerializer(serializers.ModelSerializer):
             "is_active",
             "order",
             "waiting",
+            "loket_count",
         ]
 
     def get_waiting(self, obj) -> int:
         return self.context.get("waiting_map", {}).get(obj.id, 0)
+
+    def get_loket_count(self, obj) -> int:
+        # len(.all()) uses the prefetch cache when present (no N+1 in catalogs).
+        return len(obj.loket.all())
 
 
 class InstansiSerializer(serializers.ModelSerializer):

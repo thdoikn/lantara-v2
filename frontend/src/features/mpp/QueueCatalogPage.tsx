@@ -72,16 +72,22 @@ export default function QueueCatalogPage() {
       .filter((t) => !activeTenant || t.key === activeTenant)
       .map((t) => ({
         ...t,
-        layanan: q
-          ? t.layanan.filter(
-              (l) => l.name.toLowerCase().includes(q) || t.name.toLowerCase().includes(q),
-            )
-          : t.layanan,
+        // Only offer services a loket actually serves — otherwise a number could
+        // be taken that can never be called.
+        layanan: t.layanan
+          .filter((l) => l.loket_count > 0)
+          .filter(
+            (l) =>
+              !q || l.name.toLowerCase().includes(q) || t.name.toLowerCase().includes(q),
+          ),
       }))
       .filter((t) => t.layanan.length > 0);
   }, [tenants, activeTenant, q]);
 
-  const totalServices = (tenants ?? []).reduce((n, t) => n + t.layanan.length, 0);
+  const totalServices = (tenants ?? []).reduce(
+    (n, t) => n + t.layanan.filter((l) => l.loket_count > 0).length,
+    0,
+  );
 
   function onTake(l: Layanan) {
     if (!isAuthenticated) {

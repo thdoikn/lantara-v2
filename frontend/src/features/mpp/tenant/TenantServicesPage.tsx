@@ -131,6 +131,11 @@ function ServiceRow({ service, onChanged }: { service: Layanan; onChanged: () =>
         <p className="text-xs text-khatulistiwa-400">
           {CATEGORY_LABEL[service.category]} · {service.waiting} antre
         </p>
+        {service.loket_count === 0 && (
+          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-terakota-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+            ⚠ Belum ada loket yang melayani — nomor tidak akan terpanggil
+          </p>
+        )}
       </div>
       <NumField label="Maks. antrean/hari" value={quota} onChange={setQuota} placeholder="∞" />
       <NumField label="Menit/layanan" value={avg} onChange={setAvg} />

@@ -26,6 +26,8 @@ export interface Layanan {
   is_active: boolean;
   /** Live count of people waiting today (reserved + in pool). */
   waiting: number;
+  /** How many lokets serve this service; 0 = tickets can't be called. */
+  loket_count: number;
 }
 
 export interface Instansi {
