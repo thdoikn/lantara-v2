@@ -286,9 +286,27 @@ export async function adminListLayanan(): Promise<Layanan[]> {
   return data.results ?? data;
 }
 
+export interface LayananInput {
+  instansi: string;
+  key: string;
+  name: string;
+  category: "cepat" | "sedang" | "lama";
+  avg_minutes: number;
+  daily_quota?: number | null;
+}
+
+export async function createLayanan(input: LayananInput): Promise<Layanan> {
+  const { data } = await api.post("/antrean/layanan/", input);
+  return data;
+}
+
 export async function updateLayanan(id: string, patch: Partial<Layanan>): Promise<Layanan> {
   const { data } = await api.patch(`/antrean/layanan/${id}/`, patch);
   return data;
+}
+
+export async function deleteLayanan(id: string): Promise<void> {
+  await api.delete(`/antrean/layanan/${id}/`);
 }
 
 export async function listStaff(): Promise<StaffAssignment[]> {
