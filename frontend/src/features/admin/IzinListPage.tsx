@@ -429,7 +429,7 @@ export default function IzinListPage() {
         </div>
       )}
 
-      <div className="divide-y divide-border rounded-xl border border-border overflow-hidden">
+      <div className="divide-y divide-border rounded-xl border border-border bg-white shadow-sm overflow-hidden">
         {filtered.map((pt) => (
           <div key={pt.key} className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 group">
             <Link

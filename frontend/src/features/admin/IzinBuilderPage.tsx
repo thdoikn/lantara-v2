@@ -1072,7 +1072,7 @@ function ReadinessPanel({ pt }: { pt: PermitTypeFull }) {
   const ready = checks.filter((c) => c.ok).length;
 
   return (
-    <div className="px-6 py-3 border-b border-border bg-surface/60 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+    <div className="px-6 py-3 border-b border-border bg-white grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
       {/* SLA visualizer (F13) */}
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-1">
@@ -1320,7 +1320,7 @@ export default function IzinBuilderPage() {
       <VersionHistoryModal open={showHistory} onClose={() => setShowHistory(false)} izinKey={izinKey!} />
 
       {/* Two-panel layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden bg-white">
         {/* Left — editor */}
         <div className="w-1/2 flex flex-col border-r border-border overflow-y-auto">
           {/* Tabs */}
@@ -1373,7 +1373,7 @@ export default function IzinBuilderPage() {
         </div>
 
         {/* Right — live preview */}
-        <div className="w-1/2 overflow-y-auto bg-muted/30">
+        <div className="w-1/2 overflow-y-auto bg-white">
           <div className="p-4 border-b border-border bg-white">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Preview Formulir Warga</p>
           </div>
