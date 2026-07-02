@@ -42,6 +42,24 @@ const IzinListPage = lazy(() => import("./features/admin/IzinListPage"));
 const IzinBuilderPage = lazy(() => import("./features/admin/IzinBuilderPage"));
 const AnalyticsPage = lazy(() => import("./features/admin/AnalyticsPage"));
 const AdminUsersPage = lazy(() => import("./features/admin/AdminUsersPage"));
+const AdminTenantsPage = lazy(() => import("./features/admin/AdminTenantsPage"));
+
+// MPP Antrean (queue)
+const MppLayout = lazy(() => import("./features/mpp/MppLayout"));
+const TenantLayout = lazy(() => import("./features/mpp/TenantLayout"));
+const TenantLoketsPage = lazy(() => import("./features/mpp/tenant/TenantLoketsPage"));
+const TenantServicesPage = lazy(() => import("./features/mpp/tenant/TenantServicesPage"));
+const TenantSettingsPage = lazy(() => import("./features/mpp/tenant/TenantSettingsPage"));
+const TenantOperatorsPage = lazy(() => import("./features/mpp/tenant/TenantOperatorsPage"));
+const TenantAnalyticsPage = lazy(() => import("./features/mpp/tenant/TenantAnalyticsPage"));
+const QueueAnalytics = lazy(() => import("./features/mpp/QueueAnalytics"));
+const OperatorConsolePage = lazy(() => import("./features/mpp/OperatorConsolePage"));
+const SupervisorMonitorPage = lazy(() => import("./features/mpp/SupervisorMonitorPage"));
+const CheckinStationPage = lazy(() => import("./features/mpp/CheckinStationPage"));
+const DisplayBoardPage = lazy(() => import("./features/mpp/DisplayBoardPage"));
+const QueueCatalogPage = lazy(() => import("./features/mpp/QueueCatalogPage"));
+const MyTicketPage = lazy(() => import("./features/mpp/MyTicketPage"));
+const KioskPage = lazy(() => import("./features/mpp/KioskPage"));
 
 // RDTR (Phase 3)
 const RDTRPage = lazy(() => import("./features/rdtr/RDTRPage"));
@@ -119,6 +137,7 @@ export default function App() {
         >
           <Route index element={<VerifierDashboard />} />
           <Route path="queue" element={<VerifierQueue />} />
+          <Route path="analitik" element={<AnalyticsPage />} />
           <Route path="submissions/:id" element={<VerifierSubmissionPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
@@ -137,8 +156,66 @@ export default function App() {
           <Route path="engine/:sektorKey" element={<IzinListPage />} />
           <Route path="engine/:sektorKey/:izinKey" element={<IzinBuilderPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="tenants" element={<AdminTenantsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
+          <Route
+            path="queue-analytics"
+            element={
+              <div className="mx-auto max-w-6xl">
+                <QueueAnalytics title="Analitik Antrean MPP" />
+              </div>
+            }
+          />
         </Route>
+
+        {/* ── Antrean MPP — citizen surfaces ── */}
+        {/* Public catalog: browse tenants/services (take-number requires login) */}
+        <Route path="/antrean" element={<QueueCatalogPage />} />
+        {/* Anonymous on-site e-kiosk (walk-in) */}
+        <Route path="/antrean/kiosk" element={<KioskPage />} />
+        {/* A citizen's own ticket */}
+        <Route
+          path="/antrean/tiket/:id"
+          element={
+            <ProtectedRoute>
+              <MyTicketPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── Loket Portal (counter operators) ── */}
+        <Route
+          path="/loket"
+          element={
+            <ProtectedRoute requirePortal="loket">
+              <MppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<OperatorConsolePage />} />
+          <Route path="checkin" element={<CheckinStationPage />} />
+          <Route path="analitik" element={<QueueAnalytics title="Analitik Loket Saya" />} />
+        </Route>
+
+        {/* ── Tenant Portal (tenant admins) ── */}
+        <Route
+          path="/tenant"
+          element={
+            <ProtectedRoute requirePortal="tenant">
+              <TenantLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<SupervisorMonitorPage />} />
+          <Route path="loket" element={<TenantLoketsPage />} />
+          <Route path="layanan" element={<TenantServicesPage />} />
+          <Route path="jam" element={<TenantSettingsPage />} />
+          <Route path="petugas" element={<TenantOperatorsPage />} />
+          <Route path="analitik" element={<TenantAnalyticsPage />} />
+        </Route>
+
+        {/* Public lobby display board — no auth (a screen on the wall) */}
+        <Route path="/mpp/display/:instansiKey" element={<DisplayBoardPage />} />
 
         {/* ── RDTR (Phase 3) — public map viewer, no auth required ── */}
         <Route path="/rdtr" element={<RDTRPage />} />

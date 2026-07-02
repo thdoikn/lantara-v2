@@ -49,6 +49,7 @@ LOCAL_APPS = [
     "apps.rdtr",
     "apps.tte",
     "apps.reference",
+    "apps.antrean",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -133,6 +134,23 @@ CELERY_BEAT_SCHEDULE = {
     "release-stale-claims": {
         "task": "apps.submissions.tasks.release_stale_claims",
         "schedule": crontab(minute="*/15"),
+    },
+    # ── Antrean MPP — frequent, cheap sweeps over today's live tickets ──
+    "antrean-recompute-estimates": {
+        "task": "apps.antrean.tasks.recompute_estimates",
+        "schedule": crontab(minute="*"),
+    },
+    "antrean-sweep-checkin-expiry": {
+        "task": "apps.antrean.tasks.sweep_checkin_expiry",
+        "schedule": crontab(minute="*"),
+    },
+    "antrean-sweep-no-show": {
+        "task": "apps.antrean.tasks.sweep_no_show",
+        "schedule": crontab(minute="*"),
+    },
+    "antrean-notify-position-threshold": {
+        "task": "apps.antrean.tasks.notify_position_threshold",
+        "schedule": crontab(minute="*"),
     },
 }
 

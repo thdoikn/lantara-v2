@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, ListChecks, Bell, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, ListChecks, Bell, ShieldCheck, BarChart3 } from "lucide-react";
 import api from "@/lib/api";
 import { useNotificationSocket } from "@/lib/useNotificationSocket";
 import PortalShell from "@/components/PortalShell";
@@ -8,6 +8,7 @@ import type { NavItem } from "@/components/SharedSidebar";
 const BASE_NAV: NavItem[] = [
   { to: "/verifier", label: "Beranda", icon: LayoutDashboard, exact: true },
   { to: "/verifier/queue", label: "Antrean", icon: ListChecks, exact: false },
+  { to: "/verifier/analitik", label: "Analitik", icon: BarChart3, exact: false },
   { to: "/verifier/notifications", label: "Notifikasi", icon: Bell, exact: false },
 ];
 

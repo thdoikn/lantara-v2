@@ -30,13 +30,19 @@ export default function PortalShell({
   nav,
   quickActions = [],
   notifications,
+  topbar,
+  children,
 }: {
   portalLabel: string;
-  variant: "pemohon" | "verifier" | "admin";
+  variant: "pemohon" | "verifier" | "admin" | "tenant" | "loket";
   roleBadge?: { icon: LucideIcon; label: string };
   nav: NavItem[];
   quickActions?: QuickAction[];
   notifications?: { to: string; count?: number };
+  /** Optional element rendered in the top bar (e.g. a tenant selector). */
+  topbar?: React.ReactNode;
+  /** Content override — defaults to <Outlet/> for nested-route layouts. */
+  children?: React.ReactNode;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,7 +86,14 @@ export default function PortalShell({
   }, [nav, quickActions, navigate]);
 
   const sidebarWidth = collapsed ? "lg:pl-16" : "lg:pl-64";
-  const accentBar = variant === "verifier" ? "bg-emerald-500" : variant === "admin" ? "bg-amber-500" : "bg-khatulistiwa-500";
+  const accentBar =
+    variant === "verifier"
+      ? "bg-emerald-500"
+      : variant === "admin"
+        ? "bg-amber-500"
+        : variant === "loket"
+          ? "bg-terakota-500"
+          : "bg-khatulistiwa-500";
 
   return (
     <div className="min-h-screen flex bg-pertiwi-warm">
@@ -129,6 +142,9 @@ export default function PortalShell({
 
           <div className="flex-1" />
 
+          {/* Portal-specific slot (e.g. tenant selector) */}
+          {topbar}
+
           {/* Search trigger */}
           <button
             onClick={() => window.dispatchEvent(new Event("lantara:open-command"))}
@@ -170,7 +186,7 @@ export default function PortalShell({
         </div>
 
         <main id="main-content" className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
-          <Outlet />
+          {children ?? <Outlet />}
         </main>
       </div>
 

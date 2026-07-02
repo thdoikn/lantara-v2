@@ -38,6 +38,8 @@ const ROLE_LABELS: Record<string, string> = {
   superadmin: "Superadmin",
   admin: "Admin",
   verifier: "Verifier",
+  tenant_admin: "Admin Tenant MPP",
+  loket_operator: "Petugas Loket MPP",
 };
 function roleLabel(key: string): string {
   if (ROLE_LABELS[key]) return ROLE_LABELS[key];
@@ -46,12 +48,14 @@ function roleLabel(key: string): string {
 }
 
 // Roles that can be granted/revoked via this screen (never superadmin).
-const ASSIGNABLE_KEYS = ["admin", "verifier"];
+const ASSIGNABLE_KEYS = ["admin", "verifier", "tenant_admin", "loket_operator"];
 
 const ROLE_CHIP: Record<string, string> = {
   superadmin: "bg-terakota-50 text-terakota-700 border-terakota-200",
   admin: "bg-khatulistiwa-50 text-khatulistiwa-700 border-khatulistiwa-100",
   verifier: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  tenant_admin: "bg-khatulistiwa-50 text-khatulistiwa-700 border-khatulistiwa-100",
+  loket_operator: "bg-terakota-50 text-amber-700 border-terakota-200",
 };
 
 function lastSeenLabel(iso: string | null): string {

@@ -385,7 +385,7 @@ export default function EngineBuilderPage() {
         </button>
       </div>
 
-      <div className="rounded-xl border border-border overflow-hidden divide-y divide-border/60">
+      <div className="rounded-xl border border-border bg-white shadow-sm overflow-hidden divide-y divide-border/60">
         {sektors?.results.map((sektor) => (
           <SektorRow key={sektor.key} sektor={sektor} onEdit={() => setEditSektor(sektor)} />
         ))}
